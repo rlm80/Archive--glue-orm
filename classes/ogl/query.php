@@ -21,7 +21,7 @@ abstract class OGL_Query {
 	public function __construct($expr, $fields = null) {
 		if (preg_match('/\s*([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)\s*/', $expr, $matches) > 0) {
 			$entity		= OGL_Entity::get(inflector::singular($matches[1]));
-			$src_set	= $this->create_set('_dummy', null);
+			$src_set	= $this->create_set(null, null, true);
 			$trg_set	= $this->create_set($matches[2], $this->entity);
 		}
 		else

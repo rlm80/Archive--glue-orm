@@ -10,14 +10,16 @@
  */
 
 class OGL_Set {
+	public $is_root;
 	public $name;
 	public $entity;
 	public $objects	= array();
 	protected $commands	= array();
 
-	public function  __construct($name, $entity) {
+	public function  __construct($name, $entity, $is_root = false) {
 		$this->name		= $name;
 		$this->entity	= $entity;
+		$this->is_root	= $is_root;
 	}
 
 	public function add_command($command) {
@@ -38,7 +40,7 @@ class OGL_Set {
 	}
 
 	public function init_query($query) {
-		if($this->name === '_dummy')
+		if($this->is_root)
 			return;
 
 		// Get data :
@@ -58,7 +60,7 @@ class OGL_Set {
 	}
 
 	public function exec_query($query) {
-		if($this->name === '_dummy')
+		if($this->is_root)
 			$result = $query->execute()->as_array();
 		else {
 			if (count($this->entity->pk()) === 1) {

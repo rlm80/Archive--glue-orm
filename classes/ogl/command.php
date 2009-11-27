@@ -70,7 +70,7 @@ abstract class OGL_Command {
 	}
 
 	// Applies all DB builder calls to given query :
-	public function apply_calls($query) {
+	protected function apply_calls($query) {
 		foreach($this->calls as $call)
 			call_user_func_array(array($query, $call[0]), $call[1]);
 	}

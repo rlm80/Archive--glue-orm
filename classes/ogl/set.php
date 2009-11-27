@@ -26,11 +26,11 @@ class OGL_Set {
 
 	// Returns command chain formed by all command chains starting with a child
 	// command of this set.
-	public function find_chain() {
+	public function build_chain() {
 		$chain = array();
 		$roots = array();
 		foreach($this->commands as $command) {
-			list($new_chain, $new_roots) = $command->find_chain();
+			list($new_chain, $new_roots) = $command->build_chain();
 			$chain = array_merge($chain, $new_chain);
 			$roots = array_merge($roots, $new_roots);
 		}

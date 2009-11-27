@@ -18,8 +18,8 @@ abstract class OGL_Command {
 	protected $trg_set;
 
 	// Chain :
-	protected $chain = array();
-	protected $roots = array();
+	protected $chain;
+	protected $roots;
 
 	// Query :
 	protected $query;
@@ -37,25 +37,25 @@ abstract class OGL_Command {
 
 	protected function get_chain() {
 		if ( ! isset($this->chain))
-			list($this->chain, $this->roots) = $this->find_chain();
+			list($this->chain, $this->roots) = $this->build_chain();
 		return $this->chain;
 	}
 
 	protected function get_roots() {
 		if ( ! isset($this->roots))
-			list($this->chain, $this->roots) = $this->find_chain();
+			list($this->chain, $this->roots) = $this->build_chain();
 		return $this->roots;
 	}
 
 	// Returns command chain that starts with this command and all roots that form its boundaries in
 	// the command tree.
-	public function find_chain() {
+	public function build_chain() {
 		if ($this->is_root()) {
 			$chain		= array();
 			$roots[]	= $this;
 		}
 		else {
-			list($chain, $roots) = $this->trg_set->find_chain();
+			list($chain, $roots) = $this->trg_set->build_chain();
 			array_unshift($chain, $this);
 		}
 		return array($chain, $roots);

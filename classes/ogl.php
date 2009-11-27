@@ -1,5 +1,5 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
-// test git   
+
 class OGL {
 	// Single OGL instance :
 	protected static $instance;

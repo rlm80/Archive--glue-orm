@@ -24,17 +24,15 @@ class OGL_Set {
 		$this->commands[] = $command;
 	}
 
+	// Returns command chain formed by all command chains starting with a child
+	// command of this set.
 	public function find_chain() {
 		$chain = array();
 		$roots = array();
 		foreach($this->commands as $command) {
-			if ($command->is_root())
-				$roots[] = $command;
-			else {
-				list($new_chain, $new_roots) = $command->find_chain();
-				$chain = array_merge($chain, $new_chain);
-				$roots = array_merge($roots, $new_roots);
-			}
+			list($new_chain, $new_roots) = $command->find_chain();
+			$chain = array_merge($chain, $new_chain);
+			$roots = array_merge($roots, $new_roots);
 		}
 		return array($chain, $roots);
 	}

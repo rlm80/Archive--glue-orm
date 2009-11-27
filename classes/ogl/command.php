@@ -30,11 +30,9 @@ abstract class OGL_Command {
 	// Constructor :
 	public function  __construct($src_set, $trg_set, $trg_fields) {
 		$this->trg_fields	= $trg_fields;
-		$this->chain[]		= $this;
 		$this->src_set		= $src_set;
 		$this->trg_set		= $trg_set;
 		$this->src_set->add_command($this);
-		$this->trg_set->set_root_command($this);
 	}
 
 	protected function get_chain() {
@@ -49,8 +47,18 @@ abstract class OGL_Command {
 		return $this->roots;
 	}
 
+	// Returns command chain that starts with this command and all roots that form its boundaries in
+	// the command tree.
 	public function find_chain() {
-		return $this->trg_set->find_chain();
+		if ($this->is_root()) {
+			$chain		= array();
+			$roots[]	= $this;
+		}
+		else {
+			list($chain, $roots) = $this->trg_set->find_chain();
+			array_unshift($chain, $this);
+		}
+		return array($chain, $roots);
 	}
 
 	// Stores a DB query builder call on the call stack :

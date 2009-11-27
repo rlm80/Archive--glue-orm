@@ -10,9 +10,9 @@
  */
 
 class OGL_Set {
-	public $is_root;
-	public $name;
-	public $entity;
+	protected $is_root;
+	protected $name;
+	protected $entity;
 	public $objects	= array();
 	protected $commands	= array();
 
@@ -20,6 +20,10 @@ class OGL_Set {
 		$this->name		= $name;
 		$this->entity	= $entity;
 		$this->is_root	= $is_root;
+	}
+
+	public function entity() {
+		return OGL_Entity::get($this->entity);
 	}
 
 	public function add_command($command) {

@@ -20,9 +20,9 @@ abstract class OGL_Query {
 	// Constructor, creates a load command :
 	public function __construct($expr, $fields = null) {
 		if (preg_match('/\s*([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)\s*/', $expr, $matches) > 0) {
-			$entity		= OGL_Entity::get(inflector::singular($matches[1]));
+			$entity		= inflector::singular($matches[1]);
 			$src_set	= $this->create_set(null, null, true);
-			$trg_set	= $this->create_set($matches[2], $this->entity);
+			$trg_set	= $this->create_set($matches[2], $entity);
 		}
 		else
 			throw new Kohana_Exception("Expression '".$expr."' is not valid.");
@@ -34,7 +34,7 @@ abstract class OGL_Query {
 	public function with($expr, $trg_fields = null, $pivot_fields = null) {
 		if (preg_match('/\s*([a-zA-Z][a-zA-Z0-9_]*)\.([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)\s*/', $expr, $matches) > 0) {
 			$src_set		= $this->get_set($matches[1]);
-			$relationship	= $src_set->entity->relationship($matches[2]);
+			$relationship	= $src_set->entity()->relationship($matches[2]);
 			$trg_set		= $this->create_set($matches[3], $relationship->to());
 			$command		= $relationship->create_command_load_with($src_set, $trg_set, $trg_fields, $pivot_fields);
 		}

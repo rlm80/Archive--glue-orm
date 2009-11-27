@@ -41,6 +41,8 @@ abstract class OGL_Query {
 		else
 			throw new Kohana_Exception("Expression '".$expr."' is not valid.");
 		$this->active_command	= $command;
+
+		return $this;
 	}
 
 	// Creates a new set, add it to cache, and returns it :

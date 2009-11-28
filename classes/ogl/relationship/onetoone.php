@@ -34,7 +34,7 @@ class OGL_Relationship_OneToOne extends OGL_Relationship {
 	}
 
 
-	public function create_command_load_with($src_set, $trg_set, $trg_fields, $pivot_fields) {
-		return new OGL_Command_Load_With_OneToOne($this, $src_set, $trg_set, $trg_fields);
+	public function create_command($src_set, $trg_set, $trg_fields, $pivot_fields) {
+		return new OGL_Command_With_OneToOne($this, $src_set, $trg_set, $trg_fields);
 	}
 }

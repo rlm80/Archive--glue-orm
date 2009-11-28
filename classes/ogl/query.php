@@ -37,7 +37,7 @@ abstract class OGL_Query {
 			$src_set		= $this->get_set($matches[1]);
 			$relationship	= $src_set->entity()->relationship($matches[2]);
 			$trg_set		= $this->create_set($matches[3], $relationship->to());
-			$command		= $relationship->create_command_load_with($src_set, $trg_set, $trg_fields, $pivot_fields);
+			$command		= $relationship->create_command($src_set, $trg_set, $trg_fields, $pivot_fields);
 		}
 		else
 			throw new Kohana_Exception("Expression '".$expr."' is not valid.");

@@ -43,7 +43,7 @@ class OGL_Relationship_ManyToMany extends OGL_Relationship {
 		return OGL_Relationship::get($this->to()->name(), $this->reverse);
 	}
 
-	public function create_command_load_with($src_set, $trg_set, $trg_fields, $pivot_fields) {
-		return new OGL_Command_Load_With_ManyToMany($this, $src_set, $trg_set, $trg_fields, $pivot_fields);
+	public function create_command($src_set, $trg_set, $trg_fields, $pivot_fields) {
+		return new OGL_Command_With_ManyToMany($this, $src_set, $trg_set, $trg_fields, $pivot_fields);
 	}
 }

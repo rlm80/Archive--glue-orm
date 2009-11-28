@@ -33,7 +33,7 @@ class OGL_Relationship_ManyToMany extends OGL_Relationship {
 			else
 				$this->pivot = $this->to()->name().'_'.$this->from()->name();
 		}
-		return OGL_Entity::get($this->pivot, array_merge(array_values($this->from_fk()), array_values($this->to_fk()))); // TODO correct this
+		return OGL_Entity::get($this->pivot, array_merge(array_values($this->fk()), array_keys($this->fk2())));
 	}
 
 	public function reverse() {

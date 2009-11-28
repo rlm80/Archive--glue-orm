@@ -1,8 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 class OGL_Relationship_OneToMany extends OGL_Relationship {
-	protected $fk;
-
 	public function to() {
 		if ( ! isset($this->to)) {
 			if (substr($this->name(), -1) == 'S')

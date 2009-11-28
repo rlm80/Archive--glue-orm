@@ -40,6 +40,7 @@ abstract class OGL_Relationship {
 
 	// Properties that may be set in children classes :
 	protected $to;
+	protected $fk;
 	protected $reverse;
 
 	// Class names of relationship ancestors :
@@ -62,6 +63,7 @@ abstract class OGL_Relationship {
 	}
 
 	abstract public function to();
+	abstract public function fk();
 
 	// Lazy loads a relationship object, stores it in cache, and returns it :
 	static public function get($entity_name, $name) {

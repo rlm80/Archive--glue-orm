@@ -1,8 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 class OGL_Relationship_ManyToOne extends OGL_Relationship {
-	protected $fk;
-
 	public function to() {
 		if ( ! isset($this->to))
 			$this->to = $this->name();
@@ -11,7 +9,7 @@ class OGL_Relationship_ManyToOne extends OGL_Relationship {
 
 	public function fk() {
 		if ( ! isset($this->fk))
-			$this->fk = $this->to()->default_fk();
+			$this->fk = array_flip($this->to()->default_fk());
 		return $this->fk;
 	}
 

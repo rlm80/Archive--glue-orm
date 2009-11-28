@@ -2,8 +2,7 @@
 
 class OGL_Relationship_ManyToMany extends OGL_Relationship {
 	protected $pivot;
-	protected $from_fk;
-	protected $to_fk;
+	protected $fk2;
 	
 	public function to() {
 		if ( ! isset($this->to)) {
@@ -15,16 +14,16 @@ class OGL_Relationship_ManyToMany extends OGL_Relationship {
 		return OGL_Entity::get($this->to);
 	}
 
-	public function from_fk() {
-		if ( ! isset($this->from_fk))
-			$this->from_fk = $this->from()->default_fk();
-		return $this->from_fk;
+	public function fk() {
+		if ( ! isset($this->fk))
+			$this->fk = $this->from()->default_fk();
+		return $this->fk;
 	}
 
-	public function to_fk() {
-		if ( ! isset($this->to_fk))
-			$this->to_fk = $this->to()->default_fk();
-		return $this->to_fk;
+	public function fk2() {
+		if ( ! isset($this->fk2))
+			$this->fk2 = array_flip($this->to()->default_fk());
+		return $this->fk2;
 	}
 
 	public function pivot() {

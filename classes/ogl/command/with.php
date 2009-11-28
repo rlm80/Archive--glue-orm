@@ -23,4 +23,8 @@ abstract class OGL_Command_With extends OGL_Command {
 		$this->relationship->to()->add_fields($query, $this->trg_fields, $trg_alias);
 		$this->apply_calls($query);
 	}
+
+	public function query_result($result) {
+		
+	}
 }

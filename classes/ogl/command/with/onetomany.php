@@ -5,44 +5,12 @@ class OGL_Command_With_OneToMany extends OGL_Command_With {
 		return true;
 	}
 
-	public function execute_query($query) {
-		$entity		= $this->src_set->entity;
-		$src_alias	= $this->src_set->name;
-		$src_table	= $rel->from()->table();
-		$fields		= $entity->fields();
-		$pkfields	= $entity->pk();
-
-		// Init query with src table :
-		$query->from(array($src_table, $src_alias));
-
-		// Get pk values for objects in src set :
-		$pks = $this->src_set->get_pks();
-		
-		// Left-most table pk : single or multiple columns ?
-		if (count($pkfields) === 1) {
-			// Use IN :
-			$pks = array_map('array_pop', $pks);
-			$query->where($src_alias.'.'.$fields[$pk[0]]['column'], 'IN', $pks);
-			$result = $query->execute()->as_array();
-		}
-		else {
-			// Use one query for each object in src_set and aggregate results :
-			$result = array();
-			foreach($pkfields as $f)
-				$query->where($src_alias.'.'.$fields[$f]['column'], '=', ':_'.$f);
-			foreach($pks as $pk) {
-				foreach($pkfields as $f)
-					$query->param( ':_'.$f, $pk[$f]);
-				$rows = $query->execute()->as_array();
-				if (count($rows) >= 1)
-					array_merge($result, $rows);
-			}
-		}
-
-		return $result;
+	public function query_result($result) {
+		parent::query_result($result);
 	}
 
-	public function query_result($result) {
+	public function query_contrib($query) {
+		parent::query_contrib($query);
 	}
 	
 	public function query_contrib($query) {

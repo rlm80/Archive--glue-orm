@@ -182,7 +182,7 @@ class OGL_Entity {
 	}
 
 	/* QUERY BUILDING STUFF */
-	public function _add_fields($query, $req_fields, $alias) {
+	public function add_fields($query, $req_fields, $alias) {
 		$fields = $this->fields();
 
 		// Null req_fields means all fields are required :

@@ -20,7 +20,7 @@ class OGL_Command_Load extends OGL_Command {
 	// Add table, requested fields, db builder calls :
 	protected function query_contrib($query) {
 		$query->from(array($this->entity->table(), $this->trg_set->name));
-		$this->entity->_add_fields($query, $this->trg_fields, $this->trg_set->name);
+		$this->entity->add_fields($query, $this->trg_fields, $this->trg_set->name);
 		$this->apply_calls($query);
 	}
 

@@ -4,10 +4,6 @@ class OGL_Command_With_OneToOne extends OGL_Command_With {
 	public function is_root() {
 		return false;
 	}
-
-	public function execute_self() {
-		throw new Kohana_Exception("This function should never be called because only root commands can be executed.");
-	}
 	
 	public function query_result($result) {
 

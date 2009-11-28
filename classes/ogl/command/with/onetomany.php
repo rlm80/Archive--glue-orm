@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-class OGL_Command_Load_With_OneToMany extends OGL_Command_Load_With {
+class OGL_Command_With_OneToMany extends OGL_Command_Load_With {
 	public function is_root() {
 		return true;
 	}

@@ -21,19 +21,14 @@ class OGL_Set {
 		$this->entity	= $entity;
 	}
 
-	public function entity() {
-		return OGL_Entity::get($this->entity);
-	}
-
 	public function init_query($query) {
 		// Get data :
 		$alias	= $this->name;
-		$entity = $this->entity();
-		$fields	= $entity->fields();
-		$pk		= $entity->pk();
+		$fields	= $this->entity->fields();
+		$pk		= $this->entity->pk();
 
 		// Add table :
-		$query->from(array($entity->table(), $alias));
+		$query->from(array($this->entity->table(), $alias));
 
 		// Add conditions to restrict it to rows belonging to current set :
 		if (count($pk) === 1)
@@ -44,7 +39,7 @@ class OGL_Set {
 	}
 
 	public function exec_query($query) {
-		if (count($this->entity()->pk()) === 1) {
+		if (count($this->entity->pk()) === 1) {
 			// Use only one query :
 			$pks = array_map('array_pop', $this->get_pks());
 			$result = $query->param(':_pks', $pks)->execute()->as_array();

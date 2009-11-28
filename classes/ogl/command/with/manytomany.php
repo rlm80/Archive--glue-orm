@@ -57,7 +57,7 @@ class OGL_Command_Load_With_ManyToMany extends OGL_Command_Load_With {
 		$this->apply_calls($query);
 	}
 
-	public function load($row) {
+	public function query_result($result) {
 	}
 
 	protected static function pivot_alias($src_alias, $trg_alias) {

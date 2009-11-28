@@ -128,7 +128,7 @@ abstract class OGL_Command {
 			call_user_func_array(array($query, $call[0]), $call[1]);
 	}
 
-	abstract protected function load($row);
+	abstract protected function query_result($result);
 	abstract protected function query_contrib($query);
 	abstract public function is_root();
 }

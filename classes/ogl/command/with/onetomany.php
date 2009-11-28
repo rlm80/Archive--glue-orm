@@ -42,7 +42,7 @@ class OGL_Command_Load_With_OneToMany extends OGL_Command_Load_With {
 		return $result;
 	}
 
-	public function load($row) {
+	public function query_result($result) {
 	}
 	
 	public function query_contrib($query) {

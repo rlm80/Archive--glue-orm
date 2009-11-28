@@ -9,7 +9,7 @@ class OGL_Command_Load_With_ManyToOne extends OGL_Command_Load_With {
 		throw new Kohana_Exception("This function should never be called because only root command can be executed.");
 	}
 	
-	public function load() {
+	public function query_result($result) {
 	}
 
 	public function query_contrib($query) {

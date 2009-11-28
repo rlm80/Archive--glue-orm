@@ -9,7 +9,7 @@ class OGL_Command_Load_With_OneToOne extends OGL_Command_Load_With {
 		throw new Kohana_Exception("This function should never be called because only root commands can be executed.");
 	}
 	
-	public function load($row) {
+	public function query_result($result) {
 
 	}
 

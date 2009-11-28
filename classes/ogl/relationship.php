@@ -63,11 +63,7 @@ abstract class OGL_Relationship {
 	}
 
 	public function add_joins($query, $src_alias, $trg_alias) {
-		$src_fields = $this->from()->fields();
-		$trg_fields = $this->to()->fields();
-		$query->join(array($this->to()->table(), $trg_alias), 'INNER');
-		foreach($this->fk() as $src_field => $trg_field)
-			$query->on($trg_alias.'.'.$trg_fields[$trg_field]['column'], '=', $src_alias.'.'.$src_fields[$src_field]['column']);
+		self::join($query, $src_alias, $this->from(), $trg_alias, $this->to(), $this->fk());
 	}
 
 	abstract public function to();
@@ -97,4 +93,14 @@ abstract class OGL_Relationship {
 		$relationship = new $class($entity_name, $name);
 		return $relationship;
 	}
+
+	static protected function join($query, $src_alias, $src_entity, $trg_alias, $trg_entity, $fk, $join_type = 'INNER') {
+		$trg_table	= $trg_entity->table();
+		$trg_fields	= $trg_entity->fields();
+		$src_fields	= $src_entity->fields();
+		$query->join(array($trg_table, $trg_alias), $join_type);
+		foreach($fk as $src_field => $trg_field)
+			$query->on($trg_alias.'.'.$trg_fields[$trg_field]['column'], '=', $src_alias.'.'.$src_fields[$src_field]['column']);
+	}
+
 }

@@ -33,13 +33,23 @@ class OGL_Relationship_ManyToMany extends OGL_Relationship {
 			else
 				$this->pivot = $this->to()->name().'_'.$this->from()->name();
 		}
-		return OGL_Entity::get($this->pivot, array_merge(array_values($this->from_fk()), array_values($this->to_fk())));
+		return OGL_Entity::get($this->pivot, array_merge(array_values($this->from_fk()), array_values($this->to_fk()))); // TODO correct this
 	}
 
 	public function reverse() {
 		if ( ! isset($this->reverse))
 			$this->reverse = $this->from()->name().'Z';
 		return OGL_Relationship::get($this->to()->name(), $this->reverse);
+	}
+
+	public function add_joins($query, $src_alias, $trg_alias) {
+		$pivot_alias = self::pivot_alias($src_alias, $trg_alias);
+		self::join($query, $src_alias,   $this->from(),  $pivot_alias, $this->pivot(), $this->fk());
+		self::join($query, $pivot_alias, $this->pivot(), $trg_alias,   $this->to(),    $this->fk2());
+	}
+
+	public static function pivot_alias($src_alias, $trg_alias) {
+		return '__'.$src_alias.'_'.$trg_alias;
 	}
 
 	public function create_command($src_set, $trg_set, $trg_fields, $pivot_fields) {

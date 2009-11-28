@@ -32,8 +32,8 @@ abstract class OGL_Command {
 		$this->trg_fields	= $trg_fields;
 		$this->src_set		= $src_set;
 		$this->trg_set		= $trg_set;
-		$this->src_set->add_command($this);
-		$this->trg_set->set_root_command($this);
+		$this->src_set->commands[]		= $this;
+		$this->trg_set->root_command	= $this;
 	}
 
 	protected function get_chain() {
@@ -49,11 +49,11 @@ abstract class OGL_Command {
 	}
 
 	protected function get_children() {
-		return $this->trg_set->get_commands();
+		return $this->trg_set->commands[];
 	}
 	
 	protected function get_parent() {
-		return $this->src_set->get_root_command();
+		return $this->src_set->root_command;
 	}
 
 	// Returns command chain that starts with this command and all roots that form its boundaries in
@@ -65,7 +65,7 @@ abstract class OGL_Command {
 			$roots[] = $this;
 		else {
 			$chain[] = $this;
-			foreach($this->trg_set->get_commands() as $command) {
+			foreach($this->get_children() as $command) {
 				list($new_chain, $new_roots) = $command->build_chain();
 				$chain = array_merge($chain, $new_chain);
 				$roots = array_merge($roots, $new_roots);

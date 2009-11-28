@@ -14,8 +14,8 @@ class OGL_Set {
 	protected $name;
 	protected $entity;
 	public $objects	= array();
-	protected $commands	= array();
-	protected $root_command;
+	public $commands = array();
+	public $root_command;
 
 	public function  __construct($name, $entity, $is_root = false) {
 		$this->name		= $name;
@@ -25,22 +25,6 @@ class OGL_Set {
 
 	public function entity() {
 		return OGL_Entity::get($this->entity);
-	}
-
-	public function add_command($command) {
-		$this->commands[] = $command;
-	}
-
-	public function get_commands() {
-		return $this->commands;
-	}
-	
-	public function set_root_command($command) {
-		$this->root_command = $command;
-	}
-
-	public function get_root_command() {
-		return $this->root_command;
 	}
 
 	public function init_query($query) {

@@ -33,6 +33,7 @@ abstract class OGL_Command {
 		$this->src_set		= $src_set;
 		$this->trg_set		= $trg_set;
 		$this->src_set->add_command($this);
+		$this->trg_set->set_root_command($this);
 	}
 
 	protected function get_chain() {
@@ -45,6 +46,14 @@ abstract class OGL_Command {
 		if ( ! isset($this->roots))
 			list($this->chain, $this->roots) = $this->build_chain();
 		return $this->roots;
+	}
+
+	protected function get_children() {
+		return $this->trg_set->get_commands();
+	}
+	
+	protected function get_parent() {
+		return $this->src_set->get_root_command();
 	}
 
 	// Returns command chain that starts with this command and all roots that form its boundaries in

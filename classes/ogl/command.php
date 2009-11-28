@@ -105,7 +105,7 @@ abstract class OGL_Command {
 		$query = DB::select();
 		$this->src_set->init_query($query);
 		foreach($this->get_chain() as $command)
-			$command->chain($query);
+			$command->query_contrib($query);
 		$this->query = $query->compile(Database::instance());
 	}
 
@@ -130,7 +130,7 @@ abstract class OGL_Command {
 	}
 
 	abstract protected function load($row);
-	abstract protected function chain($query);
+	abstract protected function query_contrib($query);
 	abstract public function is_root();
 }
 

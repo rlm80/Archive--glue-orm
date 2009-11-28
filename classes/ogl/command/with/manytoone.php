@@ -12,7 +12,7 @@ class OGL_Command_Load_With_ManyToOne extends OGL_Command_Load_With {
 	public function load() {
 	}
 
-	public function chain($query) {
+	public function query_contrib($query) {
 		// Gather data :
 		$rel		= $this->relationship;
 		$fk			= $rel->fk();

@@ -15,7 +15,7 @@ class OGL_Command_Load_With_ManyToMany extends OGL_Command_Load_With {
 	public function execute_self() {
 	}
 
-	public function chain($query) {
+	public function query_contrib($query) {
 		// Gather data :
 		$rel		= $this->relationship;
 		$from_fk	= $rel->from_fk();

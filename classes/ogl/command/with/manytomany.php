@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-class OGL_Command_With_ManyToMany extends OGL_Command_Load_With {
+class OGL_Command_With_ManyToMany extends OGL_Command_With {
 	protected $pivot_fields;
 
 	public function  __construct($relationship, $src_set, $trg_set, $trg_fields, $pivot_fields) {

@@ -25,6 +25,14 @@ class OGL_Relationship_OneToMany extends OGL_Relationship {
 		return OGL_Relationship::get($this->to()->name(), $this->reverse);
 	}
 
+	public function add_joins($query, $src_alias, $trg_alias) {
+		$src_fields = $this->from()->fields();
+		$trg_fields = $this->to()->fields();
+		$query->join(array($this->to()->table(), $trg_alias), 'INNER');
+		foreach($this->fk() as $src_field => $trg_field)
+			$query->on($src_alias.'.'.$src_fields[$src_field]['column'], '=', $trg_alias.'.'.$trg_fields[$trg_field]['column']);
+	}
+
 	public function create_command($src_set, $trg_set, $trg_fields, $pivot_fields) {
 		return new OGL_Command_With_OneToMany($this, $src_set, $trg_set, $trg_fields);
 	}

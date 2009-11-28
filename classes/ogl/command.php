@@ -80,13 +80,12 @@ abstract class OGL_Command {
 	// Returns command chain that starts with this command and all roots that form its boundaries in
 	// the command tree.
 	protected function build_chain() {
-		$chain = array();
+		$chain = array($this);
 		$roots = array();
-		if ($this->is_root())
-			$roots[] = $this;
-		else {
-			$chain[] = $this;
-			foreach($this->get_children() as $command) {
+		foreach($this->get_children() as $command) {
+			if ($command->is_root())
+				$roots[] = $command;
+			else {
 				list($new_chain, $new_roots) = $command->build_chain();
 				$chain = array_merge($chain, $new_chain);
 				$roots = array_merge($roots, $new_roots);

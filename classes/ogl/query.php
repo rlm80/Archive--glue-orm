@@ -19,7 +19,8 @@ abstract class OGL_Query {
 
 	// Constructor, creates a load command :
 	public function __construct($expr, $fields = null) {
-		if (preg_match('/\s*([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)\s*/', $expr, $matches) > 0) {
+		static $pat = '/\s*([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)\s*/';
+		if (preg_match($pat, $expr, $matches) > 0) {
 			$entity		= OGL_Entity::get(inflector::singular($matches[1]));
 			$trg_set	= $this->create_set($matches[2], $entity);
 		}
@@ -31,7 +32,8 @@ abstract class OGL_Query {
 
 	// Creates a with command :
 	public function with($expr, $trg_fields = null, $pivot_fields = null) {
-		if (preg_match('/\s*([a-zA-Z][a-zA-Z0-9_]*)\.([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)\s*/', $expr, $matches) > 0) {
+		static $pat = '/\s*([a-zA-Z][a-zA-Z0-9_]*)\.([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)\s*/';
+		if (preg_match($pat, $expr, $matches) > 0) {
 			$src_set		= $this->get_set($matches[1]);
 			$relationship	= $src_set->entity()->relationship($matches[2]);
 			$trg_set		= $this->create_set($matches[3], $relationship->to());

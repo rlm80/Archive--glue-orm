@@ -19,14 +19,6 @@ class OGL_Relationship_ManyToOne extends OGL_Relationship {
 		return OGL_Relationship::get($this->to()->name(), $this->reverse);
 	}
 
-	public function add_joins($query, $src_alias, $trg_alias) {
-		$src_fields = $this->from()->fields();
-		$trg_fields = $this->to()->fields();
-		$query->join(array($this->to()->table(), $trg_alias), 'INNER');
-		foreach($this->fk() as $trg_field => $src_field)
-			$query->on($trg_alias.'.'.$trg_fields[$trg_field]['column'], '=', $src_alias.'.'.$src_fields[$src_field]['column']);
-	}
-
 	public function create_command($src_set, $trg_set, $trg_fields, $pivot_fields) {
 		return new OGL_Command_With_ManyToOne($this, $src_set, $trg_set, $trg_fields);
 	}

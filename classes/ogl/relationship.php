@@ -62,6 +62,14 @@ abstract class OGL_Relationship {
 		return OGL_Entity::get($this->from);
 	}
 
+	public function add_joins($query, $src_alias, $trg_alias) {
+		$src_fields = $this->from()->fields();
+		$trg_fields = $this->to()->fields();
+		$query->join(array($this->to()->table(), $trg_alias), 'INNER');
+		foreach($this->fk() as $src_field => $trg_field)
+			$query->on($trg_alias.'.'.$trg_fields[$trg_field]['column'], '=', $src_alias.'.'.$src_fields[$src_field]['column']);
+	}
+
 	abstract public function to();
 	abstract public function fk();
 

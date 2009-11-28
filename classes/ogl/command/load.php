@@ -3,8 +3,8 @@
 class OGL_Command_Load extends OGL_Command {
 	protected $entity;
 
-	public function  __construct($entity, $src_set, $trg_set, $trg_fields) {
-		parent::__construct($src_set, $trg_set, $trg_fields);
+	public function  __construct($entity, $trg_set, $trg_fields) {
+		parent::__construct(new OGL_Set_Root(), $trg_set, $trg_fields);
 		$this->entity = $entity;
 	}
 

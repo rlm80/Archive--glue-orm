@@ -10,17 +10,15 @@
  */
 
 class OGL_Set {
-	protected $is_root;
 	protected $name;
 	protected $entity;
 	public $objects	= array();
 	public $commands = array();
 	public $root_command;
 
-	public function  __construct($name, $entity, $is_root = false) {
+	public function  __construct($name, $entity) {
 		$this->name		= $name;
 		$this->entity	= $entity;
-		$this->is_root	= $is_root;
 	}
 
 	public function entity() {
@@ -28,16 +26,14 @@ class OGL_Set {
 	}
 
 	public function init_query($query) {
-		if($this->is_root)
-			return;
-
 		// Get data :
 		$alias	= $this->name;
-		$fields	= $this->entity->fields();
-		$pk		= $this->entity->pk();
+		$entity = $this->entity();
+		$fields	= $entity->fields();
+		$pk		= $entity->pk();
 
 		// Add table :
-		$query->from(array($this->entity->table(), $alias));
+		$query->from(array($entity->table(), $alias));
 
 		// Add conditions to restrict it to rows belonging to current set :
 		if (count($pk) === 1)
@@ -48,24 +44,20 @@ class OGL_Set {
 	}
 
 	public function exec_query($query) {
-		if($this->is_root)
-			$result = $query->execute()->as_array();
+		if (count($this->entity()->pk()) === 1) {
+			// Use only one query :
+			$pks = array_map('array_pop', $this->get_pks());
+			$result = $query->param(':_pks', $pks)->execute()->as_array();
+		}
 		else {
-			if (count($this->entity->pk()) === 1) {
-				// Use only one query :
-				$pks = array_map('array_pop', $this->get_pks());
-				$result = $query->param(':_pks', $pks)->execute()->as_array();
-			}
-			else {
-				// Use one query for each object in src_set and aggregate results :
-				$result = array();
-				foreach($this->get_pks() as $pkvals) {
-					foreach($pkvals as $f => $val)
-						$query->param( ':_'.$f, $val);
-					$rows = $query->execute()->as_array();
-					if (count($rows) >= 1)
-						array_merge($result, $rows);
-				}
+			// Use one query for each object in src_set and aggregate results :
+			$result = array();
+			foreach($this->get_pks() as $pkvals) {
+				foreach($pkvals as $f => $val)
+					$query->param( ':_'.$f, $val);
+				$rows = $query->execute()->as_array();
+				if (count($rows) >= 1)
+					array_merge($result, $rows);
 			}
 		}
 		return $result;

@@ -21,12 +21,11 @@ abstract class OGL_Query {
 	public function __construct($expr, $fields = null) {
 		if (preg_match('/\s*([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)\s*/', $expr, $matches) > 0) {
 			$entity		= inflector::singular($matches[1]);
-			$src_set	= $this->create_set(null, null, true);
 			$trg_set	= $this->create_set($matches[2], $entity);
 		}
 		else
 			throw new Kohana_Exception("Expression '".$expr."' is not valid.");
-		$this->root				= new OGL_Command_Load($entity, $src_set, $trg_set, $fields);
+		$this->root				= new OGL_Command_Load($entity, $trg_set, $fields);
 		$this->active_command	= $this->root;
 	}
 

@@ -24,6 +24,14 @@
  *
  * If you wish to define your own pk, table or model, you need to create your
  * own OGL_Entity_<name> entity class.
+ *
+ * Idées pour les types :
+ * - ne PAS introduire de fonction du genre cast_value() destinée à être redéfinie
+ *   pour permettre les types exotiques. Ca alourdit et ralentit les choses et c'est
+ *   inutile : les types en question peuvent être obtenus via des getters si nécessaires.
+ * - ne PAS introduire de fonction du genre write_property() et read_property() destinées
+ *   à être redéfinies pour permettre getters/setters. Des getters seraient nécessaires pour
+ *   toutes les prioriétés de toutes façons, donc autant les mettre public.
  */
 
 class OGL_Entity {
@@ -115,55 +123,44 @@ class OGL_Entity {
 		return $this->fields;
 	}
 
-	public function get_object($row, $alias = null) {
-		$pk = $this->pk_encode($row, $alias);
-		if( ! isset($this->map[$pk]))
-			$this->map[$pk] = $this->create_object($row, $alias);
-		return array($pk, $this->map[$pk]);
-	}
-
-	protected function pk_encode($row, $alias) {
-		$prefix = isset($alias) ? $alias.':' : '';
-		foreach($this->pk() as $f) {
-			if (isset($row[$prefix.$f]))
-				$pkval[$f] = $this->cast_value($f, $row[$prefix.$f]);
-			else
-				throw new Kohana_Exception("Key ".$prefix.$f." is expected.");
-		}
-		return json_encode($pkval);
-	}
-
-	public function pk_decode($str) {
-		return json_decode($str, true);
-	}
-
-	public function create_object($row, $alias = null) {
+	public function get_objects($rows, $alias = null) {
+		// Data :
 		$prefix = isset($alias) ? $alias.':' : '';
 		$fields = $this->fields();
 		$class	= $this->model();
-		$object = new $class;
-		foreach(array_keys($fields) as $f) {
-			if (isset($row[$prefix.$f])) {
-				$property = $fields[$f]['property'];
-				$object->$property = $this->cast_value($f, $row[$prefix.$f]);
+
+		// Get distinct pk string representations and associated row number :
+		$pks = array();
+		foreach($this->pk() as $f) $cols[$prefix.$f] = 1;
+		$nbr_rows = count($rows);
+		for($i = 0; $i < $nbr_rows; $i++)
+			$pks[json_encode(array_values(array_intersect_key($row, $cols)))] = $i;
+
+		// Add new objects to id map :
+		$diff = array_diff_key($pks, $this->map);
+		foreach($diff as $pk => $index) {
+			$row	= $rows[$index];
+			$object = new $class;
+			foreach(array_keys($fields) as $f) {
+				if (isset($row[$prefix.$f])) {
+					$str = $row[$prefix.$f];
+					$property = $fields[$f]['property'];
+					switch($fields[$f]['phptype']) {
+						case 'int' :		$object->$property = (int)$str;		break;
+						case 'float' :		$object->$property = (float)$str;	break;
+						case 'boolean' :	$object->$property = (boolean)$str;	break;
+						default :			$object->$property = $str;
+					}
+					$this->map[$pk] = $object;
+				}
 			}
 		}
-		return $object;
-	}
-
-	public function cast_value($field, $str) {
-		$fields = $this->fields();
-		switch($fields[$field]['phptype']) {
-			case 'int' :		$val = (int)$str;		break;
-			case 'float' :		$val = (float)$str;		break;
-			case 'boolean' :	$val = (boolean)$str;	break;
-			default :			$val = (string)$str;	break;
-		}
-		return $val;
+		
+		// Return objects :
+		return array_intersect_key($this->map, $pks);
 	}
 
 	// Hooks
-	public function on_delete($query, $alias) {}
 	public function on_load($query, $alias) {}
 
 	// Lazy loads an entity object, stores it in cache, and returns it :

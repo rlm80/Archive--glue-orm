@@ -24,8 +24,8 @@ class OGL_Command_Load extends OGL_Command {
 		$this->apply_calls($query);
 	}
 
-	protected function query_result($dbresult) {
-		foreach($dbresult as $row) {
+	protected function query_result($result) {
+		foreach($result as $row) {
 			list($pkhash, $obj) = $this->entity->get_object($row, $this->trg_set->name);
 			$this->trg_set->objects[$pkhash] = $obj;
 		}

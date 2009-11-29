@@ -123,45 +123,56 @@ class OGL_Entity {
 		return $this->fields;
 	}
 
-	public function get_objects($rows, $alias = null) {
+	// Return pk string representations of rows and creates missing objects in id map :
+	public function get_pks($rows, $alias = null) {
 		// Data :
 		$prefix = isset($alias) ? $alias.':' : '';
-		$fields = $this->fields();
-		$class	= $this->model();
 
-		// Get distinct pk string representations and associated row number :
-		$pks = array();
-		foreach($this->pk() as $f) $cols[$prefix.$f] = 1;
-		$nbr_rows = count($rows);
-		for($i = 0; $i < $nbr_rows; $i++)
-			$pks[json_encode(array_values(array_intersect_key($row, $cols)))] = $i;
+		// Get pk string representations of rows :
+		$prefixes = array_fill(0, count($rows), $prefix);
+		$pks = array_map(array($this, 'pk_encode'), $rows, $prefixes);
 
 		// Add new objects to id map :
-		$diff = array_diff_key($pks, $this->map);
-		foreach($diff as $pk => $index) {
-			$row	= $rows[$index];
-			$object = new $class;
-			foreach(array_keys($fields) as $f) {
-				if (isset($row[$prefix.$f])) {
-					$str = $row[$prefix.$f];
-					$property = $fields[$f]['property'];
-					switch($fields[$f]['phptype']) {
-						case 'int' :		$object->$property = (int)$str;		break;
-						case 'float' :		$object->$property = (float)$str;	break;
-						case 'boolean' :	$object->$property = (boolean)$str;	break;
-						default :			$object->$property = $str;
-					}
-					$this->map[$pk] = $object;
-				}
-			}
-		}
+		$diff = array_diff_key(array_flip($pks), $this->map);
+		foreach($diff as $pk => $index)
+			$this->map[$pk] = $this->create_object($rows[$index], $prefix);
 		
-		// Return objects :
-		return array_intersect_key($this->map, $pks);
+		return $pks;
 	}
 
-	// Hooks
-	public function on_load($query, $alias) {}
+	protected function pk_encode($row, $prefix) {
+		foreach($this->pk() as $f)
+			$vals[] = $this->cast($f, $row[$prefix.$f]);
+		return json_encode($vals);
+	}
+
+	static public function pk_decode($pk) {
+		return json_decode($pk);
+	}
+
+	protected function cast($field, $str) {
+		$fields = $this->fields();
+		switch($fields[$field]['phptype']) {
+			case 'int' :		$val = (int)$str;		break;
+			case 'float' :		$val = (float)$str;     break;
+			case 'boolean' :	$val = (boolean)$str;   break;
+			default :			$val = $str;
+		}
+		return $val;
+	}
+
+	protected function create_object($row, $prefix) {
+		$fields = $this->fields();
+		$class	= $this->model();
+		$object = new $class;
+		foreach(array_keys($fields) as $f) {
+			if (isset($row[$prefix.$f])) {
+				$property = $fields[$f]['property'];
+				$object->$property = $this->cast($f, $row[$prefix.$f]);
+			}
+		}
+		return $object;
+	}
 
 	// Lazy loads an entity object, stores it in cache, and returns it :
 	static public function get($name, $pk=null, $table=null, $model=null) {

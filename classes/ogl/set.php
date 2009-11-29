@@ -12,7 +12,7 @@
 class OGL_Set {
 	protected $name;
 	protected $entity;
-	public $objects	= array();
+	public $pks	= array();
 	public $commands = array();
 	public $root_command;
 
@@ -39,26 +39,25 @@ class OGL_Set {
 	}
 
 	public function exec_query($query) {
-		if (count($this->entity->pk()) === 1) {
+		$cpk = count($this->entity->pk());
+		if ($cpk === 1) {
 			// Use only one query :
-			$pks = array_map('array_pop', $this->get_pks());
-			$result = $query->param(':_pks', $pks)->execute()->as_array();
+			$pkvals = array_map('array_pop', array_map(array('OGL_Entity', 'pk_decode'), $this->pks));
+			$result = $query->param(':_pks', $pkvals)->execute()->as_array();
 		}
 		else {
 			// Use one query for each object in src_set and aggregate results :
+			$pk		= $this->entity->pk();
+			$pkvals = array_map(array('OGL_Entity', 'pk_decode'), $this->pks);
 			$result = array();
-			foreach($this->get_pks() as $pkvals) {
-				foreach($pkvals as $f => $val)
-					$query->param( ':_'.$f, $val);
+			foreach($pkvals as $pkval) {
+				for($i = 0; $i < $cpk; $i++)
+					$query->param( ':_'.$pk[$i], $pkval[$i]);
 				$rows = $query->execute()->as_array();
 				if (count($rows) >= 1)
 					array_merge($result, $rows);
 			}
 		}
 		return $result;
-	}
-
-	protected function get_pks() {
-		return array_map(array($this->src_set->entity, 'pk_decode'), array_keys($this->src_set->objects));
 	}
 }

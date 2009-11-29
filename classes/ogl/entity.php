@@ -35,6 +35,7 @@ class OGL_Entity {
 
 	// Properties that may be set in children classes :
 	protected $pk;
+	protected $default_fk;
 	protected $table;
 	protected $model;
 	protected $fields;
@@ -78,12 +79,14 @@ class OGL_Entity {
 		return OGL_Relationship::get($this->name, $name);
 	}
 
-	public function default_fk() { // TODO pas utiliser col mais field[col]
-		$fk		= array();
-		$name	= $this->name();
-		foreach ($this->pk() as $col)
-			$fk[$col] = $name.'_'.$col;
-		return $fk;
+	public function default_fk() {
+		if ( ! isset($this->default_fk)) {
+			$this->default_fk = array();
+			$name = $this->name();
+			foreach ($this->pk() as $f)
+				$this->default_fk[$f] = $name.'_'.$f;
+		}
+		return $this->default_fk;
 	}
 
 	public function fields() {

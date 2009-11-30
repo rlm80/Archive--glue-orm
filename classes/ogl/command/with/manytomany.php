@@ -22,4 +22,14 @@ class OGL_Command_With_ManyToMany extends OGL_Command_With {
 		parent::load_objects($result);
 		$this->relationship->pivot()->get_objects($result, OGL_Relationship_ManyToMany::pivot_alias($this->src_set->name, $this->trg_set->name));
 	}
+
+	protected function load_relationships(&$result) {
+		foreach($result as $row) {
+			$src = $row[$this->src_set->name.':__object'];
+			$piv = $row[OGL_Relationship_ManyToMany::pivot_alias($this->src_set->name, $this->trg_set->name).':__object'];
+			$trg = $row[$this->trg_set->name.':__object'];
+			$this->relationship->relate(array($src, $piv, $trg));
+			$this->relationship->reverse()->relate(array($trg, $piv, $src));
+		}
+	}
 }

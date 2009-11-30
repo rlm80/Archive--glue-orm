@@ -123,55 +123,62 @@ class OGL_Entity {
 		return $this->fields;
 	}
 
-	// Return pk string representations of rows and creates missing objects in id map :
-	public function get_pks($rows, $alias = null) {
+	public function get_objects($rows, $alias = null) {
 		// Data :
 		$prefix = isset($alias) ? $alias.':' : '';
-
-		// Get pk string representations of rows :
-		$prefixes = array_fill(0, count($rows), $prefix);
-		$pks = array_map(array($this, 'pk_encode'), $rows, $prefixes);
-
-		// Add new objects to id map :
-		$diff = array_diff_key(array_flip($pks), $this->map);
-		foreach($diff as $pk => $index)
-			$this->map[$pk] = $this->create_object($rows[$index], $prefix);
-		
-		return $pks;
-	}
-
-	protected function pk_encode($row, $prefix) {
-		foreach($this->pk() as $f)
-			$vals[] = $this->cast($f, $row[$prefix.$f]);
-		return json_encode($vals);
-	}
-
-	static public function pk_decode($pk) {
-		return json_decode($pk);
-	}
-
-	protected function cast($field, $str) {
-		$fields = $this->fields();
-		switch($fields[$field]['phptype']) {
-			case 'int' :		$val = (int)$str;		break;
-			case 'float' :		$val = (float)$str;     break;
-			case 'boolean' :	$val = (boolean)$str;   break;
-			default :			$val = $str;
-		}
-		return $val;
-	}
-
-	protected function create_object($row, $prefix) {
 		$fields = $this->fields();
 		$class	= $this->model();
-		$object = new $class;
-		foreach(array_keys($fields) as $f) {
-			if (isset($row[$prefix.$f])) {
-				$property = $fields[$f]['property'];
-				$object->$property = $this->cast($f, $row[$prefix.$f]);
+
+		// Get pk string representations of each row :
+		$pks = array();
+		foreach($this->pk() as $f) $cols[$prefix.$f] = 1;
+		$nbr_rows = count($rows);
+		for($i = 0; $i < $nbr_rows; $i++)
+			$pks[$i] = json_encode(array_values(ksort(array_intersect_key($row, $cols))));
+
+		// Add new objects to id map :
+		$indexes		= array_flip($pks); // distinct pk => row index mapping
+		$field_names	= array_keys($fields);
+		$diff			= array_diff_key($indexes, $this->map);
+		foreach($diff as $pk => $index) {
+			$row	= $rows[$index];
+			$object = new $class;
+			foreach($field_names as $f) {
+				if (isset($row[$prefix.$f])) {
+					$str		= $row[$prefix.$f];
+					$property	= $fields[$f]['property'];
+					$type		= $fields[$f]['phptype'];
+					switch($type) {
+						case 'int' :		$object->$property = (int)$str;		break;
+						case 'float' :		$object->$property = (float)$str;	break;
+						case 'boolean' :	$object->$property = (boolean)$str;	break;
+						default :			$object->$property = $str;
+					}
+				}
 			}
+			$this->map[$pk] = $object;
 		}
-		return $object;
+
+		// Build distinct objects list :
+		$distinct = array_intersect_key($this->map, $indexes);
+
+		// Build object list :
+		$objects = array();
+		foreach($pks as $index => $pk)
+			$objects[$index] = $this->map[$pk];
+
+		// Return objects :
+		return array($distinct, $objects);
+	}
+
+	// Returns an associative array with pk field names and values for the given object
+	public function get_pk($obj) {
+		$fields = $this->fields();
+		foreach($this->pk() as $f) {
+			$property = $fields[$f]['property'];
+			$pk[$f] = $object->$property;
+		}
+		return $pk;
 	}
 
 	// Lazy loads an entity object, stores it in cache, and returns it :

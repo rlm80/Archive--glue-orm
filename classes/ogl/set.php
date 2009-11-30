@@ -12,7 +12,7 @@
 class OGL_Set {
 	protected $name;
 	protected $entity;
-	public $pks	= array();
+	public $objects = array();
 	public $commands = array();
 	public $root_command;
 
@@ -42,22 +42,24 @@ class OGL_Set {
 		$cpk = count($this->entity->pk());
 		if ($cpk === 1) {
 			// Use only one query :
-			$pkvals = array_map('array_pop', array_map(array('OGL_Entity', 'pk_decode'), $this->pks));
+			$pkvals = array_map('array_pop', $this->get_pkvals());
 			$result = $query->param(':_pks', $pkvals)->execute()->as_array();
 		}
 		else {
 			// Use one query for each object in src_set and aggregate results :
-			$pk		= $this->entity->pk();
-			$pkvals = array_map(array('OGL_Entity', 'pk_decode'), $this->pks);
 			$result = array();
-			foreach($pkvals as $pkval) {
-				for($i = 0; $i < $cpk; $i++)
-					$query->param( ':_'.$pk[$i], $pkval[$i]);
+			foreach(get_pkvals() as $pkval) {
+				foreach($pkval as $f => $val)
+					$query->param( ':_'.$f, $val);
 				$rows = $query->execute()->as_array();
 				if (count($rows) >= 1)
 					array_merge($result, $rows);
 			}
 		}
 		return $result;
+	}
+
+	protected function get_pkvals() {
+		return array_map(array($this->entity, 'get_pk'), $this->objects);
 	}
 }

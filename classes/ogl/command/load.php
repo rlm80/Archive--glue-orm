@@ -13,7 +13,7 @@ class OGL_Command_Load extends OGL_Command {
 		return ! (array_search($method, $allowed) === FALSE);
 	}
 
-	public function is_root() {
+	protected function is_root() {
 		return true;
 	}
 
@@ -23,8 +23,7 @@ class OGL_Command_Load extends OGL_Command {
 		$this->entity->add_fields($query, $this->trg_fields, $this->trg_set->name);
 		$this->apply_calls($query);
 	}
-
-	protected function query_result($result) {
-		$this->trg_set->pks = array_unique($this->entity->get_pks($result, $this->trg_set->name));
+	
+	protected function load_relationships(&$result) {
 	}
 }

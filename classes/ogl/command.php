@@ -61,6 +61,10 @@ abstract class OGL_Command {
 			$command->load_relationships($result);
 	}
 
+	protected function load_objects(&$result) {
+		$this->trg_set->objects = $this->trg_set->entity->get_objects($result, $this->trg_set->name);
+	}
+
 	protected function get_children() {
 		return $this->trg_set->commands[];
 	}
@@ -132,10 +136,9 @@ abstract class OGL_Command {
 			call_user_func_array(array($query, $call[0]), $call[1]);
 	}
 
-	abstract protected function load_objects($result);
-	abstract protected function load_relationships($result);
+	abstract protected function load_relationships(&$result);
 	abstract protected function query_contrib($query);
-	abstract public function is_root();
+	abstract protected function is_root();
 }
 
 

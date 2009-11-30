@@ -16,7 +16,7 @@ abstract class OGL_Command_With extends OGL_Command {
 			return ! (array_search($method, $allowed) === FALSE);
 	}
 
-	public function query_contrib($query) {
+	protected function query_contrib($query) {
 		$src_alias	= $this->src_set->name;
 		$trg_alias	= $this->trg_set->name;
 		$this->relationship->add_joins($query, $src_alias, $trg_alias);
@@ -24,7 +24,7 @@ abstract class OGL_Command_With extends OGL_Command {
 		$this->apply_calls($query);
 	}
 
-	public function query_result($result) {
-		
+	protected function load_relationships(&$result) {
+
 	}
 }

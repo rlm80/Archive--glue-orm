@@ -8,16 +8,18 @@ class OGL_Command_With_ManyToMany extends OGL_Command_With {
 		$this->pivot_fields	= $pivot_fields;
 	}
 
-	public function is_root() {
+	protected function is_root() {
 		return true;
 	}
 
-	public function query_contrib($query) {
+	protected function query_contrib($query) {
 		parent::query_contrib($query);
 		$pivot_alias = OGL_Relationship_ManyToMany::pivot_alias($this->src_set->name, $this->trg_set->name);
 		$this->relationship->pivot()->add_fields($query, $this->pivot_fields, $pivot_alias);
 	}
 
-	public function query_result($result) {
+	protected function load_objects(&$result) {
+		parent::load_objects($result);
+		$this->relationship->pivot()->get_objects($result, OGL_Relationship_ManyToMany::pivot_alias($this->src_set->name, $this->trg_set->name));
 	}
 }

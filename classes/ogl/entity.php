@@ -123,7 +123,7 @@ class OGL_Entity {
 		return $this->fields;
 	}
 
-	public function get_objects($rows, $alias = null) {
+	public function get_objects(&$rows, $alias = null) {
 		// Data :
 		$prefix = isset($alias) ? $alias.':' : '';
 		$fields = $this->fields();
@@ -162,13 +162,14 @@ class OGL_Entity {
 		// Build distinct objects list :
 		$distinct = array_intersect_key($this->map, $indexes);
 
-		// Build object list :
+		// Load objects into result set :
+		$key = $prefix.'__object';
 		$objects = array();
 		foreach($pks as $index => $pk)
-			$objects[$index] = $this->map[$pk];
+			$rows[$index][$key] = $this->map[$pk];
 
 		// Return objects :
-		return array($distinct, $objects);
+		return $distinct;
 	}
 
 	// Returns an associative array with pk field names and values for the given object

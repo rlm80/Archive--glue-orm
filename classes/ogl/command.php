@@ -52,9 +52,13 @@ abstract class OGL_Command {
 		// Execute query(ies) :
 		$result = $this->src_set->exec_query($query);
 
-		// Load sets from result set :
+		// Load objects from result set :
 		foreach($this->get_chain() as $command)
-			$command->load($result);
+			$command->load_objects($result);
+
+		// Load relationships from result set :
+		foreach($this->get_chain() as $command)
+			$command->load_relationships($result);
 	}
 
 	protected function get_children() {
@@ -128,7 +132,8 @@ abstract class OGL_Command {
 			call_user_func_array(array($query, $call[0]), $call[1]);
 	}
 
-	abstract protected function query_result($result);
+	abstract protected function load_objects($result);
+	abstract protected function load_relationships($result);
 	abstract protected function query_contrib($query);
 	abstract public function is_root();
 }

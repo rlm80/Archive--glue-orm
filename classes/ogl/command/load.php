@@ -24,5 +24,5 @@ class OGL_Command_Load extends OGL_Command {
 		$this->apply_calls($query);
 	}
 	
-	protected function load_relationships(&$result) {}
+	protected function load_relationships($result) {}
 }

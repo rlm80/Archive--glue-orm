@@ -136,7 +136,7 @@ abstract class OGL_Command {
 			call_user_func_array(array($query, $call[0]), $call[1]);
 	}
 
-	abstract protected function load_relationships(&$result);
+	abstract protected function load_relationships($result);
 	abstract protected function query_contrib($query);
 	abstract protected function is_root();
 }

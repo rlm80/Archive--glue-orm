@@ -24,7 +24,7 @@ abstract class OGL_Command_With extends OGL_Command {
 		$this->apply_calls($query);
 	}
 
-	protected function load_relationships(&$result) {
+	protected function load_relationships($result) {
 		foreach($result as $row) {
 			$src = $row[$this->src_set->name.':__object'];
 			$trg = $row[$this->trg_set->name.':__object'];

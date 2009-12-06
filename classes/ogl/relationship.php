@@ -41,6 +41,7 @@ abstract class OGL_Relationship {
 	// Properties that may be set in children classes :
 	protected $to;
 	protected $fk;
+	protected $property;
 	protected $reverse;
 
 	// Class names of relationship ancestors :
@@ -62,12 +63,19 @@ abstract class OGL_Relationship {
 		return OGL_Entity::get($this->from);
 	}
 
+	public function property() {
+		if ( ! isset($this->property))
+			$this->property = $this->name();
+		return $this->property;
+	}
+
 	public function add_joins($query, $src_alias, $trg_alias) {
 		self::join($query, $src_alias, $this->from(), $trg_alias, $this->to(), $this->fk());
 	}
 
 	abstract public function to();
 	abstract public function fk();
+	abstract public function load_relationships($result, $src_alias, $trg_alias);
 
 	// Lazy loads a relationship object, stores it in cache, and returns it :
 	static public function get($entity_name, $name) {

@@ -2,6 +2,7 @@
 
 class OGL_Relationship_ManyToMany extends OGL_Relationship {
 	protected $pivot;
+	protected $property2;
 	protected $fk2;
 	
 	public function to() {
@@ -24,6 +25,12 @@ class OGL_Relationship_ManyToMany extends OGL_Relationship {
 		if ( ! isset($this->fk2))
 			$this->fk2 = array_flip($this->to()->default_fk());
 		return $this->fk2;
+	}
+
+	public function property2() {
+		if ( ! isset($this->property2))
+			$this->property2 = $this->to()->name();
+		return $this->property2;
 	}
 
 	public function pivot() {
@@ -50,6 +57,23 @@ class OGL_Relationship_ManyToMany extends OGL_Relationship {
 
 	public static function pivot_alias($src_alias, $trg_alias) {
 		return '__'.$src_alias.'_'.$trg_alias;
+	}
+
+	public function load_relationships($result, $src_alias, $trg_alias)	{
+		$src_key	= $src_alias.':__object';
+		$piv_key	= self::pivot_alias($src_alias, $trg_alias).':__object';
+		$trg_key	= $trg_alias.':__object';
+		$property	= $this->property();
+		$property2	= $this->property2();
+		foreach($result as $row) {
+			if (isset($row[$src_key]) && isset($row[$piv_key]) && isset($row[$trg_key])) {
+				$src = $row[$src_key];
+				$piv = $row[$piv_key];
+				$trg = $row[$trg_key];
+				$src->$property[spl_object_hash($piv)] = $piv;
+				$piv->$property2[spl_object_hash($trg)] = $trg;
+			}
+		}
 	}
 
 	public function create_command($src_set, $trg_set, $trg_fields, $pivot_fields) {

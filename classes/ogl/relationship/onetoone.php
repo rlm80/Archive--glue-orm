@@ -13,7 +13,7 @@ class OGL_Relationship_OneToOne extends OGL_Relationship {
 
 	public function fk() {
 		if ( ! isset($this->fk)) {
-			$pk = array_keys($this->from()->pk());
+			$pk = array_values($this->from()->pk());
 			$this->fk = array_combine($pk, $pk);
 		}
 		return $this->fk;

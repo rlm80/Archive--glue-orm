@@ -180,7 +180,7 @@ class OGL_Entity {
 		$fields = $this->fields();
 		foreach($this->pk() as $f) {
 			$property = $fields[$f]['property'];
-			$pk[$f] = $object->$property;
+			$pk[$f] = $obj->$property;
 		}
 		return $pk;
 	}

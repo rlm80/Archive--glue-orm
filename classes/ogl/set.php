@@ -30,6 +30,9 @@ class OGL_Set {
 		// Add table :
 		$query->from(array($this->entity->table(), $alias));
 
+		// Add pk :
+		$this->entity->add_fields($query, $pk, $alias);
+
 		// Add conditions to restrict it to rows belonging to current set :
 		if (count($pk) === 1)
 			$query->where($alias.'.'.$fields[$pk[0]]['column'], 'IN', new Database_Expression(':_pks'));
@@ -57,6 +60,10 @@ class OGL_Set {
 			}
 		}
 		return $result;
+	}
+
+	public function load_objects(&$result) {
+		$this->entity->get_objects($result, $this->name);
 	}
 
 	protected function get_pkvals() {

@@ -5,10 +5,10 @@ class OGL_Set_Root extends OGL_Set {
 		parent::__construct('__root', null);
 	}
 
-	public function init_query($query) {
-	}
-
 	public function exec_query($query) {
 		return $query->execute()->as_array();
 	}
+
+	public function init_query($query) {}
+	public function load_objects(&$result) {}
 }

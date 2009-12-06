@@ -40,7 +40,7 @@ class OGL_Relationship_ManyToMany extends OGL_Relationship {
 			else
 				$this->pivot = $this->to()->name().'_'.$this->from()->name();
 		}
-		return OGL_Entity::get($this->pivot, array_merge(array_values($this->fk()), array_keys($this->fk2())));
+		return OGL_Entity::get($this->pivot, array_merge(array_values($this->fk()), array_keys($this->fk2())), $this->pivot);
 	}
 
 	public function reverse() {
@@ -66,12 +66,13 @@ class OGL_Relationship_ManyToMany extends OGL_Relationship {
 		$property	= $this->property();
 		$property2	= $this->property2();
 		foreach($result as $row) {
-			if (isset($row[$src_key]) && isset($row[$piv_key]) && isset($row[$trg_key])) {
-				$src = $row[$src_key];
-				$piv = $row[$piv_key];
-				$trg = $row[$trg_key];
+			if (isset($row[$src_key])) $src = $row[$src_key]; else unset($src);
+			if (isset($row[$piv_key])) $piv = $row[$piv_key]; else unset($piv);
+			if (isset($row[$trg_key])) $trg = $row[$trg_key]; else unset($trg);
+			if (isset($src) && ! isset($src->$property)) $src->$property = array();
+			if (isset($src) && isset($piv) && isset($trg)) {
 				$src->$property[spl_object_hash($piv)] = $piv;
-				$piv->$property2[spl_object_hash($trg)] = $trg;
+				$piv->$property2 = $trg;
 			}
 		}
 	}

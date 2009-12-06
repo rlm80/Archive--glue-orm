@@ -53,6 +53,7 @@ abstract class OGL_Command {
 		$result = $this->src_set->exec_query($query);
 
 		// Load objects from result set :
+		$this->src_set->load_objects($result);
 		foreach($this->get_chain() as $command)
 			$command->load_objects($result);
 

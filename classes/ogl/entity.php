@@ -133,8 +133,11 @@ class OGL_Entity {
 		$pks = array();
 		foreach($this->pk() as $f) $cols[$prefix.$f] = 1;
 		$nbr_rows = count($rows);
-		for($i = 0; $i < $nbr_rows; $i++)
-			$pks[$i] = json_encode(array_values(ksort(array_intersect_key($row, $cols))));
+		for($i = 0; $i < $nbr_rows; $i++) {
+			$arr = array_intersect_key($rows[$i], $cols);
+			ksort($arr);
+			$pks[$i] = json_encode(array_values($arr));
+		}
 
 		// Add new objects to id map :
 		$indexes		= array_flip($pks); // distinct pk => row index mapping
@@ -207,14 +210,15 @@ class OGL_Entity {
 		// Null req_fields means all fields are required :
 		if ( ! isset($req_fields))
 			$req_fields = array_keys($fields);
+		else {
+			// Add pk :
+			$req_fields = array_merge($req_fields, array_diff($this->pk(), $req_fields));
 
-		// Add pk :
-		$req_fields = array_merge($req_fields, array_diff($this->pk(), $req_fields));
-
-		// Check fields :
-		$errors = array_diff($req_fields, $fields);
-		if (count($errors) > 0)
-			throw new Kohana_Exception("The following fields do not belong to entity ".$this->name()." : ".implode(',', $errors));
+			// Check fields :
+			$errors = array_diff($req_fields, array_keys($fields));
+			if (count($errors) > 0)
+				throw new Kohana_Exception("The following fields do not belong to entity ".$this->name()." : ".implode(',', $errors));
+		}
 
 		// Add fields to query :
 		foreach ($req_fields as $name)

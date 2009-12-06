@@ -7,7 +7,7 @@
  * need query objects to encapsulates all the execution environnement of each query.
  */
 
-abstract class OGL_Query {	
+class OGL_Query {	
 	// Set cache :
 	protected $sets = array();
 

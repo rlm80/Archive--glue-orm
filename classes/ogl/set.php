@@ -10,8 +10,8 @@
  */
 
 class OGL_Set {
-	protected $name;
-	protected $entity;
+	public $name;
+	public $entity;
 	public $objects = array();
 	public $commands = array();
 	public $root_command;

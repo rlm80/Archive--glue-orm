@@ -66,7 +66,7 @@ abstract class OGL_Command {
 	}
 
 	protected function get_children() {
-		return $this->trg_set->commands[];
+		return $this->trg_set->commands;
 	}
 	
 	protected function get_parent() {
@@ -113,7 +113,7 @@ abstract class OGL_Command {
 		$this->src_set->init_query($query);
 		foreach($this->get_chain() as $command)
 			$command->query_contrib($query);
-		$this->query = $query->compile(Database::instance());
+		return DB::query(Database::SELECT, $query->compile(Database::instance()));
 	}
 
 	// Decides whether or not the DB query builder call is valid for current command type.

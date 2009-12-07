@@ -111,9 +111,8 @@ class OGL_Entity {
 	protected function init_default_fk() {
 		if ( ! isset($this->default_fk)) {
 			$this->default_fk = array();
-			$name = $this->name;
 			foreach ($this->pk as $f)
-				$this->default_fk[$f] = $name.'_'.$f;
+				$this->default_fk[$f] = $this->name.'_'.$f;
 		}
 	}
 

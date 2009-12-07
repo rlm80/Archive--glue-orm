@@ -56,7 +56,9 @@ class OGL_Relationship_ManyToMany extends OGL_Relationship {
 	}
 
 	public static function pivot_alias($src_alias, $trg_alias) {
-		return '__'.$src_alias.'_'.$trg_alias;
+		if ($src_alias < $trg_alias)
+			return '__'.$src_alias.'_'.$trg_alias;
+		return '__'.$trg_alias.'_'.$src_alias;
 	}
 
 	public function load_relationships($result, $src_alias, $trg_alias)	{
@@ -71,7 +73,8 @@ class OGL_Relationship_ManyToMany extends OGL_Relationship {
 			if (isset($row[$trg_key])) $trg = $row[$trg_key]; else unset($trg);
 			if (isset($src) && ! isset($src->$property)) $src->$property = array();
 			if (isset($src) && isset($piv) && isset($trg)) {
-				$src->$property[spl_object_hash($piv)] = $piv;
+				$src_arr =& $src->$property;
+				$src_arr[spl_object_hash($piv)] = $piv;
 				$piv->$property2 = $trg;
 			}
 		}

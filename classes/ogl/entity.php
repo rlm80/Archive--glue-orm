@@ -40,13 +40,13 @@ class OGL_Entity {
 
 	// Properties that may NOT be set in children classes :
 	private $name;
+	public $fields;
 
 	// Properties that may be set in children classes :
 	protected $pk;
 	protected $default_fk;
 	protected $table;
 	protected $model;
-	protected $fields;
 
 	// Identity map : (move this at query level ?)
 	protected $map = array();
@@ -57,6 +57,35 @@ class OGL_Entity {
 		$this->pk		= $pk;
 		$this->table	= $table;
 		$this->model	= $model;
+
+		// Init fields :
+		$this->fields = $this->build_fields();
+	}
+
+	protected function build_fields() {
+		// Get fields data from db :
+		$cols = Database::instance()->list_columns($this->table(), null, true);
+
+		// Create fields array :
+		$fields = array();
+		foreach($cols as $name => $data) {
+			$dbtype = $data['COLUMN_TYPE'];
+			if (preg_match('/^tinyint\b|^smallint\b|^mediumint\b|^int\b|^integer\b|^bigint\b/i', $dbtype) > 0)
+				$phptype = 'int';
+			elseif (preg_match('/^float\b|^numeric\b|^double\b|^decimal\b|^real\b/i', $dbtype) > 0)
+				$phptype = 'float';
+			elseif (preg_match('/^boolean\b|^bit\b/i', $dbtype) > 0)
+				$phptype = 'boolean';
+			else
+				$phptype = 'string';
+			$fields[$name] = array(
+				'phptype'	=> $phptype,
+				'property'	=> $name,
+				'column'	=> $name,
+			);
+		}
+		
+		return $fields;
 	}
 
 	final public function name() {
@@ -97,36 +126,10 @@ class OGL_Entity {
 		return $this->default_fk;
 	}
 
-	public function fields() {
-		if ( ! isset($this->fields)) {
-			// Get fields data from db :
-				$cols = Database::instance()->list_columns($this->table(), null, true);
-
-			// Create fields array (this part needs more work...)
-				foreach($cols as $name => $data) {
-					$dbtype = $data['COLUMN_TYPE'];
-					if (preg_match('/^tinyint\b|^smallint\b|^mediumint\b|^int\b|^integer\b|^bigint\b/i', $dbtype) > 0)
-						$phptype = 'int';
-					elseif (preg_match('/^float\b|^numeric\b|^double\b|^decimal\b|^real\b/i', $dbtype) > 0)
-						$phptype = 'float';
-					elseif (preg_match('/^boolean\b|^bit\b/i', $dbtype) > 0)
-						$phptype = 'boolean';
-					else
-						$phptype = 'string';
-					$this->fields[$name] = array(
-						'phptype'	=> $phptype,
-						'property'	=> $name,
-						'column'	=> $name,
-					);
-				}
-		}
-		return $this->fields;
-	}
-
 	public function get_objects(&$rows, $alias = null) {
 		// Data :
 		$prefix = isset($alias) ? $alias.':' : '';
-		$fields = $this->fields();
+		$fields = $this->fields;
 		$class	= $this->model();
 
 		// Get pk string representations of each row :
@@ -177,7 +180,7 @@ class OGL_Entity {
 
 	// Returns an associative array with pk field names and values for the given object
 	public function get_pk($obj) {
-		$fields = $this->fields();
+		$fields = $this->fields;
 		foreach($this->pk() as $f) {
 			$property = $fields[$f]['property'];
 			$pk[$f] = $obj->$property;
@@ -205,24 +208,22 @@ class OGL_Entity {
 
 	/* QUERY BUILDING STUFF */
 	public function add_fields($query, $req_fields, $alias) {
-		$fields = $this->fields();
-
 		// Null req_fields means all fields are required :
 		if ( ! isset($req_fields))
-			$req_fields = array_keys($fields);
+			$req_fields = array_keys($this->fields);
 		else {
 			// Add pk :
 			$req_fields = array_merge($req_fields, array_diff($this->pk(), $req_fields));
 
 			// Check fields :
-			$errors = array_diff($req_fields, array_keys($fields));
+			$errors = array_diff($req_fields, array_keys($this->fields));
 			if (count($errors) > 0)
 				throw new Kohana_Exception("The following fields do not belong to entity ".$this->name()." : ".implode(',', $errors));
 		}
 
 		// Add fields to query :
 		foreach ($req_fields as $name)
-			$query->select(array($alias.'.'.$fields[$name]['column'], $alias.':'.$name));
+			$query->select(array($alias.'.'.$this->fields[$name]['column'], $alias.':'.$name));
 	}
 }
 

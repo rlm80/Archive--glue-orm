@@ -104,8 +104,8 @@ abstract class OGL_Relationship {
 
 	static protected function join($query, $src_alias, $src_entity, $trg_alias, $trg_entity, $fk, $join_type = 'INNER') {
 		$trg_table	= $trg_entity->table();
-		$trg_fields	= $trg_entity->fields();
-		$src_fields	= $src_entity->fields();
+		$trg_fields	= $trg_entity->fields;
+		$src_fields	= $src_entity->fields;
 		$query->join(array($trg_table, $trg_alias), $join_type);
 		foreach($fk as $src_field => $trg_field)
 			$query->on($trg_alias.'.'.$trg_fields[$trg_field]['column'], '=', $src_alias.'.'.$src_fields[$src_field]['column']);

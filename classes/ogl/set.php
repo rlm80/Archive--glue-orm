@@ -24,7 +24,7 @@ class OGL_Set {
 	public function init_query($query) {
 		// Get data :
 		$alias	= $this->name;
-		$fields	= $this->entity->fields();
+		$fields	= $this->entity->fields;
 		$pk		= $this->entity->pk();
 
 		// Add table :

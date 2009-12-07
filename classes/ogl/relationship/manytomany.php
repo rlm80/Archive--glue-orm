@@ -17,36 +17,36 @@ class OGL_Relationship_ManyToMany extends OGL_Relationship {
 
 	public function fk() {
 		if ( ! isset($this->fk))
-			$this->fk = $this->from()->default_fk();
+			$this->fk = $this->from()->default_fk;
 		return $this->fk;
 	}
 
 	public function fk2() {
 		if ( ! isset($this->fk2))
-			$this->fk2 = array_flip($this->to()->default_fk());
+			$this->fk2 = array_flip($this->to()->default_fk);
 		return $this->fk2;
 	}
 
 	public function property2() {
 		if ( ! isset($this->property2))
-			$this->property2 = $this->to()->name();
+			$this->property2 = $this->to()->name;
 		return $this->property2;
 	}
 
 	public function pivot() {
 		if ( ! isset($this->pivot)) {
-			if ($this->from()->name() < $this->to()->name())
-				$this->pivot = $this->from()->name().'_'.$this->to()->name();
+			if ($this->from()->name < $this->to()->name)
+				$this->pivot = $this->from()->name.'_'.$this->to()->name;
 			else
-				$this->pivot = $this->to()->name().'_'.$this->from()->name();
+				$this->pivot = $this->to()->name.'_'.$this->from()->name;
 		}
 		return OGL_Entity::get($this->pivot, array_merge(array_values($this->fk()), array_keys($this->fk2())), $this->pivot);
 	}
 
 	public function reverse() {
 		if ( ! isset($this->reverse))
-			$this->reverse = $this->from()->name().'Z';
-		return OGL_Relationship::get($this->to()->name(), $this->reverse);
+			$this->reverse = $this->from()->name.'Z';
+		return OGL_Relationship::get($this->to()->name, $this->reverse);
 	}
 
 	public function add_joins($query, $src_alias, $trg_alias) {

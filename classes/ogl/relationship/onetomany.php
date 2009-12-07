@@ -13,14 +13,14 @@ class OGL_Relationship_OneToMany extends OGL_Relationship {
 
 	public function fk() {
 		if ( ! isset($this->fk))
-			$this->fk = $this->from()->default_fk();
+			$this->fk = $this->from()->default_fk;
 		return $this->fk;
 	}
 
 	public function reverse() {
 		if ( ! isset($this->reverse))
-			$this->reverse = $this->from()->name();
-		return OGL_Relationship::get($this->to()->name(), $this->reverse);
+			$this->reverse = $this->from()->name;
+		return OGL_Relationship::get($this->to()->name, $this->reverse);
 	}
 
 	public function load_relationships($result, $src_alias, $trg_alias)	{

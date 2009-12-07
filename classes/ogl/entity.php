@@ -39,16 +39,16 @@ class OGL_Entity {
 	static protected $entities = array();
 
 	// Properties that may NOT be set in children classes :
-	private $name;
+	public $name;
 	public $fields;
 
 	// Properties that may be set in children classes :
-	protected $pk;
-	protected $default_fk;
-	protected $table;
-	protected $model;
+	public $pk;
+	public $default_fk;
+	public $table;
+	public $model;
 
-	// Identity map : (move this at query level ?)
+	// Identity map :
 	protected $map = array();
 
 	protected function __construct($name, $pk=null, $table=null, $model=null) {
@@ -58,83 +58,78 @@ class OGL_Entity {
 		$this->table	= $table;
 		$this->model	= $model;
 
-		// Init fields :
-		$this->fields = $this->build_fields();
+		// Init properties (order matters !!!) :
+		$this->init_model();
+		$this->init_table();
+		$this->init_fields();
+		$this->init_pk();
+		$this->init_default_fk();
 	}
 
-	protected function build_fields() {
-		// Get fields data from db :
-		$cols = Database::instance()->list_columns($this->table(), null, true);
-
-		// Create fields array :
-		$fields = array();
-		foreach($cols as $name => $data) {
-			$dbtype = $data['COLUMN_TYPE'];
-			if (preg_match('/^tinyint\b|^smallint\b|^mediumint\b|^int\b|^integer\b|^bigint\b/i', $dbtype) > 0)
-				$phptype = 'int';
-			elseif (preg_match('/^float\b|^numeric\b|^double\b|^decimal\b|^real\b/i', $dbtype) > 0)
-				$phptype = 'float';
-			elseif (preg_match('/^boolean\b|^bit\b/i', $dbtype) > 0)
-				$phptype = 'boolean';
-			else
-				$phptype = 'string';
-			$fields[$name] = array(
-				'phptype'	=> $phptype,
-				'property'	=> $name,
-				'column'	=> $name,
-			);
-		}
-		
-		return $fields;
-	}
-
-	final public function name() {
-		return $this->name;
-	}
-
-	public function pk() {
-		if ( ! isset($this->pk))
-			$this->pk = array('id');
-		return $this->pk;
-	}
-
-	public function table() {
-		if ( ! isset($this->table))
-			$this->table = inflector::plural($this->name);
-		return $this->table;
-	}
-
-	public function model() {
+	protected function init_model() {
 		if ( ! isset($this->model)) {
 			$model			= 'OGL_Model_'.ucfirst($this->name);
 			$this->model	= class_exists($model) ? $model : 'StdClass';
 		}
-		return $this->model;
+	}
+
+	protected function init_table() {
+		if ( ! isset($this->table))
+			$this->table = inflector::plural($this->name);
+	}
+
+	protected function init_fields() {
+		if ( ! isset($this->fields)) {
+			// Get fields data from db :
+			$cols = Database::instance()->list_columns($this->table, null, true);
+
+			// Create fields array :
+			foreach($cols as $name => $data) {
+				$dbtype = $data['COLUMN_TYPE'];
+				if (preg_match('/^tinyint\b|^smallint\b|^mediumint\b|^int\b|^integer\b|^bigint\b/i', $dbtype) > 0)
+					$phptype = 'int';
+				elseif (preg_match('/^float\b|^numeric\b|^double\b|^decimal\b|^real\b/i', $dbtype) > 0)
+					$phptype = 'float';
+				elseif (preg_match('/^boolean\b|^bit\b/i', $dbtype) > 0)
+					$phptype = 'boolean';
+				else
+					$phptype = 'string';
+				$this->fields[$name] = array(
+					'phptype'	=> $phptype,
+					'property'	=> $name,
+					'column'	=> $name,
+				);
+			}
+		}
+	}
+
+	protected function init_pk() {
+		if ( ! isset($this->pk))
+			$this->pk = array('id');
+	}
+
+	protected function init_default_fk() {
+		if ( ! isset($this->default_fk)) {
+			$this->default_fk = array();
+			$name = $this->name;
+			foreach ($this->pk as $f)
+				$this->default_fk[$f] = $name.'_'.$f;
+		}
 	}
 
 	public function relationship($name) {
 		return OGL_Relationship::get($this->name, $name);
 	}
 
-	public function default_fk() {
-		if ( ! isset($this->default_fk)) {
-			$this->default_fk = array();
-			$name = $this->name();
-			foreach ($this->pk() as $f)
-				$this->default_fk[$f] = $name.'_'.$f;
-		}
-		return $this->default_fk;
-	}
-
 	public function get_objects(&$rows, $alias = null) {
 		// Data :
 		$prefix = isset($alias) ? $alias.':' : '';
 		$fields = $this->fields;
-		$class	= $this->model();
+		$class	= $this->model;
 
 		// Get pk string representations of each row :
 		$pks = array();
-		foreach($this->pk() as $f) $cols[$prefix.$f] = 1;
+		foreach($this->pk as $f) $cols[$prefix.$f] = 1;
 		$nbr_rows = count($rows);
 		for($i = 0; $i < $nbr_rows; $i++) {
 			$arr = array_intersect_key($rows[$i], $cols);
@@ -181,7 +176,7 @@ class OGL_Entity {
 	// Returns an associative array with pk field names and values for the given object
 	public function get_pk($obj) {
 		$fields = $this->fields;
-		foreach($this->pk() as $f) {
+		foreach($this->pk as $f) {
 			$property = $fields[$f]['property'];
 			$pk[$f] = $obj->$property;
 		}
@@ -213,12 +208,12 @@ class OGL_Entity {
 			$req_fields = array_keys($this->fields);
 		else {
 			// Add pk :
-			$req_fields = array_merge($req_fields, array_diff($this->pk(), $req_fields));
+			$req_fields = array_merge($req_fields, array_diff($this->pk, $req_fields));
 
 			// Check fields :
 			$errors = array_diff($req_fields, array_keys($this->fields));
 			if (count($errors) > 0)
-				throw new Kohana_Exception("The following fields do not belong to entity ".$this->name()." : ".implode(',', $errors));
+				throw new Kohana_Exception("The following fields do not belong to entity ".$this->name." : ".implode(',', $errors));
 		}
 
 		// Add fields to query :

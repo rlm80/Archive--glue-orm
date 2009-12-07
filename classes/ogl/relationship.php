@@ -89,7 +89,7 @@ abstract class OGL_Relationship {
 	// Chooses the right relationship class to use, based on the name of the entity,
 	// the name and the available classes.
 	static protected function create($entity_name, $name) {
-		$class = 'OGL_Relationship_'.ucfirst(OGL_Entity::get($entity_name)->name()).'_'.ucfirst($name);
+		$class = 'OGL_Relationship_'.ucfirst($entity_name).'_'.ucfirst($name);
 		if ( ! class_exists($class)) {
 			switch (substr($name, -1)) {
 				case 'S': $class = self::ONE_TO_MANY;	break;
@@ -103,7 +103,7 @@ abstract class OGL_Relationship {
 	}
 
 	static protected function join($query, $src_alias, $src_entity, $trg_alias, $trg_entity, $fk, $join_type = 'INNER') {
-		$trg_table	= $trg_entity->table();
+		$trg_table	= $trg_entity->table;
 		$trg_fields	= $trg_entity->fields;
 		$src_fields	= $src_entity->fields;
 		$query->join(array($trg_table, $trg_alias), $join_type);

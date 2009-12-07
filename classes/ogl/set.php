@@ -25,10 +25,10 @@ class OGL_Set {
 		// Get data :
 		$alias	= $this->name;
 		$fields	= $this->entity->fields;
-		$pk		= $this->entity->pk();
+		$pk		= $this->entity->pk;
 
 		// Add table :
-		$query->from(array($this->entity->table(), $alias));
+		$query->from(array($this->entity->table, $alias));
 
 		// Add pk :
 		$this->entity->add_fields($query, $pk, $alias);
@@ -42,7 +42,7 @@ class OGL_Set {
 	}
 
 	public function exec_query($query) {
-		$cpk = count($this->entity->pk());
+		$cpk = count($this->entity->pk);
 		if ($cpk === 1) {
 			// Use only one query :
 			$pkvals = array_map('array_pop', $this->get_pkvals());

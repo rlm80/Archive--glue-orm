@@ -13,7 +13,7 @@ class OGL_Relationship_OneToOne extends OGL_Relationship {
 
 	public function fk() {
 		if ( ! isset($this->fk)) {
-			$pk = array_values($this->from()->pk());
+			$pk = array_values($this->from()->pk);
 			$this->fk = array_combine($pk, $pk);
 		}
 		return $this->fk;
@@ -21,8 +21,8 @@ class OGL_Relationship_OneToOne extends OGL_Relationship {
 
 	public function reverse() {
 		if ( ! isset($this->reverse))
-			$this->reverse = $this->from()->name().'1';
-		return OGL_Relationship::get($this->to()->name(), $this->reverse);
+			$this->reverse = $this->from()->name.'1';
+		return OGL_Relationship::get($this->to()->name, $this->reverse);
 	}
 
 	public function load_relationships($result, $src_alias, $trg_alias)	{

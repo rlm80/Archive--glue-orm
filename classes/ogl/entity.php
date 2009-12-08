@@ -51,69 +51,66 @@ class OGL_Entity {
 	// Identity map :
 	protected $map = array();
 
-	protected function __construct($name, $pk=null, $table=null, $model=null) {
+	protected function __construct($name, $pk=null, $table=null, $fields=null, $model=null) {
 		// Set properties :
 		$this->name		= $name;
 		$this->pk		= $pk;
 		$this->table	= $table;
+		$this->fields	= $fields;
 		$this->model	= $model;
 
 		// Init properties (order matters !!!) :
-		$this->init_model();
-		$this->init_table();
-		$this->init_fields();
-		$this->init_pk();
-		$this->init_default_fk();
+		if ( ! isset($this->model))			$this->model		= $this->default_model();
+		if ( ! isset($this->table))			$this->table		= $this->default_table();
+		if ( ! isset($this->fields))		$this->fields		= $this->default_fields();
+		if ( ! isset($this->pk))			$this->pk			= $this->default_pk();
+		if ( ! isset($this->default_fk))	$this->default_fk	= $this->default_default_fk();
 	}
 
-	protected function init_model() {
-		if ( ! isset($this->model)) {
-			$model			= 'OGL_Model_'.ucfirst($this->name);
-			$this->model	= class_exists($model) ? $model : 'StdClass';
+	protected function default_model() {
+		$model = 'OGL_Model_'.ucfirst($this->name);
+		return class_exists($model) ? $model : 'StdClass';
+	}
+
+	protected function default_table() {
+		return inflector::plural($this->name);
+	}
+
+	protected function default_fields() {
+		// Get fields data from db :
+		$cols = Database::instance()->list_columns($this->table, null, true);
+
+		// Create fields array :
+		$fields = array();
+		foreach($cols as $name => $data) {
+			$dbtype = $data['COLUMN_TYPE'];
+			if (preg_match('/^tinyint\b|^smallint\b|^mediumint\b|^int\b|^integer\b|^bigint\b/i', $dbtype) > 0)
+				$phptype = 'int';
+			elseif (preg_match('/^float\b|^numeric\b|^double\b|^decimal\b|^real\b/i', $dbtype) > 0)
+				$phptype = 'float';
+			elseif (preg_match('/^boolean\b|^bit\b/i', $dbtype) > 0)
+				$phptype = 'boolean';
+			else
+				$phptype = 'string';
+			$fields[$name] = array(
+				'phptype'	=> $phptype,
+				'property'	=> $name,
+				'column'	=> $name,
+			);
 		}
+
+		return $fields;
 	}
 
-	protected function init_table() {
-		if ( ! isset($this->table))
-			$this->table = inflector::plural($this->name);
+	protected function default_pk() {
+		return array('id');
 	}
 
-	protected function init_fields() {
-		if ( ! isset($this->fields)) {
-			// Get fields data from db :
-			$cols = Database::instance()->list_columns($this->table, null, true);
-
-			// Create fields array :
-			foreach($cols as $name => $data) {
-				$dbtype = $data['COLUMN_TYPE'];
-				if (preg_match('/^tinyint\b|^smallint\b|^mediumint\b|^int\b|^integer\b|^bigint\b/i', $dbtype) > 0)
-					$phptype = 'int';
-				elseif (preg_match('/^float\b|^numeric\b|^double\b|^decimal\b|^real\b/i', $dbtype) > 0)
-					$phptype = 'float';
-				elseif (preg_match('/^boolean\b|^bit\b/i', $dbtype) > 0)
-					$phptype = 'boolean';
-				else
-					$phptype = 'string';
-				$this->fields[$name] = array(
-					'phptype'	=> $phptype,
-					'property'	=> $name,
-					'column'	=> $name,
-				);
-			}
-		}
-	}
-
-	protected function init_pk() {
-		if ( ! isset($this->pk))
-			$this->pk = array('id');
-	}
-
-	protected function init_default_fk() {
-		if ( ! isset($this->default_fk)) {
-			$this->default_fk = array();
-			foreach ($this->pk as $f)
-				$this->default_fk[$f] = $this->name.'_'.$f;
-		}
+	protected function default_default_fk() {
+		$default_fk = array();
+		foreach ($this->pk as $f)
+			$default_fk[$f] = $this->name.'_'.$f;
+		return $default_fk;
 	}
 
 	public function relationship($name) {
@@ -145,15 +142,10 @@ class OGL_Entity {
 			$object = new $class;
 			foreach($field_names as $f) {
 				if (isset($row[$prefix.$f])) {
-					$str		= $row[$prefix.$f];
-					$property	= $fields[$f]['property'];
-					$type		= $fields[$f]['phptype'];
-					switch($type) {
-						case 'int' :		$object->$property = (int)$str;		break;
-						case 'float' :		$object->$property = (float)$str;	break;
-						case 'boolean' :	$object->$property = (boolean)$str;	break;
-						default :			$object->$property = $str;
-					}
+					$val = $row[$prefix.$f];
+					settype($val, $fields[$f]['phptype']);
+					$property = $fields[$f]['property'];
+					$object->$property = $val;
 				}
 			}
 			$this->map[$pk] = $object;

@@ -20,6 +20,6 @@ class OGL_Command_With_ManyToMany extends OGL_Command_With {
 
 	protected function load_objects(&$result) {
 		parent::load_objects($result);
-		$this->relationship->pivot()->get_objects($result, OGL_Relationship_ManyToMany::pivot_alias($this->src_set->name, $this->trg_set->name));
+		$this->relationship->pivot()->load_objects($result, OGL_Relationship_ManyToMany::pivot_alias($this->src_set->name, $this->trg_set->name));
 	}
 }

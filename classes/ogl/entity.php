@@ -97,7 +97,7 @@ class OGL_Entity {
 		return OGL_Relationship::get($this->name, $name);
 	}
 
-	public function get_objects(&$rows, $alias = null) {
+	public function load_objects(&$rows, $alias = null) {
 		// Data :
 		$prefix = isset($alias) ? $alias.':' : '';
 		$fields = $this->fields;

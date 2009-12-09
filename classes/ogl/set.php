@@ -63,7 +63,7 @@ class OGL_Set {
 	}
 
 	public function load_objects(&$result) {
-		$this->entity->get_objects($result, $this->name);
+		$this->entity->load_objects($result, $this->name);
 	}
 
 	protected function get_pkvals() {

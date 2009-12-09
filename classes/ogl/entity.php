@@ -77,15 +77,9 @@ class OGL_Entity {
 	}
 
 	protected function default_fields() {
-		$fields = array();
 		$cols = Database::instance()->list_columns($this->table);
-		foreach($cols as $name => $data) {
-			$fields[$name] = array(
-				'phptype'	=> $data['type'],
-				'property'	=> $name,
-				'column'	=> $name,
-			);
-		}
+		foreach($cols as $name => $data)
+			$fields[$name] = array('phptype' => $data['type'], 'property' => $name, 'column' => $name);
 		return $fields;
 	}
 
@@ -94,7 +88,6 @@ class OGL_Entity {
 	}
 
 	protected function default_default_fk() {
-		$default_fk = array();
 		foreach ($this->pk as $f)
 			$default_fk[$f] = $this->name.'_'.$f;
 		return $default_fk;
@@ -179,7 +172,6 @@ class OGL_Entity {
 		return $entity;
 	}
 
-	/* QUERY BUILDING STUFF */
 	public function add_fields($query, $req_fields, $alias) {
 		// Null req_fields means all fields are required :
 		if ( ! isset($req_fields))

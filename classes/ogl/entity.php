@@ -77,28 +77,15 @@ class OGL_Entity {
 	}
 
 	protected function default_fields() {
-		// Get fields data from db :
-		$cols = Database::instance()->list_columns($this->table, null, true);
-
-		// Create fields array :
 		$fields = array();
+		$cols = Database::instance()->list_columns($this->table);
 		foreach($cols as $name => $data) {
-			$dbtype = $data['COLUMN_TYPE'];
-			if (preg_match('/^tinyint\b|^smallint\b|^mediumint\b|^int\b|^integer\b|^bigint\b/i', $dbtype) > 0)
-				$phptype = 'int';
-			elseif (preg_match('/^float\b|^numeric\b|^double\b|^decimal\b|^real\b/i', $dbtype) > 0)
-				$phptype = 'float';
-			elseif (preg_match('/^boolean\b|^bit\b/i', $dbtype) > 0)
-				$phptype = 'boolean';
-			else
-				$phptype = 'string';
 			$fields[$name] = array(
-				'phptype'	=> $phptype,
+				'phptype'	=> $data['type'],
 				'property'	=> $name,
 				'column'	=> $name,
 			);
 		}
-
 		return $fields;
 	}
 

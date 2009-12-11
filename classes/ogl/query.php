@@ -77,7 +77,7 @@ class OGL_Query {
 		// Return result array :
 		$result = array();
 		foreach($this->sets as $set)
-			$result[$set->name] = $set->objects;
+			$result[] = $set->objects;
 		return $result;
 	}
 }

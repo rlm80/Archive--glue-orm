@@ -1,22 +1,16 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-class OGL_Relationship_ManyToOne extends OGL_Relationship {
-	public function to() {
-		if ( ! isset($this->to))
-			$this->to = $this->name();
-		return OGL_Entity::get($this->to);
+class OGL_Relationship_ManyToOne extends OGL_Relationship_Direct {
+	protected function default_to() {
+		return $this->name;
 	}
 
-	public function fk() {
-		if ( ! isset($this->fk))
-			$this->fk = array_flip($this->to()->default_fk);
-		return $this->fk;
+	protected function default_fk() {
+		return array_flip($this->to->default_fk);
 	}
 
-	public function reverse() {
-		if ( ! isset($this->reverse))
-			$this->reverse = $this->from()->name.'S';
-		return OGL_Relationship::get($this->to()->name, $this->reverse);
+	protected function default_reverse() {
+		return $this->from->name.'S';
 	}
 
 	public function load_relationships($result, $src_alias, $trg_alias)	{

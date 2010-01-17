@@ -1,52 +1,32 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-class OGL_Relationship_ManyToMany extends OGL_Relationship {
-	protected $pivot;
-	protected $property2;
-	protected $fk2;
-	
-	public function to() {
-		if ( ! isset($this->to)) {
-			if (substr($this->name(), -1) == 'Z')
-				$this->to = substr($this->name(), 0, -1);
-			else
-				$this->to = inflector::singular($this->name());
-		}
-		return OGL_Entity::get($this->to);
+class OGL_Relationship_ManyToMany extends OGL_Relationship_Indirect {
+	protected function default_to() {
+		if (substr($this->name, -1) == 'Z')
+			$to = substr($this->name, 0, -1);
+		else
+			$to = inflector::singular($this->name);
+		return $to;
 	}
 
-	public function fk() {
-		if ( ! isset($this->fk))
-			$this->fk = $this->from()->default_fk;
-		return $this->fk;
+	protected function default_fk1() {
+		return $this->from->default_fk;
 	}
 
-	public function fk2() {
-		if ( ! isset($this->fk2))
-			$this->fk2 = array_flip($this->to()->default_fk);
-		return $this->fk2;
+	protected function default_fk2() {
+		return array_flip($this->to->default_fk);
 	}
 
-	public function property2() {
-		if ( ! isset($this->property2))
-			$this->property2 = $this->to()->name;
-		return $this->property2;
+	protected function default_pivot() {
+		if ($this->from->name < $this->to->name)
+			$pivot = $this->from->name.'_'.$this->to->name;
+		else
+			$pivot = $this->to->name.'_'.$this->from->name;
+		return $pivot;
 	}
 
-	public function pivot() {
-		if ( ! isset($this->pivot)) {
-			if ($this->from()->name < $this->to()->name)
-				$this->pivot = $this->from()->name.'_'.$this->to()->name;
-			else
-				$this->pivot = $this->to()->name.'_'.$this->from()->name;
-		}
-		return OGL_Entity::get($this->pivot, array_merge(array_values($this->fk()), array_keys($this->fk2())), $this->pivot);
-	}
-
-	public function reverse() {
-		if ( ! isset($this->reverse))
-			$this->reverse = $this->from()->name.'Z';
-		return OGL_Relationship::get($this->to()->name, $this->reverse);
+	protected function default_reverse() {
+		return $this->from->name.'Z';
 	}
 
 	public function add_joins($query, $src_alias, $trg_alias) {

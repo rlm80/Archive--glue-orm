@@ -35,46 +35,38 @@ abstract class OGL_Relationship {
 	static protected $relationships = array();
 
 	// Properties that may NOT be set in children classes :
-	private $from;
-	private $name;
+	public $from;
+	public $name;
 
 	// Properties that may be set in children classes :
-	protected $to;
-	protected $fk;
-	protected $property;
-	protected $reverse;
-
-	// Class names of relationship ancestors :
-	const ONE_TO_ONE	= 'OGL_Relationship_OneToOne';
-	const MANY_TO_ONE	= 'OGL_Relationship_ManyToOne';
-	const ONE_TO_MANY	= 'OGL_Relationship_OneToMany';
-	const MANY_TO_MANY	= 'OGL_Relationship_ManyToMany';
+	public $to;
+	public $property;
+	public $reverse;
 
 	protected function __construct($from, $name) {
-		$this->from = $from;
+		// Set properties :
+		$this->from = OGL_entity::get($from);
 		$this->name = $name;
+
+		// Init properties (order matters !!!) :
+		if ( ! isset($this->to)) 		$this->to		= $this->default_to();
+		$this->to = OGL_Entity::get($this->to);
+		if ( ! isset($this->property))	$this->property	= $this->default_property();
+		if ( ! isset($this->reverse))	$this->reverse	= $this->default_reverse();
+		$this->reverse = OGL_Relationship::get($this->to->name, $this->reverse);
 	}
 
-	final public function name() {
+	protected function default_property() {
 		return $this->name;
 	}
 
-	final public function from() {
-		return OGL_Entity::get($this->from);
-	}
-
-	public function property() {
-		if ( ! isset($this->property))
-			$this->property = $this->name();
-		return $this->property;
-	}
+	abstract protected function default_to();
+	abstract protected function default_reverse();
 
 	public function add_joins($query, $src_alias, $trg_alias) {
 		self::join($query, $src_alias, $this->from(), $trg_alias, $this->to(), $this->fk());
 	}
 
-	abstract public function to();
-	abstract public function fk();
 	abstract public function load_relationships($result, $src_alias, $trg_alias);
 
 	// Lazy loads a relationship object, stores it in cache, and returns it :
@@ -92,10 +84,10 @@ abstract class OGL_Relationship {
 		$class = 'OGL_Relationship_'.ucfirst($entity_name).'_'.ucfirst($name);
 		if ( ! class_exists($class)) {
 			switch (substr($name, -1)) {
-				case 'S': $class = self::ONE_TO_MANY;	break;
-				case 'Z': $class = self::MANY_TO_MANY;	break;
-				case '1': $class = self::ONE_TO_ONE;	break;
-				default : $class = self::MANY_TO_ONE;
+				case 'S': $class = 'OGL_Relationship_OneToMany';	break;
+				case 'Z': $class = 'OGL_Relationship_ManyToMany';	break;
+				case '1': $class = 'OGL_Relationship_OneToOne';		break;
+				default : $class = 'OGL_Relationship_ManyToOne';
 			}
 		}
 		$relationship = new $class($entity_name, $name);

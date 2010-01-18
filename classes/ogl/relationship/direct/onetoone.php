@@ -18,16 +18,6 @@ class OGL_Relationship_OneToOne extends OGL_Relationship_Direct {
 		return $this->from->name.'1';
 	}
 
-	public function load_relationships($result, $src_alias, $trg_alias)	{
-		$src_key	= $src_alias.':__object';
-		$trg_key	= $trg_alias.':__object';
-		$property	= $this->property();
-		foreach($result as $row) {
-			if (isset($row[$src_key]) && isset($row[$trg_key]))
-				$row[$src_key]->$property = $row[$trg_key];
-		}
-	}
-
 	public function cardinality() {
 		return self::SINGLE;
 	}

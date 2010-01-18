@@ -67,8 +67,27 @@ abstract class OGL_Relationship {
 	}
 
 	abstract public function add_joins($query, $src_alias, $trg_alias);
-	abstract public function load_relationships($result, $src_alias, $trg_alias);
 	abstract public function cardinality();
+
+	public function load_relationships($result, $src_alias, $trg_alias)	{
+		$src_key	= $src_alias.':__object';
+		$trg_key	= $trg_alias.':__object';
+		$property	= $this->property;
+		foreach($result as $row) {
+			if (isset($row[$src_key])) {
+				$src = $row[$src_key];
+				if ($this->cardinality() === self::MULTIPLE && ! isset($src->$property))
+					$src->$property = array();
+				if (isset($row[$trg_key])) {
+					$trg = $row[$trg_key];
+					if ($this->cardinality() === self::MULTIPLE)
+						$src->$property[spl_object_hash($trg)] = $trg;
+					else
+						$src->$property = $trg;
+				}
+			}
+		}
+	}
 
 	// Lazy loads a relationship object, stores it in cache, and returns it :
 	static public function get($entity_name, $name) {

@@ -166,7 +166,7 @@ class OGL_Entity {
 	static protected function create($name, $pk=null, $table=null, $model=null) {
 		$class = 'OGL_Entity_'.ucfirst($name);
 		if (class_exists($class))
-			$entity = new $class($name, $pk, $table, $model);
+			$entity = new $class($name);
 		else
 			$entity	= new self($name, $pk, $table, $model);
 		return $entity;

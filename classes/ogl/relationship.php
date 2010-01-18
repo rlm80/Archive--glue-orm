@@ -34,6 +34,10 @@ abstract class OGL_Relationship {
 	// Relationships cache :
 	static protected $relationships = array();
 
+	// Cardinality values :
+	const SINGLE	= 1; // Relationship associates at most one target entity instance to each source entity instance
+	const MULTIPLE	= 2; // Relationship may associate more than one target entity instance to each source entity instance
+
 	// Properties that may NOT be set in children classes :
 	public $from;
 	public $name;
@@ -56,18 +60,15 @@ abstract class OGL_Relationship {
 		$this->reverse = OGL_Relationship::get($this->to->name, $this->reverse);
 	}
 
+	abstract protected function default_to();
+	abstract protected function default_reverse();
 	protected function default_property() {
 		return $this->name;
 	}
 
-	abstract protected function default_to();
-	abstract protected function default_reverse();
-
-	public function add_joins($query, $src_alias, $trg_alias) {
-		self::join($query, $src_alias, $this->from(), $trg_alias, $this->to(), $this->fk());
-	}
-
+	abstract public function add_joins($query, $src_alias, $trg_alias);
 	abstract public function load_relationships($result, $src_alias, $trg_alias);
+	abstract public function cardinality();
 
 	// Lazy loads a relationship object, stores it in cache, and returns it :
 	static public function get($entity_name, $name) {

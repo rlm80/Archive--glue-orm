@@ -29,18 +29,6 @@ class OGL_Relationship_ManyToMany extends OGL_Relationship_Indirect {
 		return $this->from->name.'Z';
 	}
 
-	public function add_joins($query, $src_alias, $trg_alias) {
-		$pivot_alias = self::pivot_alias($src_alias, $trg_alias);
-		self::join($query, $src_alias,   $this->from(),  $pivot_alias, $this->pivot(), $this->fk());
-		self::join($query, $pivot_alias, $this->pivot(), $trg_alias,   $this->to(),    $this->fk2());
-	}
-
-	public static function pivot_alias($src_alias, $trg_alias) {
-		if ($src_alias < $trg_alias)
-			return '__'.$src_alias.'_'.$trg_alias;
-		return '__'.$trg_alias.'_'.$src_alias;
-	}
-
 	public function load_relationships($result, $src_alias, $trg_alias)	{
 		$src_key	= $src_alias.':__object';
 		$piv_key	= self::pivot_alias($src_alias, $trg_alias).':__object';
@@ -60,7 +48,7 @@ class OGL_Relationship_ManyToMany extends OGL_Relationship_Indirect {
 		}
 	}
 
-	public function create_command($src_set, $trg_set, $trg_fields, $pivot_fields) {
-		return new OGL_Command_With_ManyToMany($this, $src_set, $trg_set, $trg_fields, $pivot_fields);
+	public function cardinality() {
+		return self::MULTIPLE;
 	}
 }

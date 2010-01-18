@@ -10,4 +10,8 @@ abstract class OGL_Relationship_Direct extends OGL_Relationship {
 	}
 	
 	abstract protected function default_fk();
+
+	public function add_joins($query, $src_alias, $trg_alias) {
+		self::join($query, $src_alias, $this->from, $trg_alias, $this->to, $this->fk);
+	}
 }

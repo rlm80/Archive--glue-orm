@@ -28,7 +28,7 @@ class OGL_Relationship_OneToOne extends OGL_Relationship_Direct {
 		}
 	}
 
-	public function create_command($src_set, $trg_set, $trg_fields, $pivot_fields) {
-		return new OGL_Command_With_OneToOne($this, $src_set, $trg_set, $trg_fields);
+	public function cardinality() {
+		return self::SINGLE;
 	}
 }

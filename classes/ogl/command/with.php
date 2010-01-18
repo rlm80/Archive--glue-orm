@@ -30,4 +30,8 @@ abstract class OGL_Command_With extends OGL_Command {
 		$this->relationship->load_relationships($result, $src_alias, $trg_alias);
 		$this->relationship->reverse()->load_relationships($result, $trg_alias, $src_alias);
 	}
+
+	protected function is_root() {
+		return ($this->relationship->cardinality() === OGL_Relationship::MULTIPLE);
+	}
 }

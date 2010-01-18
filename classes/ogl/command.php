@@ -52,18 +52,20 @@ abstract class OGL_Command {
 		// Execute query(ies) :
 		$result = $this->src_set->exec_query($query);
 
-		// Load objects from result set :
-		$this->src_set->load_objects($result);
-		foreach($this->get_chain() as $command)
-			$command->load_objects($result);
+		// Load objects and relationships from result set :
+		if ( ! $this->src_set instanceof OGL_Set_Root) $this->src_set->load_objects($result);
+		foreach($this->get_chain() as $command) {
+			// Alias :
+			$src_alias	= $command->src_set->name;
+			$trg_alias	= $command->trg_set->name;
 
-		// Load relationships from result set :
-		foreach($this->get_chain() as $command)
-			$command->load_relationships($result);
-	}
+			// Objects :
+			$command->trg_set->objects = $command->trg_set->entity->load_objects($result, $trg_alias);
 
-	protected function load_objects(&$result) {
-		$this->trg_set->objects = $this->trg_set->entity->load_objects($result, $this->trg_set->name);
+			// Relationships :
+			$command->relationship->load_relationships($result, $src_alias, $trg_alias);
+			$command->relationship->reverse()->load_relationships($result, $trg_alias, $src_alias);
+		}
 	}
 
 	protected function get_children() {
@@ -137,7 +139,6 @@ abstract class OGL_Command {
 			call_user_func_array(array($query, $call[0]), $call[1]);
 	}
 
-	abstract protected function load_relationships($result);
 	abstract protected function query_contrib($query);
 	abstract protected function is_root();
 }

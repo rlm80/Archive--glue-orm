@@ -10,5 +10,4 @@ class OGL_Set_Root extends OGL_Set {
 	}
 
 	public function init_query($query) {}
-	public function load_objects(&$result) {}
 }

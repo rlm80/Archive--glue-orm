@@ -12,6 +12,12 @@ class OGL_Relationship_Indirect extends OGL_Relationship {
 		if ( ! isset($this->pivot))	$this->pivot	= $this->default_pivot();
 	}
 
+	public function add_joins($query, $src_alias, $trg_alias) {
+		$pivot_alias = $src_alias . '__' . $trg_alias;
+		self::join($query, $src_alias,   $this->from,  $pivot_alias, $this->pivot, $this->fk1);
+		self::join($query, $pivot_alias, $this->pivot, $trg_alias,   $this->to,    $this->fk2);
+	}
+
 	protected function default_fk1() {
 		return $this->from->default_fk;
 	}
@@ -22,21 +28,9 @@ class OGL_Relationship_Indirect extends OGL_Relationship {
 
 	protected function default_pivot() {
 		if ($this->from->name < $this->to->name)
-			$pivot = $this->from->name.'_'.$this->to->name;
+			$pivot = $this->from->name.'2'.$this->to->name;
 		else
-			$pivot = $this->to->name.'_'.$this->from->name;
+			$pivot = $this->to->name.'2'.$this->from->name;
 		return $pivot;
-	}
-
-	public function add_joins($query, $src_alias, $trg_alias) {
-		$pivot_alias = self::pivot_alias($src_alias, $trg_alias);
-		self::join($query, $src_alias,   $this->from,  $pivot_alias, $this->pivot, $this->fk1);
-		self::join($query, $pivot_alias, $this->pivot, $trg_alias,   $this->to,    $this->fk2);
-	}
-
-	public static function pivot_alias($src_alias, $trg_alias) {
-		if ($src_alias < $trg_alias)
-			return '__'.$src_alias.'_'.$trg_alias;
-		return '__'.$trg_alias.'_'.$src_alias;
 	}
 }

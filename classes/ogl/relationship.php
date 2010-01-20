@@ -53,7 +53,7 @@ abstract class OGL_Relationship {
 		$this->from = OGL_entity::get($from);
 		$this->name = $name;
 
-		// Init properties (order matters !!!) :
+		// Init properties :
 		if ( ! isset($this->to))			$this->to			= $this->default_to();
 		if ( ! isset($this->property))		$this->property		= $this->default_property();
 		if ( ! isset($this->reverse))		$this->reverse		= $this->default_reverse();

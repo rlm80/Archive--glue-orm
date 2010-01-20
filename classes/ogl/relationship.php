@@ -54,13 +54,15 @@ abstract class OGL_Relationship {
 		$this->name = $name;
 
 		// Init properties (order matters !!!) :
-		if ( ! isset($this->to)) 		$this->to		= $this->default_to();
-		$this->to = OGL_Entity::get($this->to);
-		if ( ! isset($this->property))	$this->property	= $this->default_property();
-		if ( ! isset($this->reverse))	$this->reverse	= $this->default_reverse();
-		$this->reverse = OGL_Relationship::get($this->to->name, $this->reverse);
+		if ( ! isset($this->to))			$this->to			= $this->default_to();
+		if ( ! isset($this->property))		$this->property		= $this->default_property();
+		if ( ! isset($this->reverse))		$this->reverse		= $this->default_reverse();
 		if ( ! isset($this->cardinality))	$this->cardinality	= $this->default_cardinality();
+		$this->to		= OGL_Entity::get($this->to);
+		$this->reverse	= OGL_Relationship::get($this->to->name, $this->reverse);
 	}
+
+	abstract public function add_joins($query, $src_alias, $trg_alias);
 
 	protected function default_to() {
 		switch (substr($this->name, -1)) {
@@ -89,14 +91,12 @@ abstract class OGL_Relationship {
 	protected function default_cardinality() {
 		switch (substr($this->name, -1)) {
 			case 'Z': $cardinality = self::MULTIPLE;	break;
-			case 'S': $cardinality = self::MULTIPLE;		break;
-			case '1': $cardinality = self::SINGLE;	break;
+			case 'S': $cardinality = self::MULTIPLE;	break;
+			case '1': $cardinality = self::SINGLE;		break;
 			default : $cardinality = self::SINGLE;
 		}
 		return $cardinality;
 	}
-
-	abstract public function add_joins($query, $src_alias, $trg_alias);
 
 	public function load_relationships($result, $src_alias, $trg_alias)	{
 		$src_key	= $src_alias.':__object';

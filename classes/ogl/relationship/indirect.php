@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-abstract class OGL_Relationship_Indirect extends OGL_Relationship {
+class OGL_Relationship_Indirect extends OGL_Relationship {
 	protected $fk1;
 	protected $pivot;
 	protected $fk2;

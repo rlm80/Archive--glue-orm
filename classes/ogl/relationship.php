@@ -46,6 +46,7 @@ abstract class OGL_Relationship {
 	public $to;
 	public $property;
 	public $reverse;
+	public $cardinality;
 
 	protected function __construct($from, $name) {
 		// Set properties :
@@ -58,16 +59,44 @@ abstract class OGL_Relationship {
 		if ( ! isset($this->property))	$this->property	= $this->default_property();
 		if ( ! isset($this->reverse))	$this->reverse	= $this->default_reverse();
 		$this->reverse = OGL_Relationship::get($this->to->name, $this->reverse);
+		if ( ! isset($this->cardinality))	$this->cardinality	= $this->default_cardinality();
 	}
 
-	abstract protected function default_to();
-	abstract protected function default_reverse();
+	protected function default_to() {
+		switch (substr($this->name, -1)) {
+			case 'Z': $to = substr($this->name, 0, -1); break;
+			case 'S': $to = substr($this->name, 0, -1); break;
+			case '1': $to = substr($this->name, 0, -1); break;
+			default : $to = $this->name;
+		}
+		return $to;
+	}
+
+	protected function default_reverse() {
+		switch (substr($this->name, -1)) {
+			case 'Z': $reverse = $this->from->name.'Z';	break;
+			case 'S': $reverse = $this->from->name;		break;
+			case '1': $reverse = $this->from->name.'1';	break;
+			default : $reverse = $this->from->name.'S';
+		}
+		return $reverse;
+	}
+
 	protected function default_property() {
 		return $this->name;
 	}
 
+	protected function default_cardinality() {
+		switch (substr($this->name, -1)) {
+			case 'Z': $cardinality = self::MULTIPLE;	break;
+			case 'S': $cardinality = self::MULTIPLE;		break;
+			case '1': $cardinality = self::SINGLE;	break;
+			default : $cardinality = self::SINGLE;
+		}
+		return $cardinality;
+	}
+
 	abstract public function add_joins($query, $src_alias, $trg_alias);
-	abstract public function cardinality();
 
 	public function load_relationships($result, $src_alias, $trg_alias)	{
 		$src_key	= $src_alias.':__object';
@@ -76,11 +105,11 @@ abstract class OGL_Relationship {
 		foreach($result as $row) {
 			if (isset($row[$src_key])) {
 				$src = $row[$src_key];
-				if ($this->cardinality() === self::MULTIPLE && ! isset($src->$property))
+				if ($this->cardinality === self::MULTIPLE && ! isset($src->$property))
 					$src->$property = array();
 				if (isset($row[$trg_key])) {
 					$trg = $row[$trg_key];
-					if ($this->cardinality() === self::MULTIPLE)
+					if ($this->cardinality === self::MULTIPLE)
 						$src->$property[spl_object_hash($trg)] = $trg;
 					else
 						$src->$property = $trg;
@@ -103,12 +132,10 @@ abstract class OGL_Relationship {
 	static protected function create($entity_name, $name) {
 		$class = 'OGL_Relationship_'.ucfirst($entity_name).'_'.ucfirst($name);
 		if ( ! class_exists($class)) {
-			switch (substr($name, -1)) {
-				case 'S': $class = 'OGL_Relationship_OneToMany';	break;
-				case 'Z': $class = 'OGL_Relationship_ManyToMany';	break;
-				case '1': $class = 'OGL_Relationship_OneToOne';		break;
-				default : $class = 'OGL_Relationship_ManyToOne';
-			}
+			if (substr($name, -1) == 'Z')
+				$class = 'OGL_Relationship_Indirect';
+			else
+				$class = 'OGL_Relationship_Direct';
 		}
 		$relationship = new $class($entity_name, $name);
 		return $relationship;

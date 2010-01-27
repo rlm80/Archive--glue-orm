@@ -20,16 +20,25 @@ abstract class OGL_Relationship {
 		$this->from = $from;
 		$this->name = $name;
 
-		// Init properties :
+		// Fill in missing properties with default values based on $from and $name :
 		if ( ! isset($this->to))		$this->to		= $this->default_to();
 		if ( ! isset($this->property))	$this->property	= $this->default_property();
 		if ( ! isset($this->reverse))	$this->reverse	= $this->default_reverse();
 		if ( ! isset($this->multiple))	$this->multiple	= $this->default_multiple();
 		if ( ! isset($this->mapping))	$this->mapping	= $this->default_mapping();
 
+		// Fill in missing entity names in mapping :
+		$new = array();
+		foreach($mapping as $src => $trg) {
+			if (strpos('.', $src) === FALSE) $src = $this->from . '.' . $src;
+			if (strpos('.', $trg) === FALSE) $trg = $this->to   . '.' . $trg;
+			$new[$src] = $trg;
+		}
+		$this->mapping = $new;
+
 		// Turn properties into objects where appropriate :
 		$this->reverse	= OGL_Relationship::get($this->to, $this->reverse);
-		$this->from		= OGL_entity::get($this->from);
+		$this->from		= OGL_Entity::get($this->from);
 		$this->to		= OGL_Entity::get($this->to);
 	}
 
@@ -71,7 +80,7 @@ abstract class OGL_Relationship {
 			case 'Z':
 				$pivot = ($this->from < $this->to) ? $this->from.'2'.$this->to : $this->to.'2'.$this->from;
 				foreach($from->default_fk as $src => $trg) $mapping[$src] = $pivot.'.'.$trg;
-				foreach(array_flip($to->default_fk) as $src => $trg) $mapping[$pivot.'.'.$src] = $trg;
+				foreach($to->default_fk   as $trg => $src) $mapping[$pivot.'.'.$src] = $trg;
 				break;
 			case 'S': $mapping = $from->default_fk; break;
 			case '1': $pk = array_values($from->pk); $mapping = array_combine($pk, $pk); break;
@@ -81,6 +90,7 @@ abstract class OGL_Relationship {
 	}
 
 	public function add_joins($query, $src_alias, $trg_alias) {
+
 		self::join($query, $src_alias, $this->from, $trg_alias, $this->to, $this->fk);
 
 		self::join($query, $src_alias,   $this->from,  $pivot_alias, $this->pivot, $this->fk1);

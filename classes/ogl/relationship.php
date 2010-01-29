@@ -27,14 +27,8 @@ abstract class OGL_Relationship {
 		if ( ! isset($this->multiple))	$this->multiple	= $this->default_multiple();
 		if ( ! isset($this->mapping))	$this->mapping	= $this->default_mapping();
 
-		// Fill in missing entity names in mapping :
-		$new = array();
-		foreach($mapping as $src => $trg) {
-			if (strpos('.', $src) === FALSE) $src = $this->from . '.' . $src;
-			if (strpos('.', $trg) === FALSE) $trg = $this->to   . '.' . $trg;
-			$new[$src] = $trg;
-		}
-		$this->mapping = $new;
+		// Turn mapping into something easier to work with :
+		$this->adapt_mapping();
 
 		// Turn properties into objects where appropriate :
 		$this->reverse	= OGL_Relationship::get($this->to, $this->reverse);
@@ -115,6 +109,26 @@ abstract class OGL_Relationship {
 				}
 			}
 		}
+	}
+	
+	private function adapt_mapping() {
+		// Add missing entity names :
+		$new = array();
+		foreach($this->mapping as $src => $trg) {
+			if (strpos('.', $src) === FALSE) $src = $this->from . '.' . $src;
+			if (strpos('.', $trg) === FALSE) $trg = $this->to   . '.' . $trg;
+			$new[$src] = $trg;
+		}
+		$this->mapping = $new;
+		
+		// Loop on mapping and find entities :
+		$new[$this->from] = array();
+		foreach($mapping as $src => $trg) {
+			if (strpos('.', $src) === FALSE) $src = $this->from . '.' . $src;
+			if (strpos('.', $trg) === FALSE) $trg = $this->to   . '.' . $trg;
+			$new[$src] = $trg;
+		}
+		$this->mapping = $new;
 	}
 
 	// Lazy loads a relationship object, stores it in cache, and returns it :

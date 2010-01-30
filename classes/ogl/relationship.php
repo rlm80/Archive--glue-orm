@@ -92,9 +92,11 @@ abstract class OGL_Relationship {
 	public function add_joins($query, $from_alias, $to_alias) {
 		$prefix = $from_alias.'__'.$to_alias;
 		foreach($this->mapping as $trg_entity => $trg_fields) {
-			// Get entity object, fields and table :
+			// Get entity object and fields :
 			$trg_entity = OGL_Entity::get($trg_entity);
 			$trg_fields	= $trg_entity->fields;
+
+			// Build table alias :
 			$trg_alias	= ($trg_entity === $this->to) ? $to_alias : $prefix.'__'.$trg_entity->name;
 
 			// Add table to from :
@@ -107,6 +109,8 @@ abstract class OGL_Relationship {
 				// Get entity object, fields and table :
 				$src_entity = OGL_Entity::get($src_entity);
 				$src_fields	= $src_entity->fields;
+
+				// Build table alias :
 				$src_alias	= ($src_entity === $this->from) ? $from_alias : $prefix.'__'.$src_entity->name;
 
 				// Add columns mapping to on :
@@ -116,21 +120,26 @@ abstract class OGL_Relationship {
 	}
 
 	public function load_relationships($result, $src_alias, $trg_alias)	{
-		$src_key	= $src_alias.':__object';
-		$trg_key	= $trg_alias.':__object';
-		$property	= $this->property;
+		$src_key = $src_alias.':__object';
+		$trg_key = $trg_alias.':__object';
 		foreach($result as $row) {
-			if (isset($row[$src_key])) {
-				$src = $row[$src_key];
-				if ($this->multiple && ! isset($src->$property))
-					$src->$property = array();
-				if (isset($row[$trg_key])) {
-					$trg = $row[$trg_key];
-					if ($this->multiple)
-						$src->$property[spl_object_hash($trg)] = $trg;
-					else
-						$src->$property = $trg;
-				}
+			$this->link(
+				isset($row[$src_key]) ? $row[$src_key] : null,
+				isset($row[$trg_key]) ? $row[$trg_key] : null
+			);
+		}
+	}
+	
+	protected function link($src, $trg) {
+		if (isset($src)) {
+			$property = $this->property;
+			if ($this->multiple && ! isset($src->$property))
+				$src->$property = array();
+			if (isset($trg)) {
+				if ($this->multiple)
+					$src->$property[spl_object_hash($trg)] = $trg;
+				else
+					$src->$property = $trg;
 			}
 		}
 	}

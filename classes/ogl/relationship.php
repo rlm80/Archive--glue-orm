@@ -89,13 +89,13 @@ abstract class OGL_Relationship {
 		return $mapping;
 	}
 
-	public function add_joins($query, $src_alias, $trg_alias) {
-		$prefix = $src_alias.'__'.$trg_alias;
+	public function add_joins($query, $from_alias, $to_alias) {
+		$prefix = $from_alias.'__'.$to_alias;
 		foreach($this->mapping as $trg_entity => $trg_fields) {
 			// Get entity object, fields and table :
 			$trg_entity = OGL_Entity::get($trg_entity);
 			$trg_fields	= $trg_entity->fields;
-			$trg_alias	= $prefix.'__'.$trg_entity->name;
+			$trg_alias	= ($trg_entity === $this->to) ? $to_alias : $prefix.'__'.$trg_entity->name;
 
 			// Add table to from :
 			$query->join(array($trg_entity->table, $trg_alias), 'LEFT');
@@ -107,7 +107,7 @@ abstract class OGL_Relationship {
 				// Get entity object, fields and table :
 				$src_entity = OGL_Entity::get($src_entity);
 				$src_fields	= $src_entity->fields;
-				$src_alias	= $prefix.'__'.$src_entity->name;
+				$src_alias	= ($src_entity === $this->from) ? $from_alias : $prefix.'__'.$src_entity->name;
 
 				// Add columns mapping to on :
 				$query->on($trg_alias.'.'.$trg_fields[$trg_field]['column'], '=', $src_alias.'.'.$src_fields[$src_field]['column']);

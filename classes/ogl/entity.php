@@ -1,70 +1,32 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-/*
- * Entities are objects responsible for handling the conversion between database
- * table rows and model objects, for those elements defined as entities in an entity-relationship
- * diagram. They hold all available data about the underlying table, its columns and its primary key,
- * and about the model objects and their properties.
- *
- * Entities are always requested from OGL by name :
- * - by referring to them in an OGL query (ogl::load('users')),
- * - by requesting OGL to save an object in the database (ogl::save('user', $user)),
- * - by requesting OGL to delete an object from the database (ogl::delete('user', $user)),
- * - ...
- *
- * Entity objects behave as singletons. When an entity object is required by name,
- * OGL will instanciate :
- * a) the class OGL_Entity_<name> if it exists,
- * b) the default class OGL_Entity if no such class is found.
- *
- * Conventions used by the default OGL_Entity class :
- * - table : pluralized entity name
- * - pk : 'id'
- * - model class : 'Model_'.entity name if there is such a class, StdObject otherwise.
- *
- * If you wish to define your own pk, table or model, you need to create your
- * own OGL_Entity_<name> entity class.
- *
- * Idées pour les types :
- * - ne PAS introduire de fonction du genre cast_value() destinée à être redéfinie
- *   pour permettre les types exotiques. Ca alourdit et ralentit les choses et c'est
- *   inutile : les types en question peuvent être obtenus via des getters si nécessaires.
- * - ne PAS introduire de fonction du genre write_property() et read_property() destinées
- *   à être redéfinies pour permettre getters/setters. Des getters seraient nécessaires pour
- *   toutes les prioriétés de toutes façons, donc autant les mettre public.
- */
-
 class OGL_Entity {
 	// Entity cache :
 	static protected $entities = array();
 
 	// Properties that may NOT be set in children classes :
 	public $name;
-	public $fields;
-
+	
 	// Properties that may be set in children classes :
 	public $pk;
-	public $default_fk;
+	public $fk;
 	public $table;
 	public $model;
+	public $fields;
 
 	// Identity map :
 	protected $map = array();
 
-	protected function __construct($name, $pk=null, $table=null, $fields=null, $model=null) {
+	protected function __construct($name) {
 		// Set properties :
-		$this->name		= $name;
-		$this->pk		= $pk;
-		$this->table	= $table;
-		$this->fields	= $fields;
-		$this->model	= $model;
+		$this->name	= $name;
 
 		// Init properties (order matters !!!) :
-		if ( ! isset($this->model))			$this->model		= $this->default_model();
-		if ( ! isset($this->table))			$this->table		= $this->default_table();
-		if ( ! isset($this->fields))		$this->fields		= $this->default_fields();
-		if ( ! isset($this->pk))			$this->pk			= $this->default_pk();
-		if ( ! isset($this->default_fk))	$this->default_fk	= $this->default_default_fk();
+		if ( ! isset($this->model))		$this->model	= $this->default_model();
+		if ( ! isset($this->table))		$this->table	= $this->default_table();
+		if ( ! isset($this->fields))	$this->fields	= $this->default_fields();
+		if ( ! isset($this->pk))		$this->pk		= $this->default_pk();
+		if ( ! isset($this->fk))		$this->fk		= $this->default_fk();
 	}
 
 	protected function default_model() {
@@ -87,10 +49,10 @@ class OGL_Entity {
 		return array('id');
 	}
 
-	protected function default_default_fk() {
+	protected function default_fk() {
 		foreach ($this->pk as $f)
-			$default_fk[$f] = $this->name.'_'.$f;
-		return $default_fk;
+			$fk[$f] = $this->name.'_'.$f;
+		return $fk;
 	}
 
 	public function relationship($name) {
@@ -155,20 +117,20 @@ class OGL_Entity {
 	}
 
 	// Lazy loads an entity object, stores it in cache, and returns it :
-	static public function get($name, $pk=null, $table=null, $model=null) {
+	static public function get($name) {
 		if( ! isset(self::$entities[$name]))
-			self::$entities[$name] = self::create($name, $pk, $table, $model);
+			self::$entities[$name] = self::create($name);
 		return self::$entities[$name];
 	}
 
 	// Chooses the right entity class to use, based on the name of the entity and
 	// the available classes.
-	static protected function create($name, $pk=null, $table=null, $model=null) {
+	static protected function create($name) {
 		$class = 'OGL_Entity_'.ucfirst($name);
 		if (class_exists($class))
 			$entity = new $class($name);
 		else
-			$entity	= new self($name, $pk, $table, $model);
+			$entity	= new self($name);
 		return $entity;
 	}
 

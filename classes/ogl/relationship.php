@@ -73,18 +73,18 @@ abstract class OGL_Relationship {
 		switch (substr($this->name, -1)) {
 			case 'Z':
 				$pivot = ($this->from < $this->to) ? $this->from.'2'.$this->to : $this->to.'2'.$this->from;
-				foreach($from->default_fk as $src => $trg) $mapping[$src] = $pivot.'.'.$trg;
-				foreach($to->default_fk   as $trg => $src) $mapping[$pivot.'.'.$src] = $trg;
+				foreach($from->fk as $src => $trg) $mapping[$src] = $pivot.'.'.$trg;
+				foreach($to->fk   as $trg => $src) $mapping[$pivot.'.'.$src] = $trg;
 				break;
 			case 'S':
-				$mapping = $from->default_fk;
+				$mapping = $from->fk;
 				break;
 			case '1':
 				$pk = array_values($from->pk);
 				$mapping = array_combine($pk, $pk);
 				break;
 			default :
-				$mapping = array_flip($to->default_fk);
+				$mapping = array_flip($to->fk);
 		}
 		return $mapping;
 	}
@@ -94,9 +94,7 @@ abstract class OGL_Relationship {
 		foreach($this->mapping as $trg_entity => $trg_fields) {
 			// Get entity object, fields and table :
 			$trg_entity = OGL_Entity::get($trg_entity);
-			$trg_table	= $trg_entity->table;
 			$trg_fields	= $trg_entity->fields;
-			$trg_name	= $trg_entity->name;
 			$trg_alias	= $prefix.'__'.$trg_entity->name;
 
 			// Add table to from :
@@ -108,9 +106,7 @@ abstract class OGL_Relationship {
 				
 				// Get entity object, fields and table :
 				$src_entity = OGL_Entity::get($src_entity);
-				$src_table	= $src_entity->table;
 				$src_fields	= $src_entity->fields;
-				$src_name	= $src_entity->name;
 				$src_alias	= $prefix.'__'.$src_entity->name;
 
 				// Add columns mapping to on :

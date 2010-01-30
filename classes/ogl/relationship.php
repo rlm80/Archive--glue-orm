@@ -20,7 +20,7 @@ abstract class OGL_Relationship {
 		$this->from = $from;
 		$this->name = $name;
 
-		// Fill in missing properties with default values based on $from and $name :
+		// Fill in any missing properties with default values based on $from and $name :
 		if ( ! isset($this->to))		$this->to		= $this->default_to();
 		if ( ! isset($this->property))	$this->property	= $this->default_property();
 		if ( ! isset($this->reverse))	$this->reverse	= $this->default_reverse();
@@ -76,19 +76,47 @@ abstract class OGL_Relationship {
 				foreach($from->default_fk as $src => $trg) $mapping[$src] = $pivot.'.'.$trg;
 				foreach($to->default_fk   as $trg => $src) $mapping[$pivot.'.'.$src] = $trg;
 				break;
-			case 'S': $mapping = $from->default_fk; break;
-			case '1': $pk = array_values($from->pk); $mapping = array_combine($pk, $pk); break;
-			default : $mapping = array_flip($to->default_fk);
+			case 'S':
+				$mapping = $from->default_fk;
+				break;
+			case '1':
+				$pk = array_values($from->pk);
+				$mapping = array_combine($pk, $pk);
+				break;
+			default :
+				$mapping = array_flip($to->default_fk);
 		}
 		return $mapping;
 	}
 
 	public function add_joins($query, $src_alias, $trg_alias) {
+		$prefix = $src_alias.'__'.$trg_alias;
+		foreach($this->mapping as $trg_entity => $trg_fields) {
+			// Get entity object, fields and table :
+			$trg_entity = OGL_Entity::get($trg_entity);
+			$trg_table	= $trg_entity->table;
+			$trg_fields	= $trg_entity->fields;
+			$trg_name	= $trg_entity->name;
+			$trg_alias	= $prefix.'__'.$trg_entity->name;
 
-		self::join($query, $src_alias, $this->from, $trg_alias, $this->to, $this->fk);
+			// Add table to from :
+			$query->join(array($trg_entity->table, $trg_alias), 'LEFT');
 
-		self::join($query, $src_alias,   $this->from,  $pivot_alias, $this->pivot, $this->fk1);
-		self::join($query, $pivot_alias, $this->pivot, $trg_alias,   $this->to,    $this->fk2);
+			// Add required column mappings to on :
+			foreach($trg_fields as $trg_field => $arr) {
+				list($src_entity, $src_field) = $arr;
+				
+				// Get entity object, fields and table :
+				$src_entity = OGL_Entity::get($src_entity);
+				$src_table	= $src_entity->table;
+				$src_fields	= $src_entity->fields;
+				$src_name	= $src_entity->name;
+				$src_alias	= $prefix.'__'.$src_entity->name;
+
+				// Add columns mapping to on :
+				$query->on($trg_alias.'.'.$trg_fields[$trg_field]['column'], '=', $src_alias.'.'.$src_fields[$src_field]['column']);
+			}
+		}
 	}
 
 	public function load_relationships($result, $src_alias, $trg_alias)	{
@@ -112,21 +140,16 @@ abstract class OGL_Relationship {
 	}
 	
 	private function adapt_mapping() {
-		// Add missing entity names :
+		// Build new mapping array :
 		$new = array();
 		foreach($this->mapping as $src => $trg) {
+			// Add missing entity prefixes :
 			if (strpos('.', $src) === FALSE) $src = $this->from . '.' . $src;
 			if (strpos('.', $trg) === FALSE) $trg = $this->to   . '.' . $trg;
-			$new[$src] = $trg;
-		}
-		$this->mapping = $new;
-		
-		// Loop on mapping and find entities :
-		$new[$this->from] = array();
-		foreach($mapping as $src => $trg) {
-			if (strpos('.', $src) === FALSE) $src = $this->from . '.' . $src;
-			if (strpos('.', $trg) === FALSE) $trg = $this->to   . '.' . $trg;
-			$new[$src] = $trg;
+
+			// Add data to new mapping array :
+			list($trg_entity, $trg_field) = explode('.', $trg);
+			$new[$trg_entity][$trg_field] = explode('.', $src);
 		}
 		$this->mapping = $new;
 	}
@@ -149,14 +172,5 @@ abstract class OGL_Relationship {
 		else
 			$relationship = new self($entity_name, $name);
 		return $relationship;
-	}
-
-	static protected function join($query, $src_alias, $src_entity, $trg_alias, $trg_entity, $fk, $join_type = 'INNER') {
-		$trg_table	= $trg_entity->table;
-		$trg_fields	= $trg_entity->fields;
-		$src_fields	= $src_entity->fields;
-		$query->join(array($trg_table, $trg_alias), $join_type);
-		foreach($fk as $src_field => $trg_field)
-			$query->on($trg_alias.'.'.$trg_fields[$trg_field]['column'], '=', $src_alias.'.'.$src_fields[$src_field]['column']);
 	}
 }

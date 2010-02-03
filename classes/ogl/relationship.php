@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-abstract class OGL_Relationship {
+class OGL_Relationship {
 	// Relationships cache :
 	static protected $relationships = array();
 
@@ -100,7 +100,7 @@ abstract class OGL_Relationship {
 			$trg_alias	= ($trg_entity === $this->to) ? $to_alias : $prefix.'__'.$trg_entity->name;
 
 			// Add table to from :
-			$query->join(array($trg_entity->table, $trg_alias), 'LEFT');
+			$query->join(array($trg_entity->table, $trg_alias), 'INNER');
 
 			// Add required column mappings to on :
 			foreach($trg_fields as $trg_field => $arr) {
@@ -129,7 +129,7 @@ abstract class OGL_Relationship {
 			);
 		}
 	}
-	
+
 	protected function link($src, $trg) {
 		if (isset($src)) {
 			$property = $this->property;

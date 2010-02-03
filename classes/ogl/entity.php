@@ -11,6 +11,7 @@ class OGL_Entity {
 	public $pk;
 	public $fk;
 	public $table;
+	public $joins;
 	public $model;
 	public $fields;
 
@@ -24,6 +25,12 @@ class OGL_Entity {
 		// Init properties (order matters !!!) :
 		if ( ! isset($this->model))		$this->model	= $this->default_model();
 		if ( ! isset($this->table))		$this->table	= $this->default_table();
+		if ( ! isset($this->joins))		$this->joins	= $this->default_joins();
+
+		// Turn joins into something easier to work with :
+		$this->adapt_joins();
+
+		// Keep initializing properties :
 		if ( ! isset($this->fields))	$this->fields	= $this->default_fields();
 		if ( ! isset($this->pk))		$this->pk		= $this->default_pk();
 		if ( ! isset($this->fk))		$this->fk		= $this->default_fk();
@@ -38,10 +45,35 @@ class OGL_Entity {
 		return inflector::plural($this->name);
 	}
 
+	protected function default_joins() {
+		return array();
+	}
+
 	protected function default_fields() {
+		// Get fields from main table :
 		$cols = Database::instance()->list_columns($this->table);
-		foreach($cols as $name => $data)
-			$fields[$name] = array('phptype' => $data['type'], 'property' => $name, 'column' => $name);
+		foreach ($cols as $name => $data)
+			$fields[$name] = array(
+				'phptype'	=> $data['type'],
+				'property'	=> $name,
+				'table'		=> $this->table,
+				'column'	=> $name
+			);
+
+		// Get fields from join tables :
+		foreach ($joins as $table => $columns) {
+			$cols = Database::instance()->list_columns($table);
+			foreach($cols as $name => $data)
+				if ( ! array_key_exists($name, $columns)) {
+					$fields[$name] = array(
+						'phptype'	=> $data['type'],
+						'property'	=> $name,
+						'table'		=> $table,
+						'column'	=> $name
+					);
+				}
+		}
+
 		return $fields;
 	}
 
@@ -53,6 +85,44 @@ class OGL_Entity {
 		foreach ($this->pk as $f)
 			$fk[$f] = $this->name.'_'.$f;
 		return $fk;
+	}
+
+	public function join($query, $alias, $mappings, $type = 'INNER') {
+		// Group mappings by tables :
+		$new = array();
+		foreach($mappings as $field => $expr) {
+			$table = $this->fields[$field]['table'];
+			$new[$table][$field] = $expr;
+		}
+		$mappings = $new;
+
+		// Join main table :
+		$table_alias = $alias.'__'.$this->table;
+		$query->join(array($this->table, $table_alias), $type);
+		foreach($mappings[$this->table] as $field => $expr) {
+			$column = $this->fields[$field]['column'];
+			$query->on($table_alias.'.'.$column, '=', $expr);
+		}
+
+		// Join other tables :
+		foreach($this->joins as $table => $columns) {
+			$table_alias = $alias.'__'.$table;
+			$query->join(array($table, $table_alias), $type);
+			foreach($mappings[$table] as $field => $expr) {
+				$column = $this->fields[$field]['column'];
+				$query->on($table_alias.'.'.$column, '=', $expr);
+			}
+			foreach($columns as $column => $data) {
+				list($table2, $column2) = $data;
+				$query->on($table_alias.'.'.$column, '=', $alias.'__'.$table2.'.'.$column2);
+			}
+		}
+	}
+
+	public function field_expr($entity_alias, $field) {
+		$table	= $this->fields[$field]['table'];
+		$column	= $this->fields[$field]['column'];
+		return $entity_alias . '__' . $table . '.' . $column;
 	}
 
 	public function relationship($name) {
@@ -114,6 +184,21 @@ class OGL_Entity {
 			$pk[$f] = $obj->$property;
 		}
 		return $pk;
+	}
+
+	private function adapt_joins() {
+		// Build new joins array :
+		$new = array();
+		foreach($this->joins as $src => $trg) {
+			// Add missing table prefixes :
+			if (strpos('.', $src) === FALSE) $src = $this->table . '.' . $src;
+			if (strpos('.', $trg) === FALSE) throw new Kohana_Exception("Format 'table.column' expected, '".$trg."' found instead.");
+
+			// Add data to new joins array :
+			list($trg_table, $trg_column) = explode('.', $trg);
+			$new[$trg_table][$trg_column] = explode('.', $src);
+		}
+		$this->joins = $new;
 	}
 
 	// Lazy loads an entity object, stores it in cache, and returns it :

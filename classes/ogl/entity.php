@@ -102,7 +102,7 @@ class OGL_Entity {
 		}
 	}
 
-	public function join($query, $alias, $mappings) {
+	public function join($query, $alias, $mappings, $type = 'INNER') {
 		// Group mappings by tables :
 		$new = array();
 		foreach($mappings as $field => $expr) {
@@ -113,7 +113,7 @@ class OGL_Entity {
 
 		// Join main table :
 		$table_alias = $alias.'__'.$this->table;
-		$query->join(array($this->table, $table_alias), 'INNER');
+		$query->join(array($this->table, $table_alias), $type);
 		foreach($mappings[$this->table] as $field => $expr) {
 			$column = $this->fields[$field]['column'];
 			$query->on($table_alias.'.'.$column, '=', $expr);
@@ -122,7 +122,7 @@ class OGL_Entity {
 		// Join other tables :
 		foreach($this->joins as $table => $columns) {
 			$table_alias = $alias.'__'.$table;
-			$query->join(array($table, $table_alias), 'INNER');
+			$query->join(array($table, $table_alias), $type);
 			foreach($columns as $column => $data) {
 				list($table2, $column2) = $data;
 				$query->on($table_alias.'.'.$column, '=', $alias.'__'.$table2.'.'.$column2);
@@ -134,10 +134,10 @@ class OGL_Entity {
 		}
 	}
 
-	public function field_expr($entity_alias, $field) {
+	public function field_expr($alias, $field) {
 		$table	= $this->fields[$field]['table'];
 		$column	= $this->fields[$field]['column'];
-		return $entity_alias . '__' . $table . '.' . $column;
+		return $alias . '__' . $table . '.' . $column;
 	}
 
 	public function relationship($name) {

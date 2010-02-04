@@ -89,33 +89,29 @@ class OGL_Relationship {
 		return $mapping;
 	}
 
-	public function add_joins($query, $from_alias, $to_alias) {
+	public function join($query, $from_alias, $to_alias, $type = 'INNER') {
 		$prefix = $from_alias.'__'.$to_alias;
-		foreach($this->mapping as $trg_entity => $trg_fields) {
-			// Get entity object and fields :
-			$trg_entity = OGL_Entity::get($trg_entity);
-			$trg_fields	= $trg_entity->fields;
 
-			// Build table alias :
+		// Loop on target entities :
+		foreach($this->mapping as $trg_entity => $data1) {
+			// Get entity object and build alias :
+			$trg_entity = OGL_Entity::get($trg_entity);
 			$trg_alias	= ($trg_entity === $this->to) ? $to_alias : $prefix.'__'.$trg_entity->name;
 
-			// Add table to from :
-			$query->join(array($trg_entity->table, $trg_alias), 'INNER');
-
-			// Add required column mappings to on :
-			foreach($trg_fields as $trg_field => $arr) {
-				list($src_entity, $src_field) = $arr;
-				
-				// Get entity object, fields and table :
+			// Loop on source entities :
+			$mappings = array();
+			foreach($data1 as $src_entity => $data2) {
+				// Get entity object and build alias :
 				$src_entity = OGL_Entity::get($src_entity);
-				$src_fields	= $src_entity->fields;
-
-				// Build table alias :
 				$src_alias	= ($src_entity === $this->from) ? $from_alias : $prefix.'__'.$src_entity->name;
 
-				// Add columns mapping to on :
-				$query->on($trg_alias.'.'.$trg_fields[$trg_field]['column'], '=', $src_alias.'.'.$src_fields[$src_field]['column']);
+				// Loop on source entity fields :
+				foreach($data2 as $src_field => $trg_field)
+					$mappings[$trg_field] = $src_entity->field_expr($src_alias, $src_field);
 			}
+
+			// Join target entity :
+			$query->join($query, $trg_alias, $mappings, $type);
 		}
 	}
 
@@ -154,7 +150,8 @@ class OGL_Relationship {
 
 			// Add data to new mapping array :
 			list($trg_entity, $trg_field) = explode('.', $trg);
-			$new[$trg_entity][$trg_field] = explode('.', $src);
+			list($src_entity, $src_field) = explode('.', $src);
+			$new[$trg_entity][$src_entity][$src_field] = $trg_field;
 		}
 		$this->mapping = $new;
 	}

@@ -22,23 +22,7 @@ class OGL_Set {
 	}
 
 	public function init_query($query) {
-		// Get data :
-		$alias	= $this->name;
-		$fields	= $this->entity->fields;
-		$pk		= $this->entity->pk;
-
-		// Add table :
-		$query->from(array($this->entity->table, $alias));
-
-		// Add pk :
-		$this->entity->add_fields($query, $pk, $alias);
-
-		// Add conditions to restrict it to rows belonging to current set :
-		if (count($pk) === 1)
-			$query->where($alias.'.'.$fields[$pk[0]]['column'], 'IN', new Database_Expression(':_pks'));
-		else
-			foreach($pk as $f)
-				$query->where($alias.'.'.$fields[$f]['column'], '=', new Database_Expression(':_'.$f));
+		$this->entity->init($query, $alias);
 	}
 
 	public function exec_query($query) {

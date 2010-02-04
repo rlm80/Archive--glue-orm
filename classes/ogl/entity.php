@@ -87,6 +87,21 @@ class OGL_Entity {
 		return $fk;
 	}
 
+	public function init($query, $alias) {
+		// Add entity tables to from :
+		$this->from($query, $alias);
+
+		// Add pk to select :
+		$this->add_fields($query, $this->pk, $alias);
+
+		// Add conditions on pk to where :
+		if (count($this->pk) === 1)
+			$query->where($this->field_expr($this->pk[0], $alias), 'IN', new Database_Expression(':_pks'));
+		else
+			foreach($this->pk as $f)
+				$query->where($this->field_expr($f, $alias), '=', new Database_Expression(':_'.$f));
+	}
+
 	public function from($query, $alias) {
 		// Main table :
 		$query->from(array($this->table, $alias.'__'.$this->table));

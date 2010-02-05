@@ -53,7 +53,7 @@ abstract class OGL_Command {
 		$result = $this->src_set->exec_query($query);
 
 		// Load objects and relationships from result set :
-		if ( ! $this->src_set instanceof OGL_Set_Root) $this->src_set->load_objects($result);
+		if ( ! $this->src_set instanceof OGL_Set_Root) $this->src_set->entity->load_objects($result, $this->src_set->name);
 		foreach($this->get_chain() as $command) {
 			// Alias :
 			$src_alias	= $command->src_set->name;
@@ -63,8 +63,7 @@ abstract class OGL_Command {
 			$command->trg_set->objects = $command->trg_set->entity->load_objects($result, $trg_alias);
 
 			// Relationships :
-			$command->relationship->load_relationships($result, $src_alias, $trg_alias);
-			$command->relationship->reverse()->load_relationships($result, $trg_alias, $src_alias);
+			$command->load_relationships($result);
 		}
 	}
 

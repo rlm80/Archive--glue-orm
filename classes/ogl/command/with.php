@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-abstract class OGL_Command_With extends OGL_Command {
+class OGL_Command_With extends OGL_Command {
 	protected $relationship;
 
 	public function  __construct($relationship, $src_set, $trg_set, $trg_fields) {
@@ -19,7 +19,7 @@ abstract class OGL_Command_With extends OGL_Command {
 	protected function query_contrib($query) {
 		$src_alias	= $this->src_set->name;
 		$trg_alias	= $this->trg_set->name;
-		$this->relationship->add_joins($query, $src_alias, $trg_alias);
+		$this->relationship->join($query, $src_alias, $trg_alias);
 		$this->relationship->to()->add_fields($query, $this->trg_fields, $trg_alias);
 		$this->apply_calls($query);
 	}
@@ -32,6 +32,6 @@ abstract class OGL_Command_With extends OGL_Command {
 	}
 
 	protected function is_root() {
-		return ($this->relationship->cardinality() === OGL_Relationship::MULTIPLE);
+		return $this->relationship->multiple;
 	}
 }

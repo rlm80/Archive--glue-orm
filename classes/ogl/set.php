@@ -22,10 +22,10 @@ class OGL_Set {
 	}
 
 	public function init_query($query) {
-		$this->entity->query_init($query, $alias);
+		$this->entity->query_init($query, $this->name);
 	}
 
 	public function exec_query($query) {
-		$this->entity->query_exec($query, $this->objects);
+		return $this->entity->query_exec($query, $this->objects);
 	}
 }

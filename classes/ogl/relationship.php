@@ -87,14 +87,16 @@ class OGL_Relationship {
 
 		// Loop on target entities :
 		foreach($this->mapping as $trg_entity => $data1) {
-			// Build alias :
-			$trg_alias = ($trg_entity === $this->to) ? $to_alias : $prefix.'__'.$trg_entity;
+			// Get entity object and build alias :
+			$trg_entity = OGL_Entity::get($trg_entity);
+			$trg_alias	= ($trg_entity->name === $this->to) ? $to_alias : $prefix.'__'.$trg_entity->name;
 
 			// Loop on source entities :
 			$mappings = array();
 			foreach($data1 as $src_entity => $data2) {
-				// Build alias :
-				$src_alias = ($src_entity === $this->from) ? $from_alias : $prefix.'__'.$src_entity;
+				// Get entity object and build alias :
+				$src_entity = OGL_Entity::get($src_entity);
+				$src_alias	= ($src_entity->name === $this->from) ? $from_alias : $prefix.'__'.$src_entity->name;
 
 				// Loop on source entity fields :
 				foreach($data2 as $src_field => $trg_field)
@@ -102,9 +104,10 @@ class OGL_Relationship {
 			}
 
 			// Join target entity :
-			$query->join($query, $trg_alias, $mappings, $type);
+			$trg_entity->query_join($query, $trg_alias, $mappings, $type);
 		}
 	}
+
 
 	public function load_relationships($result, $src_alias, $trg_alias)	{
 		$src_key = $src_alias.':__object';
@@ -135,8 +138,10 @@ class OGL_Relationship {
 			if ($this->multiple && ! isset($src->$property))
 				$src->$property = array();
 			if (isset($trg)) {
-				if ($this->multiple)
-					$src->$property[spl_object_hash($trg)] = $trg;
+				if ($this->multiple) {
+					$p =& $src->$property;
+					$p[spl_object_hash($trg)] = $trg;
+				}
 				else
 					$src->$property = $trg;
 			}
@@ -148,8 +153,8 @@ class OGL_Relationship {
 		$new = array();
 		foreach($this->mapping as $src => $trg) {
 			// Add missing entity prefixes :
-			if (strpos('.', $src) === FALSE) $src = $this->from . '.' . $src;
-			if (strpos('.', $trg) === FALSE) $trg = $this->to   . '.' . $trg;
+			if (strpos($src, '.') === FALSE) $src = $this->from . '.' . $src;
+			if (strpos($trg, '.') === FALSE) $trg = $this->to   . '.' . $trg;
 
 			// Add data to new mapping array :
 			list($trg_entity, $trg_field) = explode('.', $trg);

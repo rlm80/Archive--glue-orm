@@ -61,10 +61,16 @@ class OGL_Entity {
 			);
 
 		// Get fields from join tables :
-		foreach ($joins as $table => $columns) {
+		foreach ($this->joins as $table => $srct) {
+			// Get columns involved in a join :
+			$colj = array();
+			foreach ($srct as $srcc => $trgc)
+				$colj[$trgc] = 1;
+
+			// Loop on table columns :
 			$cols = Database::instance()->list_columns($table);
 			foreach($cols as $name => $data)
-				if ( ! array_key_exists($name, $columns)) {
+				if ( ! isset($colj[$name])) {
 					$fields[$name] = array(
 						'phptype'	=> $data['type'],
 						'property'	=> $name,
@@ -89,17 +95,17 @@ class OGL_Entity {
 
 	public function query_init($query, $alias) {
 		// Add entity tables to from :
-		$this->from($query, $alias);
+		$this->query_from($query, $alias);
 
 		// Add pk to select :
 		$this->add_fields($query, $this->pk, $alias);
 
 		// Add conditions on pk to where :
 		if (count($this->pk) === 1)
-			$query->where($this->field_expr($this->pk[0], $alias), 'IN', new Database_Expression(':_pks'));
+			$query->where($this->field_expr($alias, $this->pk[0]), 'IN', new Database_Expression(':_pks'));
 		else
 			foreach($this->pk as $f)
-				$query->where($this->field_expr($f, $alias), '=', new Database_Expression(':_'.$f));
+				$query->where($this->field_expr($alias, $f), '=', new Database_Expression(':_'.$f));
 	}
 
 	public function query_from($query, $alias, $type = 'INNER') {
@@ -180,10 +186,6 @@ class OGL_Entity {
 		$table	= $this->fields[$field]['table'];
 		$column	= $this->fields[$field]['column'];
 		return $alias . '__' . $table . '.' . $column;
-	}
-
-	public function relationship($name) {
-		return OGL_Relationship::get($this->name, $name);
 	}
 
 	public function load_objects(&$rows, $alias = null) {
@@ -292,7 +294,7 @@ class OGL_Entity {
 
 		// Add fields to query :
 		foreach ($req_fields as $name)
-			$query->select(array($alias.'.'.$this->fields[$name]['column'], $alias.':'.$name));
+			$query->select(array($this->field_expr($alias, $name), $alias.':'.$name));
 	}
 }
 

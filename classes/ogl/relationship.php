@@ -90,13 +90,13 @@ class OGL_Relationship {
 		// Loop on target entities :
 		foreach($this->mapping as $trg_entity => $data1) {
 			// Build alias :
-			$trg_alias	= ($trg_entity === $this->to) ? $to_alias : $prefix.'__'.$trg_entity;
+			$trg_alias = ($trg_entity === $this->to) ? $to_alias : $prefix.'__'.$trg_entity;
 
 			// Loop on source entities :
 			$mappings = array();
 			foreach($data1 as $src_entity => $data2) {
 				// Build alias :
-				$src_alias	= ($src_entity === $this->from) ? $from_alias : $prefix.'__'.$src_entity;
+				$src_alias = ($src_entity === $this->from) ? $from_alias : $prefix.'__'.$src_entity;
 
 				// Loop on source entity fields :
 				foreach($data2 as $src_field => $trg_field)
@@ -117,6 +117,18 @@ class OGL_Relationship {
 				isset($row[$trg_key]) ? $row[$trg_key] : null
 			);
 		}
+	}
+
+	public function to() {
+		return OGL_Entity::get($this->to);
+	}
+
+	public function from() {
+		return OGL_Entity::get($this->from);
+	}
+
+	public function reverse() {
+		return OGL_Relationship::get($this->to, $this->reverse);
 	}
 
 	protected function link($src, $trg) {

@@ -87,7 +87,7 @@ class OGL_Entity {
 		return $fk;
 	}
 
-	public function init($query, $alias) {
+	public function query_init($query, $alias) {
 		// Add entity tables to from :
 		$this->from($query, $alias);
 
@@ -102,14 +102,14 @@ class OGL_Entity {
 				$query->where($this->field_expr($f, $alias), '=', new Database_Expression(':_'.$f));
 	}
 
-	public function from($query, $alias) {
+	public function query_from($query, $alias, $type = 'INNER') {
 		// Main table :
 		$query->from(array($this->table, $alias.'__'.$this->table));
 
 		// Join other tables :
 		foreach($this->joins as $table => $columns) {
 			$table_alias = $alias.'__'.$table;
-			$query->join(array($table, $table_alias), 'INNER');
+			$query->join(array($table, $table_alias), $type);
 			foreach($columns as $column => $data) {
 				list($table2, $column2) = $data;
 				$query->on($table_alias.'.'.$column, '=', $alias.'__'.$table2.'.'.$column2);
@@ -117,7 +117,7 @@ class OGL_Entity {
 		}
 	}
 
-	public function join($query, $alias, $mappings, $type = 'INNER') {
+	public function query_join($query, $alias, $mappings, $type = 'INNER') {
 		// Group mappings by tables :
 		$new = array();
 		foreach($mappings as $field => $expr) {
@@ -147,6 +147,33 @@ class OGL_Entity {
 				$query->on($table_alias.'.'.$column, '=', $expr);
 			}
 		}
+	}
+
+	public function query_exec($query, $objects) {
+		// No objects ? No result :
+		if (count($objects) === 0)
+			return array();
+
+		// Get array of pk values :
+		$pkvals = array_map('array_pop', array_map(array($this, 'get_pk'), $objects));
+
+		// Exec query :
+		$result = array();
+		if (count($this->pk) === 1) {
+			// Use only one query :
+			$result = $query->param(':_pks', $pkvals)->execute()->as_array();
+		}
+		else {
+			// Use one query for each object and aggregate results :
+			foreach($pkvals as $pkval) {
+				foreach($pkval as $f => $val)
+					$query->param( ':_'.$f, $val);
+				$rows = $query->execute()->as_array();
+				if (count($rows) >= 1)
+					array_merge($result, $rows);
+			}
+		}
+		return $result;
 	}
 
 	public function field_expr($alias, $field) {

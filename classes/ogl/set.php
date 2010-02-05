@@ -22,31 +22,10 @@ class OGL_Set {
 	}
 
 	public function init_query($query) {
-		$this->entity->init($query, $alias);
+		$this->entity->query_init($query, $alias);
 	}
 
 	public function exec_query($query) {
-		$cpk = count($this->entity->pk);
-		if ($cpk === 1) {
-			// Use only one query :
-			$pkvals = array_map('array_pop', $this->get_pkvals());
-			$result = $query->param(':_pks', $pkvals)->execute()->as_array();
-		}
-		else {
-			// Use one query for each object in src_set and aggregate results :
-			$result = array();
-			foreach(get_pkvals() as $pkval) {
-				foreach($pkval as $f => $val)
-					$query->param( ':_'.$f, $val);
-				$rows = $query->execute()->as_array();
-				if (count($rows) >= 1)
-					array_merge($result, $rows);
-			}
-		}
-		return $result;
-	}
-
-	protected function get_pkvals() {
-		return array_map(array($this->entity, 'get_pk'), $this->objects);
+		$this->entity->query_exec($query, $this->objects);
 	}
 }

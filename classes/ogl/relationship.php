@@ -63,23 +63,21 @@ class OGL_Relationship {
 
 	protected function default_mapping() {
 		$mapping = array();
-		$from	 = OGL_entity::get($this->from);
-		$to		 = OGL_Entity::get($this->to);
 		switch (substr($this->name, -1)) {
 			case 'Z':
 				$pivot = ($this->from < $this->to) ? $this->from.'2'.$this->to : $this->to.'2'.$this->from;
-				foreach($from->fk as $src => $trg) $mapping[$src] = $pivot.'.'.$trg;
-				foreach($to->fk   as $trg => $src) $mapping[$pivot.'.'.$src] = $trg;
+				foreach($this->from()->fk as $src => $trg) $mapping[$src] = $pivot.'.'.$trg;
+				foreach($this->to()->fk   as $trg => $src) $mapping[$pivot.'.'.$src] = $trg;
 				break;
 			case 'S':
-				$mapping = $from->fk;
+				$mapping = $this->from()->fk;
 				break;
 			case '1':
-				$pk = array_values($from->pk);
+				$pk = array_values($this->from()->pk);
 				$mapping = array_combine($pk, $pk);
 				break;
 			default :
-				$mapping = array_flip($to->fk);
+				$mapping = array_flip($this->to()->fk);
 		}
 		return $mapping;
 	}

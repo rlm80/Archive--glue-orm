@@ -29,11 +29,6 @@ class OGL_Relationship {
 
 		// Turn mapping into something easier to work with :
 		$this->adapt_mapping();
-
-		// Turn properties into objects where appropriate :
-		$this->reverse	= OGL_Relationship::get($this->to, $this->reverse);
-		$this->from		= OGL_Entity::get($this->from);
-		$this->to		= OGL_Entity::get($this->to);
 	}
 
 	protected function default_to() {
@@ -94,16 +89,14 @@ class OGL_Relationship {
 
 		// Loop on target entities :
 		foreach($this->mapping as $trg_entity => $data1) {
-			// Get entity object and build alias :
-			$trg_entity = OGL_Entity::get($trg_entity);
-			$trg_alias	= ($trg_entity === $this->to) ? $to_alias : $prefix.'__'.$trg_entity->name;
+			// Build alias :
+			$trg_alias	= ($trg_entity === $this->to) ? $to_alias : $prefix.'__'.$trg_entity;
 
 			// Loop on source entities :
 			$mappings = array();
 			foreach($data1 as $src_entity => $data2) {
-				// Get entity object and build alias :
-				$src_entity = OGL_Entity::get($src_entity);
-				$src_alias	= ($src_entity === $this->from) ? $from_alias : $prefix.'__'.$src_entity->name;
+				// Build alias :
+				$src_alias	= ($src_entity === $this->from) ? $from_alias : $prefix.'__'.$src_entity;
 
 				// Loop on source entity fields :
 				foreach($data2 as $src_field => $trg_field)

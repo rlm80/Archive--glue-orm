@@ -4,7 +4,7 @@ class OGL_Command_Load extends OGL_Command {
 	protected $entity;
 
 	public function  __construct($entity, $trg_set, $trg_fields) {
-		parent::__construct(new OGL_Set_Root(), $trg_set, $trg_fields);
+		parent::__construct($trg_fields, $trg_set);
 		$this->entity = $entity;
 	}
 
@@ -15,6 +15,11 @@ class OGL_Command_Load extends OGL_Command {
 
 	protected function is_root() {
 		return true;
+	}
+
+	protected function query_exec()	{
+		$query = $this->query_get();
+		return $query->execute()->as_array();
 	}
 
 	// Add table, requested fields, db builder calls : (TODO simplifier ça)

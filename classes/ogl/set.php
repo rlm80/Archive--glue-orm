@@ -21,11 +21,11 @@ class OGL_Set {
 		$this->entity	= $entity;
 	}
 
-	public function init_query($query) {
+	public function query_init($query) {
 		$this->entity->query_init($query, $this->name);
 	}
 
-	public function exec_query($query) {
+	public function query_exec($query) {
 		return $this->entity->query_exec($query, $this->objects);
 	}
 }

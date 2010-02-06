@@ -2,10 +2,13 @@
 
 class OGL_Command_With extends OGL_Command {
 	protected $relationship;
+	protected $src_set;
 
 	public function  __construct($relationship, $src_set, $trg_set, $trg_fields) {
-		parent::__construct($src_set, $trg_set, $trg_fields);
-		$this->relationship	= $relationship;
+		parent::__construct($trg_fields, $trg_set);
+		$this->relationship				= $relationship;
+		$this->src_set					= $src_set;
+		$this->src_set->commands[]		= $this;
 	}
 
 	protected function is_valid_call($method, $args) {
@@ -14,6 +17,11 @@ class OGL_Command_With extends OGL_Command {
 			return false;
 		else
 			return ! (array_search($method, $allowed) === FALSE);
+	}
+
+	protected function query_exec()	{
+		$query = $this->query_get();
+		return $this->src_set->query_exec($query);
 	}
 
 	protected function query_init() {

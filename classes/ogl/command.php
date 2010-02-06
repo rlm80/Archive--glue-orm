@@ -13,8 +13,7 @@ abstract class OGL_Command {
 	// Query builder calls :
 	protected $calls = array();
 
-	// Sets :
-	protected $src_set;
+	// Set :
 	protected $trg_set;
 
 	// Chain :
@@ -28,11 +27,9 @@ abstract class OGL_Command {
 	protected $trg_fields;
 
 	// Constructor :
-	public function  __construct($src_set, $trg_set, $trg_fields) {
+	public function  __construct($trg_fields, $trg_set) {
 		$this->trg_fields	= $trg_fields;
-		$this->src_set		= $src_set;
 		$this->trg_set		= $trg_set;
-		$this->src_set->commands[]		= $this;
 		$this->trg_set->root_command	= $this;
 	}
 
@@ -46,33 +43,20 @@ abstract class OGL_Command {
 	}
 
 	protected function execute_self() {
-		// Get query :
-		$query = $this->get_query();
-
-		// Execute query(ies) :
-		$result = $this->src_set->exec_query($query);
+		// Execute query :
+		$result = $this->query_exec();
 
 		// Load objects and relationships from result set :
-		if ( ! $this->src_set instanceof OGL_Set_Root) $this->src_set->entity->load_objects($result, $this->src_set->name);
+		if ( ! $this->src_set instanceof OGL_Set_Root) $this->src_set->entity->load_objects($result, $this->src_set->name); // TODO
 		foreach($this->get_chain() as $command) {
-			// Alias :
-			$src_alias	= $command->src_set->name;
-			$trg_alias	= $command->trg_set->name;
-
-			// Objects :
+			$trg_alias = $command->trg_set->name;
 			$command->trg_set->objects = $command->trg_set->entity->load_objects($result, $trg_alias);
-
-			// Relationships :
 			$command->load_relationships($result);
 		}
 	}
 
 	protected function get_children() {
 		return $this->trg_set->commands;
-	}
-	
-	protected function get_parent() {
-		return $this->src_set->root_command;
 	}
 
 	protected function get_chain() {
@@ -104,19 +88,26 @@ abstract class OGL_Command {
 		return array($chain, $roots);
 	}
 
-	protected function get_query() {
-		if ( ! isset($this->query)) {
-			$query = $this->query_init();
-			foreach($this->get_chain() as $command)
-				$command->query_contrib($query);
-			$this->query = DB::query(Database::SELECT, $query->compile(Database::instance()));
-		}
+	abstract protected function query_exec();
+
+	protected function query_get() {
+		if ( ! isset($this->query))
+			$this->query = $this->query_build();
 		return $this->query;
+	}
+
+	protected function query_build() {
+		$query = $this->query_init();
+		foreach($this->get_chain() as $command)
+			$command->query_contrib($query);
+		return DB::query(Database::SELECT, $query->compile(Database::instance()));
 	}
 
 	protected function query_init() {
 		return DB::select();
 	}
+
+	abstract protected function query_contrib($query);
 
 	// Decides whether or not the DB query builder call is valid for current command type.
 	protected function is_valid_call($method, $args) {
@@ -138,7 +129,6 @@ abstract class OGL_Command {
 			call_user_func_array(array($query, $call[0]), $call[1]);
 	}
 
-	abstract protected function query_contrib($query);
 	abstract protected function is_root();
 }
 

@@ -16,6 +16,12 @@ class OGL_Command_With extends OGL_Command {
 			return ! (array_search($method, $allowed) === FALSE);
 	}
 
+	protected function query_init() {
+		$query = parent::query_init();
+		$this->relationship->from()->query_init($query, $this->src_set->name);
+		return $query;
+	}
+
 	protected function query_contrib($query) {
 		$src_alias	= $this->src_set->name;
 		$trg_alias	= $this->trg_set->name;

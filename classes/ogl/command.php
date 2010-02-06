@@ -105,17 +105,17 @@ abstract class OGL_Command {
 	}
 
 	protected function get_query() {
-		if ( ! isset($this->query))
-			$this->query = $this->build_query();
+		if ( ! isset($this->query)) {
+			$query = $this->query_init();
+			foreach($this->get_chain() as $command)
+				$command->query_contrib($query);
+			$this->query = DB::query(Database::SELECT, $query->compile(Database::instance()));
+		}
 		return $this->query;
 	}
 
-	protected function build_query() {
-		$query = DB::select();
-		$this->src_set->init_query($query);
-		foreach($this->get_chain() as $command)
-			$command->query_contrib($query);
-		return DB::query(Database::SELECT, $query->compile(Database::instance()));
+	protected function query_init() {
+		return DB::select();
 	}
 
 	// Decides whether or not the DB query builder call is valid for current command type.

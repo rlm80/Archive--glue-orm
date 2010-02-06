@@ -31,6 +31,18 @@ class OGL_Relationship {
 		$this->adapt_mapping();
 	}
 
+	public function to() {
+		return OGL_Entity::get($this->to);
+	}
+
+	public function from() {
+		return OGL_Entity::get($this->from);
+	}
+
+	public function reverse() {
+		return OGL_Relationship::get($this->to, $this->reverse);
+	}
+
 	protected function default_to() {
 		switch (substr($this->name, -1)) {
 			case 'Z': case 'S': case '1': $to = substr($this->name, 0, -1); break;
@@ -118,18 +130,6 @@ class OGL_Relationship {
 				isset($row[$trg_key]) ? $row[$trg_key] : null
 			);
 		}
-	}
-
-	public function to() {
-		return OGL_Entity::get($this->to);
-	}
-
-	public function from() {
-		return OGL_Entity::get($this->from);
-	}
-
-	public function reverse() {
-		return OGL_Relationship::get($this->to, $this->reverse);
 	}
 
 	protected function link($src, $trg) {

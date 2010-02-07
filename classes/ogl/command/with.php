@@ -19,6 +19,19 @@ class OGL_Command_With extends OGL_Command {
 			return ! (array_search($method, $allowed) === FALSE);
 	}
 
+	protected function load_result($result) {
+		$this->src_set->entity->load_objects($result, $this->src_set->name);
+		parent::load_result($result);
+	}
+
+	protected function load_result_self($result) {
+		parent::load_result_self($result);
+		$src_alias	= $this->src_set->name;
+		$trg_alias	= $this->trg_set->name;
+		$this->relationship->load_relationships($result, $src_alias, $trg_alias);
+		$this->relationship->reverse()->load_relationships($result, $trg_alias, $src_alias);
+	}
+
 	protected function query_exec()	{
 		$query = $this->query_get();
 		return $this->src_set->query_exec($query);
@@ -36,13 +49,6 @@ class OGL_Command_With extends OGL_Command {
 		$this->relationship->join($query, $src_alias, $trg_alias);
 		$this->relationship->to()->add_fields($query, $this->trg_fields, $trg_alias);
 		$this->apply_calls($query);
-	}
-
-	protected function load_relationships($result) {
-		$src_alias	= $this->src_set->name;
-		$trg_alias	= $this->trg_set->name;
-		$this->relationship->load_relationships($result, $src_alias, $trg_alias);
-		$this->relationship->reverse()->load_relationships($result, $trg_alias, $src_alias);
 	}
 
 	protected function is_root() {

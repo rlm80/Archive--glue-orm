@@ -47,12 +47,16 @@ abstract class OGL_Command {
 		$result = $this->query_exec();
 
 		// Load objects and relationships from result set :
-		if ( ! $this->src_set instanceof OGL_Set_Root) $this->src_set->entity->load_objects($result, $this->src_set->name); // TODO
-		foreach($this->get_chain() as $command) {
-			$trg_alias = $command->trg_set->name;
-			$command->trg_set->objects = $command->trg_set->entity->load_objects($result, $trg_alias);
-			$command->load_relationships($result);
-		}
+		$this->load_result($result);
+	}
+
+	protected function load_result($result) {
+		foreach($this->get_chain() as $command)
+			$command->load_result_self($result);
+	}
+
+	protected function load_result_self($result) {
+		$this->trg_set->objects = $this->trg_set->entity->load_objects($result, $this->trg_set->name);
 	}
 
 	protected function get_children() {
@@ -88,8 +92,6 @@ abstract class OGL_Command {
 		return array($chain, $roots);
 	}
 
-	abstract protected function query_exec();
-
 	protected function query_get() {
 		if ( ! isset($this->query))
 			$this->query = $this->query_build();
@@ -107,6 +109,8 @@ abstract class OGL_Command {
 		return DB::select();
 	}
 
+	abstract protected function query_exec();
+	
 	abstract protected function query_contrib($query);
 
 	// Decides whether or not the DB query builder call is valid for current command type.

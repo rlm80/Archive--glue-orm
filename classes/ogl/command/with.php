@@ -25,11 +25,20 @@ class OGL_Command_With extends OGL_Command {
 	}
 
 	protected function load_result_self($result) {
+		// Load objects :
 		parent::load_result_self($result);
-		$src_alias	= $this->src_set->name;
-		$trg_alias	= $this->trg_set->name;
-		$this->relationship->load_relationships($result, $src_alias, $trg_alias);
-		$this->relationship->reverse()->load_relationships($result, $trg_alias, $src_alias);
+
+		// Load relationships :
+		$direct		= $this->relationship;
+		$reverse	= $this->relationship->reverse();
+		$src_key = $this->src_set->name.':__object';
+		$trg_key = $this->trg_set->name.':__object';
+		foreach($result as $row) {
+			$src_obj = isset($row[$src_key]) ? $row[$src_key] : null;
+			$trg_obj = isset($row[$trg_key]) ? $row[$trg_key] : null;
+			$direct->link($src_obj, $trg_obj);
+			$reverse->link($trg_obj, $src_obj);
+		}
 	}
 
 	protected function query_exec()	{
@@ -39,7 +48,7 @@ class OGL_Command_With extends OGL_Command {
 
 	protected function query_init() {
 		$query = parent::query_init();
-		$this->relationship->from()->query_init($query, $this->src_set->name);
+		$this->src_set->query_init($query);
 		return $query;
 	}
 

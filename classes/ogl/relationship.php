@@ -120,19 +120,7 @@ class OGL_Relationship {
 		}
 	}
 
-
-	public function load_relationships($result, $src_alias, $trg_alias)	{
-		$src_key = $src_alias.':__object';
-		$trg_key = $trg_alias.':__object';
-		foreach($result as $row) {
-			$this->link(
-				isset($row[$src_key]) ? $row[$src_key] : null,
-				isset($row[$trg_key]) ? $row[$trg_key] : null
-			);
-		}
-	}
-
-	protected function link($src, $trg) {
+	public function link($src, $trg) {
 		if (isset($src)) {
 			$property = $this->property;
 			if ($this->multiple && ! isset($src->$property))

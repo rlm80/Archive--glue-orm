@@ -6,13 +6,12 @@ class OGL_Entity {
 
 	// Properties that may NOT be set in children classes :
 	public $name;
-	
-	// Properties that may be set in children classes :
 	public $pk;
 	public $fk;
-	public $table;
-	public $joins;
+	
+	// Properties that may be set in children classes :
 	public $model;
+	public $tables;
 	public $fields;
 
 	// Identity map :
@@ -24,16 +23,18 @@ class OGL_Entity {
 
 		// Init properties (order matters !!!) :
 		if ( ! isset($this->model))		$this->model	= $this->default_model();
-		if ( ! isset($this->table))		$this->table	= $this->default_table();
-		if ( ! isset($this->joins))		$this->joins	= $this->default_joins();
-
-		// Turn joins into something easier to work with :
-		$this->adapt_joins();
-
-		// Keep initializing properties :
+		if ( ! isset($this->tables))	$this->tables	= $this->default_tables();
 		if ( ! isset($this->fields))	$this->fields	= $this->default_fields();
-		if ( ! isset($this->pk))		$this->pk		= $this->default_pk();
-		if ( ! isset($this->fk))		$this->fk		= $this->default_fk();
+
+		// Extract pk and fk from fields array for efficiency purposes :
+		$this->pk = array();
+		$this->fk = array();
+		foreach($this->fields as $name => $data) {
+			if (isset($data['pk'])) {
+				$this->pk[]			= $name;
+				$this->fk[$name]	= $this->name.'_'.$name;
+			}
+		}
 	}
 
 	protected function default_model() {
@@ -41,56 +42,35 @@ class OGL_Entity {
 		return class_exists($model) ? $model : 'StdClass';
 	}
 
-	protected function default_table() {
-		return inflector::plural($this->name);
-	}
-
-	protected function default_joins() {
-		return array();
+	protected function default_tables() {
+		return array(inflector::plural($this->name));
 	}
 
 	protected function default_fields() {
-		// Get fields from main table :
-		$cols = Database::instance()->list_columns($this->table);
-		foreach ($cols as $name => $data)
-			$fields[$name] = array(
-				'phptype'	=> $data['type'],
-				'property'	=> $name,
-				'table'		=> $this->table,
-				'column'	=> $name
-			);
+		// Init fields array :
+		$fields  = array();
 
-		// Get fields from join tables :
-		foreach ($this->joins as $table => $srct) {
-			// Get columns involved in a join :
-			$colj = array();
-			foreach ($srct as $srcc => $trgc)
-				$colj[$trgc] = 1;
-
-			// Loop on table columns :
+		// Loop on tables, look up columns properties by database introspection and populate fields array :
+		foreach($this->tables as $table) {
 			$cols = Database::instance()->list_columns($table);
-			foreach($cols as $name => $data)
-				if ( ! isset($colj[$name])) {
-					$fields[$name] = array(
+			foreach($cols as $col => $data) {
+				if ( ! isset($fields[$col])) {
+					// Field doesn't exist yet ? Create it :
+					$fields[$col] = array(
+						'columns'	=> array($table.'.'.$col),
 						'phptype'	=> $data['type'],
-						'property'	=> $name,
-						'table'		=> $table,
-						'column'	=> $name
+						'property'	=> $col
 					);
+					if (isset($data['key']) && $data['key'] === 'PRI')
+						$fields[$col]['pk'] = $this->name.'_'.$col;
 				}
+				else
+					// Otherwise add current column to its columns list :
+					$fields[$col]['columns'][] = $table.'.'.$col;
+			}
 		}
 
 		return $fields;
-	}
-
-	protected function default_pk() {
-		return array('id');
-	}
-
-	protected function default_fk() {
-		foreach ($this->pk as $f)
-			$fk[$f] = $this->name.'_'.$f;
-		return $fk;
 	}
 
 	public function query_init($query, $alias) {

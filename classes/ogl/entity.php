@@ -119,9 +119,11 @@ class OGL_Entity {
 				$query->where($this->field_expr($alias, $f), '=', new Database_Expression(':_'.$f));
 	}
 
-	public function query_from($query, $alias, $type = 'INNER') {
+	public function query_from($query, $alias, $type = 'LEFT') {
 		// First table :
-		$query->from(array($this->tables[0], $alias.'__'.$this->tables[0]));
+		$table			= $this->tables[0];
+		$table_alias	= $alias.'__'.$table;
+		$query->from(array($table, $table_alias));
 
 		// Join other tables :
 		$count = count($this->tables);
@@ -142,34 +144,47 @@ class OGL_Entity {
 		}
 	}
 
-	public function query_join($query, $alias, $mappings, $type = 'INNER') {
-		// Group mappings by tables :
+	public function query_join($query, $alias, $ons, $type = 'LEFT') {
+		// Group $ons array by tables and columns :
 		$new = array();
-		foreach($mappings as $field => $expr) {
-			$table = $this->fields[$field]['table'];
-			$new[$table][$field] = $expr;
+		foreach($ons as $field => $expr) {
+			list($table, $column) = explode('.', $this->fields[$field]['columns'][0]);
+			$new[$table][$column] = $expr;
 		}
-		$mappings = $new;
+		$ons = $new;
 
-		// Join main table :
-		$table_alias = $alias.'__'.$this->table;
-		$query->join(array($this->table, $table_alias), $type);
-		foreach($mappings[$this->table] as $field => $expr) {
-			$column = $this->fields[$field]['column'];
-			$query->on($table_alias.'.'.$column, '=', $expr);
-		}
+		// Reorder tables so that the ones that appear in mappings come first :
+		$tables = array_keys($ons);
+		foreach($this->tables as $t)
+			if ( ! in_array($t, $tables))
+				$tables[] = $t;
+
+		// First table :
+		$table			= $tables[0];
+		$table_alias	= $alias.'__'.$table;
+		$query->join(array($table, $table_alias), $type);
+		if (isset($ons[$table]))
+			foreach($ons[$table] as $col => $expr)
+				$query->on($table_alias.'.'.$col, '=', $expr);
 
 		// Join other tables :
-		foreach($this->joins as $table => $columns) {
-			$table_alias = $alias.'__'.$table;
-			$query->join(array($table, $table_alias), $type);
-			foreach($columns as $column => $data) {
-				list($table2, $column2) = $data;
-				$query->on($table_alias.'.'.$column, '=', $alias.'__'.$table2.'.'.$column2);
-			}
-			foreach($mappings[$table] as $field => $expr) {
-				$column = $this->fields[$field]['column'];
-				$query->on($table_alias.'.'.$column, '=', $expr);
+		$count = count($tables);
+		if ($count > 1) {
+			for ($i = 1; $i < $count; $i++) {
+				$table1 = $tables[$i];
+				$table1_alias = $alias.'__'.$table1;
+				$query->join(array($table1, $table1_alias), $type);
+				for($j = $i - 1; $j >= 0; $j--) {
+					$table2 = $tables[$j];
+					$table2_alias = $alias.'__'.$table2;
+					if (isset($this->joins[$table1][$table2])) {
+						foreach($this->joins[$table1][$table2] as $col1 => $col2)
+							$query->on($table1_alias.'.'.$col1, '=', $table2_alias.'.'.$col2);
+					}
+				}
+				if (isset($ons[$table1]))
+					foreach($ons[$table1] as $col => $expr)
+						$query->on($table1_alias.'.'.$col, '=', $expr);
 			}
 		}
 	}
@@ -202,8 +217,7 @@ class OGL_Entity {
 	}
 
 	public function field_expr($alias, $field) {
-		$table	= $this->fields[$field]['table'];
-		$column	= $this->fields[$field]['column'];
+		list($table, $column) = explode('.', $this->fields[$field]['columns'][0]);
 		return $alias . '__' . $table . '.' . $column;
 	}
 

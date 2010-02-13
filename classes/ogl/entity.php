@@ -27,7 +27,7 @@ class OGL_Entity {
 		if ( ! isset($this->tables))	$this->tables	= $this->default_tables();
 		if ( ! isset($this->fields))	$this->fields	= $this->default_fields();
 
-		// Check field array format :
+		// Check fields array format :
 		foreach($this->fields as $name => $data) {
 			// Check columns property :
 			if ( ! isset($data['columns']) || ! is_array($data['columns']))
@@ -49,14 +49,19 @@ class OGL_Entity {
 
 		// Build joins array :
 		$this->joins = array();
-		foreach($this->fields as $name => $data) {
-			$columns = $data['columns'];
-			for ($i = 0; $i < count($columns); $i++) {
-				list($table_i, $col_i) = explode('.', $columns[$i]);
-				for ($j = 0; $j < count($columns); $j++) {
-					if ($j !== $i) {
-						list($table_j, $col_j) = explode('.', $columns[$j]);
-						$this->joins[$table_i][$table_j][$col_i] = $col_j;
+		if (count($this->tables) > 1) {
+			foreach($this->fields as $name => $data) {
+				$columns	= $data['columns'];
+				$count		= count($columns);
+				if ($count > 1) {
+					for ($i = 0; $i < $count; $i++) {
+						list($table_i, $col_i) = explode('.', $columns[$i]);
+						for ($j = 0; $j < $count; $j++) {
+							if ($j !== $i) {
+								list($table_j, $col_j) = explode('.', $columns[$j]);
+								$this->joins[$table_i][$table_j][$col_i] = $col_j;
+							}
+						}
 					}
 				}
 			}
@@ -115,16 +120,24 @@ class OGL_Entity {
 	}
 
 	public function query_from($query, $alias, $type = 'INNER') {
-		// Main table :
-		$query->from(array($this->table, $alias.'__'.$this->table));
+		// First table :
+		$query->from(array($this->tables[0], $alias.'__'.$this->tables[0]));
 
 		// Join other tables :
-		foreach($this->joins as $table => $columns) {
-			$table_alias = $alias.'__'.$table;
-			$query->join(array($table, $table_alias), $type);
-			foreach($columns as $column => $data) {
-				list($table2, $column2) = $data;
-				$query->on($table_alias.'.'.$column, '=', $alias.'__'.$table2.'.'.$column2);
+		$count = count($this->tables);
+		if ($count > 1) {
+			for ($i = 1; $i < $count; $i++) {
+				$table1 = $this->tables[$i];
+				$table1_alias = $alias.'__'.$table1;
+				$query->join(array($table1, $table1_alias), $type);
+				for($j = $i - 1; $j >= 0; $j--) {
+					$table2 = $this->tables[$j];
+					$table2_alias = $alias.'__'.$table2;
+					if (isset($this->joins[$table1][$table2])) {
+						foreach($this->joins[$table1][$table2] as $col1 => $col2)
+							$query->on($table1_alias.'.'.$col1, '=', $table2_alias.'.'.$col2);
+					}
+				}
 			}
 		}
 	}

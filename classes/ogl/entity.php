@@ -4,10 +4,11 @@ class OGL_Entity {
 	// Entity cache :
 	static protected $entities = array();
 
-	// Properties that may NOT be set in children classes :
+	// Properties that may NOT be set in children classes (either passed to constructor or deduced from other properties) :
 	public $name;
 	public $pk;
 	public $fk;
+	public $joins;
 	
 	// Properties that may be set in children classes :
 	public $model;
@@ -26,6 +27,16 @@ class OGL_Entity {
 		if ( ! isset($this->tables))	$this->tables	= $this->default_tables();
 		if ( ! isset($this->fields))	$this->fields	= $this->default_fields();
 
+		// Check field array format :
+		foreach($this->fields as $name => $data) {
+			// Check columns property :
+			if ( ! isset($data['columns']) || ! is_array($data['columns']))
+				throw new Kohana_Exception("No 'columns' property found for field '".$this->name.".".$name."' or property not an array.");
+			foreach ($data['columns'] as $col)
+				if (strpos($col, '.') === false)
+					throw new Kohana_Exception("Format 'table.column' expected, '".$col."' found instead.");
+		}
+
 		// Extract pk and fk from fields array for efficiency purposes :
 		$this->pk = array();
 		$this->fk = array();
@@ -33,6 +44,21 @@ class OGL_Entity {
 			if (isset($data['pk'])) {
 				$this->pk[]			= $name;
 				$this->fk[$name]	= $this->name.'_'.$name;
+			}
+		}
+
+		// Build joins array :
+		$this->joins = array();
+		foreach($this->fields as $name => $data) {
+			$columns = $data['columns'];
+			for ($i = 0; $i < count($columns); $i++) {
+				list($table_i, $col_i) = explode('.', $columns[$i]);
+				for ($j = 0; $j < count($columns); $j++) {
+					if ($j !== $i) {
+						list($table_j, $col_j) = explode('.', $columns[$j]);
+						$this->joins[$table_i][$table_j][$col_i] = $col_j;
+					}
+				}
 			}
 		}
 	}
@@ -223,21 +249,6 @@ class OGL_Entity {
 			$pk[$f] = $obj->$property;
 		}
 		return $pk;
-	}
-
-	private function adapt_joins() {
-		// Build new joins array :
-		$new = array();
-		foreach($this->joins as $src => $trg) {
-			// Add missing table prefixes :
-			if (strpos('.', $src) === FALSE) $src = $this->table . '.' . $src;
-			if (strpos('.', $trg) === FALSE) throw new Kohana_Exception("Format 'table.column' expected, '".$trg."' found instead.");
-
-			// Add data to new joins array :
-			list($trg_table, $trg_column) = explode('.', $trg);
-			$new[$trg_table][$trg_column] = explode('.', $src);
-		}
-		$this->joins = $new;
 	}
 
 	// Lazy loads an entity object, stores it in cache, and returns it :

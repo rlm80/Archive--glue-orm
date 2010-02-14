@@ -125,12 +125,12 @@ class OGL_Entity {
 		$count = count($this->tables);
 		if ($count > 1) {
 			for ($i = 1; $i < $count; $i++) {
-				$table1 = $this->tables[$i];
-				$table1_alias = $alias.'__'.$table1;
+				$table1			= $this->tables[$i];
+				$table1_alias	= $alias.'__'.$table1;
 				$query->join(array($table1, $table1_alias), $type);
 				for($j = $i - 1; $j >= 0; $j--) {
-					$table2 = $this->tables[$j];
-					$table2_alias = $alias.'__'.$table2;
+					$table2			= $this->tables[$j];
+					$table2_alias	= $alias.'__'.$table2;
 					if (isset($this->joins[$table1][$table2])) {
 						foreach($this->joins[$table1][$table2] as $col1 => $col2)
 							$query->on($table1_alias.'.'.$col1, '=', $table2_alias.'.'.$col2);
@@ -167,12 +167,12 @@ class OGL_Entity {
 		$count = count($tables);
 		if ($count > 1) {
 			for ($i = 1; $i < $count; $i++) {
-				$table1 = $tables[$i];
-				$table1_alias = $alias.'__'.$table1;
+				$table1			= $tables[$i];
+				$table1_alias	= $alias.'__'.$table1;
 				$query->join(array($table1, $table1_alias), $type);
 				for($j = $i - 1; $j >= 0; $j--) {
-					$table2 = $tables[$j];
-					$table2_alias = $alias.'__'.$table2;
+					$table2			= $tables[$j];
+					$table2_alias	= $alias.'__'.$table2;
 					if (isset($this->joins[$table1][$table2])) {
 						foreach($this->joins[$table1][$table2] as $col1 => $col2)
 							$query->on($table1_alias.'.'.$col1, '=', $table2_alias.'.'.$col2);

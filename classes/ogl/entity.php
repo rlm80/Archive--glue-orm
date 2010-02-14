@@ -307,12 +307,6 @@ class OGL_Entity {
 		return $object;
 	}
 
-	protected function object_set($object, $field, $val) {
-		$data = $this->fields[$field];
-		settype($val, $data['phptype']);
-		$object->{$data['property']} = $val;
-	}
-
 	// Returns an associative array with pk field names and values for the given object
 	public function get_pk($obj) {
 		$fields = $this->fields;

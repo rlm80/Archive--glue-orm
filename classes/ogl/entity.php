@@ -109,7 +109,7 @@ class OGL_Entity {
 		$this->query_from($query, $alias);
 
 		// Add pk to select :
-		$this->add_fields($query, $this->pk, $alias);
+		$this->query_fields($query, $this->pk, $alias);
 
 		// Add conditions on pk to where :
 		if (count($this->pk) === 1)
@@ -153,7 +153,7 @@ class OGL_Entity {
 		}
 		$ons = $new;
 
-		// Reorder tables so that the ones that appear in mappings come first :
+		// Reorder tables so that the ones that appear in "$ons" come first :
 		$tables = array_keys($ons);
 		foreach($this->tables as $t)
 			if ( ! in_array($t, $tables))
@@ -214,6 +214,25 @@ class OGL_Entity {
 			}
 		}
 		return $result;
+	}
+
+	public function query_fields($query, $req_fields, $alias) {
+		// Null req_fields means all fields are required :
+		if ( ! isset($req_fields))
+			$req_fields = array_keys($this->fields);
+		else {
+			// Add pk :
+			$req_fields = array_merge($req_fields, array_diff($this->pk, $req_fields));
+
+			// Check fields :
+			$errors = array_diff($req_fields, array_keys($this->fields));
+			if (count($errors) > 0)
+				throw new Kohana_Exception("The following fields do not belong to entity ".$this->name." : ".implode(',', $errors));
+		}
+
+		// Add fields to query :
+		foreach ($req_fields as $name)
+			$query->select(array($this->field_expr($alias, $name), $alias.':'.$name));
 	}
 
 	public function field_expr($alias, $field) {
@@ -294,25 +313,6 @@ class OGL_Entity {
 		else
 			$entity	= new self($name);
 		return $entity;
-	}
-
-	public function add_fields($query, $req_fields, $alias) {
-		// Null req_fields means all fields are required :
-		if ( ! isset($req_fields))
-			$req_fields = array_keys($this->fields);
-		else {
-			// Add pk :
-			$req_fields = array_merge($req_fields, array_diff($this->pk, $req_fields));
-
-			// Check fields :
-			$errors = array_diff($req_fields, array_keys($this->fields));
-			if (count($errors) > 0)
-				throw new Kohana_Exception("The following fields do not belong to entity ".$this->name." : ".implode(',', $errors));
-		}
-
-		// Add fields to query :
-		foreach ($req_fields as $name)
-			$query->select(array($this->field_expr($alias, $name), $alias.':'.$name));
 	}
 }
 

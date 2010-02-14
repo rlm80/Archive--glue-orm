@@ -56,7 +56,7 @@ class OGL_Command_With extends OGL_Command {
 		$src_alias	= $this->src_set->name;
 		$trg_alias	= $this->trg_set->name;
 		$this->relationship->join($query, $src_alias, $trg_alias);
-		$this->relationship->to()->add_fields($query, $this->trg_fields, $trg_alias);
+		$this->relationship->to()->query_fields($query, $this->trg_fields, $trg_alias);
 		$this->apply_calls($query);
 	}
 

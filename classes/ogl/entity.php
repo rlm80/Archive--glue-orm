@@ -9,7 +9,7 @@ class OGL_Entity {
 	public $pk;
 	public $fk;
 	public $joins;
-	
+
 	// Properties that may be set in children classes :
 	public $model;
 	public $tables;
@@ -237,10 +237,20 @@ class OGL_Entity {
 	}
 
 	public function load_objects(&$rows, $alias = null) {
+		// No rows ? Do nothing :
+		if (count($rows) === 0) return;
+
+		// Build columns => fields mapping :
+		$mapping = array();
+		foreach($rows[0] as $col => $val) {
+			list($prefix, $field) = explode(':', $col);
+			if ($prefix === $alias)
+				$mapping[$col] = $field;
+		}
+
 		// Data :
 		$prefix = isset($alias) ? $alias.':' : '';
 		$fields = $this->fields;
-		$class	= $this->model;
 
 		// Get pk string representations of each row :
 		$pks = array();
@@ -257,17 +267,9 @@ class OGL_Entity {
 		$field_names	= array_keys($fields);
 		$diff			= array_diff_key($indexes, $this->map);
 		foreach($diff as $pk => $index) {
-			$row	= $rows[$index];
-			$object = new $class;
-			foreach($field_names as $f) {
-				if (isset($row[$prefix.$f])) {
-					$val = $row[$prefix.$f];
-					settype($val, $fields[$f]['phptype']);
-					$property = $fields[$f]['property'];
-					$object->$property = $val;
-				}
-			}
-			$this->map[$pk] = $object;
+			$vals	= array_intersect_key($rows[$index], $mapping);
+			$array	= array_combine($mapping, $vals);
+			$this->map[$pk] = $this->object_create($array);
 		}
 
 		// Build distinct objects list :
@@ -281,6 +283,34 @@ class OGL_Entity {
 
 		// Return objects :
 		return $distinct;
+	}
+
+	protected function object_create($array) {
+		static $pattern;
+
+		// Create pattern object if one doesn't exist yet :
+		if ( ! isset($pattern)) {
+			$class = $this->model;
+			$pattern = new $class;
+		}
+
+		// Clone pattern object :
+		$object = clone $pattern;
+
+		// Set object properties :
+		foreach($array as $field => $val) {
+			$data = $this->fields[$field];
+			settype($val, $data['phptype']);
+			$object->{$data['property']} = $val;
+		}
+
+		return $object;
+	}
+
+	protected function object_set($object, $field, $val) {
+		$data = $this->fields[$field];
+		settype($val, $data['phptype']);
+		$object->{$data['property']} = $val;
 	}
 
 	// Returns an associative array with pk field names and values for the given object

@@ -105,18 +105,14 @@ class OGL_Entity {
 	}
 
 	public function query_init($query, $alias) {
-		// Add entity tables to from :
 		$this->query_from($query, $alias);
-
-		// Add pk to select :
-		$this->query_fields($query, $this->pk, $alias);
-
-		// Add conditions on pk to where :
+		$this->query_fields($query, $alias, $this->pk);
 		if (count($this->pk) === 1)
 			$query->where($this->field_expr($alias, $this->pk[0]), 'IN', new Database_Expression(':_pks'));
-		else
+		else {
 			foreach($this->pk as $f)
 				$query->where($this->field_expr($alias, $f), '=', new Database_Expression(':_'.$f));
+		}
 	}
 
 	public function query_from($query, $alias, $type = 'LEFT') {
@@ -216,7 +212,7 @@ class OGL_Entity {
 		return $result;
 	}
 
-	public function query_fields($query, $req_fields, $alias) {
+	public function query_fields($query, $alias, $req_fields) {
 		// Null req_fields means all fields are required :
 		if ( ! isset($req_fields))
 			$req_fields = array_keys($this->fields);

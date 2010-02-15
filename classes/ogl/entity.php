@@ -306,16 +306,6 @@ class OGL_Entity {
 		return $object;
 	}
 
-	// Returns an associative array with pk field names and values for the given object
-	public function get_pk($obj) {
-		$fields = $this->fields;
-		foreach($this->pk as $f) {
-			$property = $fields[$f]['property'];
-			$pk[$f] = $obj->$property;
-		}
-		return $pk;
-	}
-
 	// Lazy loads an entity object, stores it in cache, and returns it :
 	static public function get($name) {
 		if( ! isset(self::$entities[$name]))

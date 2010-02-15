@@ -20,7 +20,7 @@ class OGL_Command_With extends OGL_Command {
 	}
 
 	protected function load_result($result) {
-		$this->src_set->entity->load_objects($result, $this->src_set->name);
+		$this->src_set->entity->load_objects($result, $this->src_set->name.':');
 		parent::load_result($result);
 	}
 

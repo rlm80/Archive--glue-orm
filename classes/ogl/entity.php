@@ -236,16 +236,13 @@ class OGL_Entity {
 		return $alias . '__' . $table . '.' . $column;
 	}
 
-	public function load_objects(&$rows, $alias = null) {
+	public function load_objects(&$rows, $prefix = '') {
 		// No rows ? Do nothing :
 		if (count($rows) === 0) return;
 
-		// Fields prefix :
-		$prefix		= isset($alias) ? $alias.':' : '';
-		$len_prefix	= strlen($prefix);
-
 		// Build columns => fields mapping :
 		$mapping = array();
+		$len_prefix	= strlen($prefix);
 		foreach($rows[0] as $col => $val) {
 			if (substr($col, 0, $len_prefix) === $prefix) {
 				$field = substr($col, $len_prefix);

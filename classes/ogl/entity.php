@@ -240,31 +240,34 @@ class OGL_Entity {
 		// No rows ? Do nothing :
 		if (count($rows) === 0) return;
 
+		// Fields prefix :
+		$prefix		= isset($alias) ? $alias.':' : '';
+		$len_prefix	= strlen($prefix);
+
 		// Build columns => fields mapping :
 		$mapping = array();
 		foreach($rows[0] as $col => $val) {
-			list($prefix, $field) = explode(':', $col);
-			if ($prefix === $alias)
+			if (substr($col, 0, $len_prefix) === $prefix) {
+				$field = substr($col, $len_prefix);
+				if ( ! isset($this->fields[$field]))
+					throw new Kohana_Exception("The following field doesn't belong to entity '".$this->name."' : '".$field."'");
 				$mapping[$col] = $field;
+			}
 		}
 
-		// Data :
-		$prefix = isset($alias) ? $alias.':' : '';
-		$fields = $this->fields;
-
 		// Get pk string representations of each row :
-		$pks = array();
-		foreach($this->pk as $f) $cols[$prefix.$f] = 1;
-		$nbr_rows = count($rows);
-		for($i = 0; $i < $nbr_rows; $i++) {
-			$arr = array_intersect_key($rows[$i], $cols);
-			ksort($arr);
-			$pks[$i] = json_encode(array_values($arr));
+		$arr	= array();
+		$pks	= array();
+		$pkcols	= array();
+		foreach($this->pk as $f) $pkcols[] = $prefix.$f;
+		foreach($rows as $row) {
+			foreach($pkcols as $i => $col) $arr[$i] = $row[$col];
+			$pks[] = json_encode($arr);
 		}
 
 		// Add new objects to id map :
 		$indexes		= array_flip($pks); // distinct pk => row index mapping
-		$field_names	= array_keys($fields);
+		$field_names	= array_keys($this->fields);
 		$diff			= array_diff_key($indexes, $this->map);
 		foreach($diff as $pk => $index) {
 			$vals	= array_intersect_key($rows[$index], $mapping);
@@ -277,11 +280,10 @@ class OGL_Entity {
 
 		// Load objects into result set :
 		$key = $prefix.'__object';
-		$objects = array();
 		foreach($pks as $index => $pk)
 			$rows[$index][$key] = $this->map[$pk];
 
-		// Return objects :
+		// Return distinct objects :
 		return $distinct;
 	}
 

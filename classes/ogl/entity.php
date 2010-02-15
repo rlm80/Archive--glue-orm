@@ -70,7 +70,7 @@ class OGL_Entity {
 
 	protected function default_model() {
 		$model = 'OGL_Model_'.ucfirst($this->name);
-		return class_exists($model) ? $model : 'StdClass';
+		return class_exists($model) ? $model : 'stdClass'; // no upper case !
 	}
 
 	protected function default_tables() {
@@ -285,9 +285,11 @@ class OGL_Entity {
 	}
 
 	protected function object_create($array) {
-		static $pattern;
+		// If model is standard PHP object type, this is faster :
+		if ($this->model === 'stdClass') return (object) $array;
 
 		// Create pattern object if one doesn't exist yet :
+		static $pattern;
 		if ( ! isset($pattern)) {
 			$class = $this->model;
 			$pattern = new $class;

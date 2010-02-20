@@ -105,82 +105,73 @@ class OGL_Entity {
 	}
 
 	public function query_init($query, $alias) {
-		$this->query_from($query, $alias);
-		$this->query_fields($query, $alias, $this->pk);
+		// Build conditions array :
+		$conds = array();
 		if (count($this->pk) === 1)
-			$query->where($this->field_expr($alias, $this->pk[0]), 'IN', new Database_Expression(':_pks'));
-		else {
+			$conds[] = array($this->pk[0], 'IN', new Database_Expression(':_pks'));
+		else
 			foreach($this->pk as $f)
-				$query->where($this->field_expr($alias, $f), '=', new Database_Expression(':_'.$f));
-		}
+				$conds[] = array($f, '=', new Database_Expression(':_'.$f));
+		
+		// Add entity to from/where :
+		$this->query_from($query, $alias, $conds);
+		
+		// Add pk to fields :
+		$this->query_fields($query, $alias, $this->pk);
 	}
 
-	public function query_from($query, $alias, $type = 'LEFT') {
-		// First table :
-		$table			= $this->tables[0];
-		$table_alias	= $alias.'__'.$table;
-		$query->from(array($table, $table_alias));
+	public function query_from($query, $alias, $conds = array(), $type = 'LEFT') {
+		return $this->query_add($query, $alias, $conds, 'from', $type);
+	}
 
-		// Join other tables :
-		$count = count($this->tables);
-		if ($count > 1) {
-			for ($i = 1; $i < $count; $i++) {
-				$table1			= $this->tables[$i];
-				$table1_alias	= $alias.'__'.$table1;
-				$query->join(array($table1, $table1_alias), $type);
-				for($j = $i - 1; $j >= 0; $j--) {
-					$table2			= $this->tables[$j];
-					$table2_alias	= $alias.'__'.$table2;
-					if (isset($this->joins[$table1][$table2])) {
-						foreach($this->joins[$table1][$table2] as $col1 => $col2)
-							$query->on($table1_alias.'.'.$col1, '=', $table2_alias.'.'.$col2);
-					}
+	public function query_join($query, $alias, $conds = array(), $type = 'LEFT') {
+		return $this->query_add($query, $alias, $conds, 'join', $type);
+	}
+
+	protected function query_add($query, $alias, $conds, $type_add, $type_join) {
+		// Group $conds array by tables and columns :
+		$new = array();
+		foreach($conds as $cond) {
+			list($field, $op, $expr) = $cond;
+			list($table, $column) = explode('.', $this->fields[$field]['columns'][0]);
+			$new[$table][$column] = array($op, $expr);
+		}
+		$conds = $new;
+
+		// Reorder tables so that the ones that appear in $conds come first :
+		$tables = array_keys($conds);
+		$tables = array_merge($tables, array_diff($this->tables, $tables));
+
+		// Join tables :
+		$count = count($tables);
+		for ($i = 0; $i < $count; $i++) {
+			// Join :
+			$table1			= $tables[$i];
+			$table1_alias	= $alias.'__'.$table1;
+			if ($i === 0 && $type_add === 'from')
+				$query->from(array($table1, $table1_alias));
+			else
+				$query->join(array($table1, $table1_alias), $type_join);
+
+			// Add external join conditions :
+			if (isset($conds[$table1])) {
+				foreach($conds[$table1] as $col => $cond) {
+					list($op, $expr) = $cond;
+					if ($i === 0 && $type_add === 'from')
+						$query->where($table1_alias.'.'.$col, $op, $expr);
+					else
+						$query->on($table1_alias.'.'.$col, $op, $expr);
 				}
 			}
-		}
-	}
 
-	public function query_join($query, $alias, $ons, $type = 'LEFT') {
-		// Group $ons array by tables and columns :
-		$new = array();
-		foreach($ons as $field => $expr) {
-			list($table, $column) = explode('.', $this->fields[$field]['columns'][0]);
-			$new[$table][$column] = $expr;
-		}
-		$ons = $new;
-
-		// Reorder tables so that the ones that appear in "$ons" come first :
-		$tables = array_keys($ons);
-		foreach($this->tables as $t)
-			if ( ! in_array($t, $tables))
-				$tables[] = $t;
-
-		// First table :
-		$table			= $tables[0];
-		$table_alias	= $alias.'__'.$table;
-		$query->join(array($table, $table_alias), $type);
-		if (isset($ons[$table]))
-			foreach($ons[$table] as $col => $expr)
-				$query->on($table_alias.'.'.$col, '=', $expr);
-
-		// Join other tables :
-		$count = count($tables);
-		if ($count > 1) {
-			for ($i = 1; $i < $count; $i++) {
-				$table1			= $tables[$i];
-				$table1_alias	= $alias.'__'.$table1;
-				$query->join(array($table1, $table1_alias), $type);
-				for($j = $i - 1; $j >= 0; $j--) {
-					$table2			= $tables[$j];
-					$table2_alias	= $alias.'__'.$table2;
-					if (isset($this->joins[$table1][$table2])) {
-						foreach($this->joins[$table1][$table2] as $col1 => $col2)
-							$query->on($table1_alias.'.'.$col1, '=', $table2_alias.'.'.$col2);
-					}
+			// Add internal join conditions :
+			for($j = $i - 1; $j >= 0; $j--) {
+				$table2			= $tables[$j];
+				$table2_alias	= $alias.'__'.$table2;
+				if (isset($this->joins[$table1][$table2])) {
+					foreach($this->joins[$table1][$table2] as $col1 => $col2)
+						$query->on($table1_alias.'.'.$col1, '=', $table2_alias.'.'.$col2);
 				}
-				if (isset($ons[$table1]))
-					foreach($ons[$table1] as $col => $expr)
-						$query->on($table1_alias.'.'.$col, '=', $expr);
 			}
 		}
 	}
@@ -191,7 +182,7 @@ class OGL_Entity {
 			return array();
 
 		// Get array of pk values :
-		$pkvals = array_map('array_pop', array_map(array($this, 'get_pk'), $objects));
+		$pkvals = array_map('array_pop', array_map(array($this, 'object_pk'), $objects));
 
 		// Exec query :
 		$result = array();
@@ -306,6 +297,13 @@ class OGL_Entity {
 		}
 
 		return $object;
+	}
+
+	// Returns an associative array with pk field names and values for the given object
+	protected function object_pk($object) {
+		foreach($this->pk as $f)
+			$pk[$f] = $object->{$this->fields[$f]['property']};
+		return $pk;
 	}
 
 	// Lazy loads an entity object, stores it in cache, and returns it :

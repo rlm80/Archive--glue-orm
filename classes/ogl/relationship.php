@@ -28,7 +28,18 @@ class OGL_Relationship {
 		if ( ! isset($this->mapping))	$this->mapping	= $this->default_mapping();
 
 		// Turn mapping into something easier to work with :
-		$this->adapt_mapping();
+		$new = array();
+		foreach($this->mapping as $src => $trg) {
+			// Add missing entity prefixes :
+			if (strpos($src, '.') === FALSE) $src = $this->from . '.' . $src;
+			if (strpos($trg, '.') === FALSE) $trg = $this->to   . '.' . $trg;
+
+			// Add data to new mapping array :
+			list($trg_entity, $trg_field) = explode('.', $trg);
+			list($src_entity, $src_field) = explode('.', $src);
+			$new[$trg_entity][$src_entity][$trg_field] = $src_field;
+		}
+		$this->mapping = $new;
 	}
 
 	public function to() {
@@ -94,29 +105,29 @@ class OGL_Relationship {
 		return $mapping;
 	}
 
-	public function join($query, $from_alias, $to_alias, $type = 'INNER') {
-		$prefix = $from_alias.'__'.$to_alias;
+	public function join($query, $from_alias, $to_alias, $type = 'LEFT') {
+		$prefix = $from_alias.'__'.$to_alias.'__';
 
 		// Loop on target entities :
 		foreach($this->mapping as $trg_entity => $data1) {
 			// Get entity object and build alias :
 			$trg_entity = OGL_Entity::get($trg_entity);
-			$trg_alias	= ($trg_entity->name === $this->to) ? $to_alias : $prefix.'__'.$trg_entity->name;
+			$trg_alias	= ($trg_entity->name === $this->to) ? $to_alias : $prefix.$trg_entity->name;
 
 			// Loop on source entities :
-			$mappings = array();
+			$conds = array();
 			foreach($data1 as $src_entity => $data2) {
 				// Get entity object and build alias :
 				$src_entity = OGL_Entity::get($src_entity);
-				$src_alias	= ($src_entity->name === $this->from) ? $from_alias : $prefix.'__'.$src_entity->name;
+				$src_alias	= ($src_entity->name === $this->from) ? $from_alias : $prefix.$src_entity->name;
 
 				// Loop on source entity fields :
-				foreach($data2 as $src_field => $trg_field)
-					$mappings[$trg_field] = $src_entity->field_expr($src_alias, $src_field);
+				foreach($data2 as $trg_field => $src_field)
+					$conds[] = array($trg_field, '=', $src_entity->field_expr($src_alias, $src_field));
 			}
 
 			// Join target entity :
-			$trg_entity->query_join($query, $trg_alias, $mappings, $type);
+			$trg_entity->query_join($query, $trg_alias, $conds, $type);
 		}
 	}
 
@@ -134,22 +145,6 @@ class OGL_Relationship {
 					$src->$property = $trg;
 			}
 		}
-	}
-	
-	private function adapt_mapping() {
-		// Build new mapping array :
-		$new = array();
-		foreach($this->mapping as $src => $trg) {
-			// Add missing entity prefixes :
-			if (strpos($src, '.') === FALSE) $src = $this->from . '.' . $src;
-			if (strpos($trg, '.') === FALSE) $trg = $this->to   . '.' . $trg;
-
-			// Add data to new mapping array :
-			list($trg_entity, $trg_field) = explode('.', $trg);
-			list($src_entity, $src_field) = explode('.', $src);
-			$new[$trg_entity][$src_entity][$src_field] = $trg_field;
-		}
-		$this->mapping = $new;
 	}
 
 	// Lazy loads a relationship object, stores it in cache, and returns it :

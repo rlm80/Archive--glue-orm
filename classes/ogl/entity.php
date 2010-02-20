@@ -219,10 +219,10 @@ class OGL_Entity {
 
 		// Add fields to query :
 		foreach ($req_fields as $name)
-			$query->select(array($this->field_expr($alias, $name), $alias.':'.$name));
+			$query->select(array($this->query_field_expr($alias, $name), $alias.':'.$name));
 	}
 
-	public function field_expr($alias, $field) {
+	public function query_field_expr($alias, $field) {
 		list($table, $column) = explode('.', $this->fields[$field]['columns'][0]);
 		return $alias . '__' . $table . '.' . $column;
 	}

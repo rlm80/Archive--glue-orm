@@ -123,7 +123,7 @@ class OGL_Relationship {
 
 				// Loop on source entity fields :
 				foreach($data2 as $trg_field => $src_field)
-					$conds[] = array($trg_field, '=', $src_entity->field_expr($src_alias, $src_field));
+					$conds[] = array($trg_field, '=', $src_entity->query_field_expr($src_alias, $src_field));
 			}
 
 			// Join target entity :

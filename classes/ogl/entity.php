@@ -227,7 +227,7 @@ class OGL_Entity {
 		return $alias . '__' . $table . '.' . $column;
 	}
 
-	public function load_objects(&$rows, $prefix = '') {
+	public function object_load(&$rows, $prefix = '') {
 		// No rows ? Do nothing :
 		if (count($rows) === 0) return;
 

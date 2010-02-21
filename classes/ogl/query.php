@@ -35,7 +35,7 @@ class OGL_Query {
 		static $pat = '/\s*([a-zA-Z][a-zA-Z0-9_]*)\.([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)\s*/';
 		if (preg_match($pat, $expr, $matches) > 0) {
 			$src_set		= $this->get_set($matches[1]);
-			$relationship	= OGL_Relationship::get($src_set->entity->name, $matches[2]);
+			$relationship	= $src_set->entity->relationship($matches[2]);
 			$trg_set		= $this->create_set($matches[3], OGL_Entity::get($relationship->to));
 			$command		= new OGL_Command_With($relationship, $src_set, $trg_set, $fields);
 		}

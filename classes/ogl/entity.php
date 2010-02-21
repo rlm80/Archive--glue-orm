@@ -5,15 +5,15 @@ class OGL_Entity {
 	static protected $entities = array();
 
 	// Properties that may NOT be set in children classes (either passed to constructor or deduced from other properties) :
-	public $name;
-	public $pk;
-	public $fk;
-	public $joins;
+	protected $name;
+	protected $pk;
+	protected $fk;
+	protected $joins;
 
 	// Properties that may be set in children classes :
-	public $model;
-	public $tables;
-	public $fields;
+	protected $model;
+	protected $tables;
+	protected $fields;
 
 	// Identity map :
 	protected $map = array();
@@ -316,6 +316,23 @@ class OGL_Entity {
 		foreach($this->pk as $f)
 			$pk[$f] = $object->{$this->fields[$f]['property']};
 		return $pk;
+	}
+
+	// Return relationship $name of this entity.
+	public function relationship($name) {
+		return OGL_Relationship::get($this->name, $name);
+	}
+
+	public function name() {
+		return $this->name;
+	}
+
+	public function pk() {
+		return $this->pk;
+	}
+
+	public function fk() {
+		return $this->fk;
 	}
 
 	// Lazy loads an entity object, stores it in cache, and returns it :

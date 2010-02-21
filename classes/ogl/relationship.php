@@ -89,18 +89,18 @@ class OGL_Relationship {
 		switch (substr($this->name, -1)) {
 			case 'Z':
 				$pivot = ($this->from < $this->to) ? $this->from.'2'.$this->to : $this->to.'2'.$this->from;
-				foreach($this->from()->fk as $src => $trg) $mapping[$src] = $pivot.'.'.$trg;
-				foreach($this->to()->fk   as $trg => $src) $mapping[$pivot.'.'.$src] = $trg;
+				foreach($this->from()->fk() as $src => $trg) $mapping[$src] = $pivot.'.'.$trg;
+				foreach($this->to()->fk()   as $trg => $src) $mapping[$pivot.'.'.$src] = $trg;
 				break;
 			case 'S':
-				$mapping = $this->from()->fk;
+				$mapping = $this->from()->fk();
 				break;
 			case '1':
-				$pk = array_values($this->from()->pk);
+				$pk = array_values($this->from()->pk());
 				$mapping = array_combine($pk, $pk);
 				break;
 			default :
-				$mapping = array_flip($this->to()->fk);
+				$mapping = array_flip($this->to()->fk());
 		}
 		return $mapping;
 	}
@@ -109,17 +109,17 @@ class OGL_Relationship {
 		$prefix = $from_alias.'__'.$to_alias.'__';
 
 		// Loop on target entities :
-		foreach($this->mapping as $trg_entity => $data1) {
+		foreach($this->mapping as $trg_entity_name => $data1) {
 			// Get entity object and build alias :
-			$trg_entity = OGL_Entity::get($trg_entity);
-			$trg_alias	= ($trg_entity->name === $this->to) ? $to_alias : $prefix.$trg_entity->name;
+			$trg_entity = OGL_Entity::get($trg_entity_name);
+			$trg_alias	= ($trg_entity_name === $this->to) ? $to_alias : $prefix.$trg_entity_name;
 
 			// Loop on source entities :
 			$conds = array();
-			foreach($data1 as $src_entity => $data2) {
+			foreach($data1 as $src_entity_name => $data2) {
 				// Get entity object and build alias :
-				$src_entity = OGL_Entity::get($src_entity);
-				$src_alias	= ($src_entity->name === $this->from) ? $from_alias : $prefix.$src_entity->name;
+				$src_entity = OGL_Entity::get($src_entity_name);
+				$src_alias	= ($src_entity_name === $this->from) ? $from_alias : $prefix.$src_entity_name;
 
 				// Loop on source entity fields :
 				foreach($data2 as $trg_field => $src_field)

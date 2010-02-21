@@ -43,10 +43,10 @@ class OGL_Relationship {
 	}
 
 	// Getters :
+	public function reverse()	{	return OGL_Relationship::get($this->to, $this->reverse); }
 	public function to()		{	return OGL_Entity::get($this->to);		}
 	public function from()		{	return OGL_Entity::get($this->from);	}
-	public function reverse()	{	return OGL_Relationship::get($this->to, $this->reverse); }
-	public function multiple()	{	return $this->multiple;	}
+	public function multiple()	{	return $this->multiple;					}
 
 	protected function default_to() {
 		switch (substr($this->name, -1)) {

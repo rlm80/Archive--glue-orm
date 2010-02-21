@@ -323,17 +323,10 @@ class OGL_Entity {
 		return OGL_Relationship::get($this->name, $name);
 	}
 
-	public function name() {
-		return $this->name;
-	}
-
-	public function pk() {
-		return $this->pk;
-	}
-
-	public function fk() {
-		return $this->fk;
-	}
+	// Getters :
+	public function name()	{ return $this->name;	}
+	public function pk()	{ return $this->pk;		}
+	public function fk()	{ return $this->fk;		}
 
 	// Lazy loads an entity object, stores it in cache, and returns it :
 	static public function get($name) {

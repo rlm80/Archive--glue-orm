@@ -36,7 +36,7 @@ class OGL_Query {
 		if (preg_match($pat, $expr, $matches) > 0) {
 			$src_set		= $this->get_set($matches[1]);
 			$relationship	= $src_set->entity->relationship($matches[2]);
-			$trg_set		= $this->create_set($matches[3], OGL_Entity::get($relationship->to));
+			$trg_set		= $this->create_set($matches[3], $relationship->to());
 			$command		= new OGL_Command_With($relationship, $src_set, $trg_set, $fields);
 		}
 		else

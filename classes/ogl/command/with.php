@@ -61,6 +61,6 @@ class OGL_Command_With extends OGL_Command {
 	}
 
 	protected function is_root() {
-		return $this->relationship->multiple;
+		return $this->relationship->multiple();
 	}
 }

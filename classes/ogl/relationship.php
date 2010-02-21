@@ -5,15 +5,15 @@ class OGL_Relationship {
 	static protected $relationships = array();
 
 	// Properties that may NOT be set in children classes :
-	public $from;
-	public $name;
+	protected $from;
+	protected $name;
 
 	// Properties that may be set in children classes :
-	public $to;
-	public $property;
-	public $reverse;
-	public $multiple;
-	public $mapping;
+	protected $to;
+	protected $property;
+	protected $reverse;
+	protected $multiple;
+	protected $mapping;
 
 	protected function __construct($from, $name) {
 		// Set properties :
@@ -42,17 +42,11 @@ class OGL_Relationship {
 		$this->mapping = $new;
 	}
 
-	public function to() {
-		return OGL_Entity::get($this->to);
-	}
-
-	public function from() {
-		return OGL_Entity::get($this->from);
-	}
-
-	public function reverse() {
-		return OGL_Relationship::get($this->to, $this->reverse);
-	}
+	// Getters :
+	public function to()		{	return OGL_Entity::get($this->to);		}
+	public function from()		{	return OGL_Entity::get($this->from);	}
+	public function reverse()	{	return OGL_Relationship::get($this->to, $this->reverse); }
+	public function multiple()	{	return $this->multiple;	}
 
 	protected function default_to() {
 		switch (substr($this->name, -1)) {

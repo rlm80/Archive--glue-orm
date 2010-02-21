@@ -46,6 +46,7 @@ class OGL_Entity {
 				$this->fk[$name]	= $this->name.'_'.$name;
 			}
 		}
+		$this->multipk = (count($this->pk ) > 1);
 
 		// Build joins array :
 		$this->joins = array();
@@ -181,8 +182,8 @@ class OGL_Entity {
 		if (count($objects) === 0)
 			return array();
 
-		// Get array of pk values :
-		$pkvals = array_map('array_pop', array_map(array($this, 'object_pk'), $objects));
+		// Get pk values :
+		$pkvals = array_map(array($this, 'object_pk'), $objects);
 
 		// Exec query :
 		$result = array();
@@ -276,31 +277,42 @@ class OGL_Entity {
 	}
 
 	protected function object_create($array) {
-		// If model is standard PHP object type, this is faster :
-		if ($this->model === 'stdClass') return (object) $array;
-
-		// Create pattern object if one doesn't exist yet :
 		static $pattern;
+
+		// Create pattern object :
 		if ( ! isset($pattern)) {
 			$class = $this->model;
 			$pattern = new $class;
 		}
 
-		// Clone pattern object :
+		// Create object :
 		$object = clone $pattern;
 
 		// Set object properties :
 		foreach($array as $field => $val) {
 			$data = $this->fields[$field];
-			settype($val, $data['phptype']);
-			$object->{$data['property']} = $val;
+			$prop = $data['property'];
+			$type = $data['phptype'];
+			if ($type !== 'string')
+				settype($val, $type);
+			$object->$prop = $val;
 		}
 
 		return $object;
 	}
 
-	// Returns an associative array with pk field names and values for the given object
+	// For single column pk, returns the pk value.
+	// For multiple columns pk, returns an associative array with pk field names and values.
 	protected function object_pk($object) {
+		// Efficiently deal with single column pk :
+		static $prop;
+		if (isset($prop)) return $object->$prop;
+		if (count($this->pk) === 1) {
+			$prop = $this->fields[$this->pk[0]]['property'];
+			return $object->$prop;
+		}
+
+		// Multiple column pk :
 		foreach($this->pk as $f)
 			$pk[$f] = $object->{$this->fields[$f]['property']};
 		return $pk;

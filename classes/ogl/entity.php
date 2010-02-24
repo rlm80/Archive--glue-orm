@@ -12,8 +12,11 @@ class OGL_Entity {
 
 	// Properties that may be set in children classes :
 	protected $model;
-	protected $tables;
+	protected $tables ;
 	protected $fields;
+
+	// Internal details :
+	private $partial;
 
 	// Identity map :
 	protected $map = array();
@@ -46,7 +49,6 @@ class OGL_Entity {
 				$this->fk[$name]	= $this->name.'_'.$name;
 			}
 		}
-		$this->multipk = (count($this->pk ) > 1);
 
 		// Build joins array :
 		$this->joins = array();
@@ -121,60 +123,52 @@ class OGL_Entity {
 		$this->query_fields($query, $alias, $this->pk);
 	}
 
-	public function query_from($query, $alias, $conds = array(), $type = 'LEFT') {
-		return $this->query_add($query, $alias, $conds, 'from', $type);
+	public function query_from($query, $alias) {
+		$partial = $this->query_partial($alias);
+		$query->from(DB::expr($partial));
 	}
 
-	public function query_join($query, $alias, $conds = array(), $type = 'LEFT') {
-		return $this->query_add($query, $alias, $conds, 'join', $type);
+	public function query_join($query, $alias, $type = 'LEFT') {
+		$partial = $this->query_partial($alias);
+		$query->join(DB::expr($partial), $type);
+		
 	}
 
-	protected function query_add($query, $alias, $conds, $type_add, $type_join) {
-		// Group $conds array by tables and columns :
-		$new = array();
-		foreach($conds as $cond) {
-			list($field, $op, $expr) = $cond;
-			list($table, $column) = explode('.', $this->fields[$field]['columns'][0]);
-			$new[$table][$column] = array($op, $expr);
-		}
-		$conds = $new;
+	public function query_partial($alias) {
+		// Init partial cache :
+		if ( ! isset($this->partial)) {
+			// Init fake select query (we need this hack because query builder doesn't support nested joins) :
+			$fake = DB::select();
 
-		// Reorder tables so that the ones that appear in $conds come first :
-		$tables = array_keys($conds);
-		$tables = array_merge($tables, array_diff($this->tables, $tables));
+			// Add tables :
+			$count = count($this->tables);
+			for ($i = 0; $i < $count; $i++) {
+				// Join :
+				$table1			= $this->tables[$i];
+				$table1_alias	= '%ALIAS%'.'__'.$table1;
+				if ($i === 0)
+					$fake->from(array($table1, $table1_alias));
+				else
+					$fake->join(array($table1, $table1_alias), 'INNER');
 
-		// Join tables :
-		$count = count($tables);
-		for ($i = 0; $i < $count; $i++) {
-			// Join :
-			$table1			= $tables[$i];
-			$table1_alias	= $alias.'__'.$table1;
-			if ($i === 0 && $type_add === 'from')
-				$query->from(array($table1, $table1_alias));
-			else
-				$query->join(array($table1, $table1_alias), $type_join);
-
-			// Add external join conditions :
-			if (isset($conds[$table1])) {
-				foreach($conds[$table1] as $col => $cond) {
-					list($op, $expr) = $cond;
-					if ($i === 0 && $type_add === 'from')
-						$query->where($table1_alias.'.'.$col, $op, $expr);
-					else
-						$query->on($table1_alias.'.'.$col, $op, $expr);
+				// Add internal join conditions :
+				for($j = $i - 1; $j >= 0; $j--) {
+					$table2			= $this->tables[$j];
+					$table2_alias	= '%ALIAS%'.'__'.$table2;
+					if (isset($this->joins[$table1][$table2])) {
+						foreach($this->joins[$table1][$table2] as $col1 => $col2)
+							$fake->on($table1_alias.'.'.$col1, '=', $table2_alias.'.'.$col2);
+					}
 				}
 			}
 
-			// Add internal join conditions :
-			for($j = $i - 1; $j >= 0; $j--) {
-				$table2			= $tables[$j];
-				$table2_alias	= $alias.'__'.$table2;
-				if (isset($this->joins[$table1][$table2])) {
-					foreach($this->joins[$table1][$table2] as $col1 => $col2)
-						$query->on($table1_alias.'.'.$col1, '=', $table2_alias.'.'.$col2);
-				}
-			}
+			// Capture partial query :
+			$sql			= $fake->compile(Database::instance());
+			list(, $sql)	= explode('FROM ', $sql);
+			$this->partial	= ($count > 1) ? '('.$sql.')' : $sql;
 		}
+
+		return str_replace('%ALIAS%', $alias, $this->partial);
 	}
 
 	public function query_exec($query, $objects) {

@@ -121,7 +121,11 @@ class OGL_Relationship {
 			}
 
 			// Join target entity :
-			$trg_entity->query_join($query, $trg_alias, $conds, $type);
+			$trg_entity->query_join($query, $trg_alias, $type);
+			foreach($conds as $cond) {
+				list($field, $op, $expr) = $cond;
+				$query->on($trg_entity->query_field_expr($trg_alias, $field), $op, $expr);
+			}
 		}
 	}
 

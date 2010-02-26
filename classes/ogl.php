@@ -1,6 +1,11 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 class OGL {
+	// Constants :
+	const ROOT	= 1;
+	const SLAVE	= 2;
+	const AUTO	= 3;
+
 	// Single OGL instance :
 	protected static $instance;
 

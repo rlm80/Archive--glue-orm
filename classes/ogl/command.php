@@ -24,13 +24,17 @@ abstract class OGL_Command {
 	protected $query;
 
 	// Trg fields
-	protected $trg_fields;
+	protected $fields;
+
+	// Root or slave command ?
+	protected $root;
 
 	// Constructor :
-	public function  __construct($trg_fields, $trg_set) {
-		$this->trg_fields	= $trg_fields;
-		$this->trg_set		= $trg_set;
-		$this->trg_set->root_command	= $this;
+	public function  __construct($fields, $trg_set) {
+		$this->root		= OGL::AUTO;
+		$this->fields	= $fields;
+		$this->trg_set	= $trg_set;
+		$this->trg_set->root_command = $this;
 	}
 
 	public function execute() {
@@ -110,14 +114,7 @@ abstract class OGL_Command {
 	}
 
 	abstract protected function query_exec();
-	
 	abstract protected function query_contrib($query);
-
-	// Decides whether or not the DB query builder call is valid for current command type.
-	protected function is_valid_call($method, $args) {
-		static $allowed = array('param','parameters');
-		return ! (array_search($method, $allowed) === FALSE);
-	}
 
 	// Stores a DB query builder call on the call stack :
 	public function store_call($method, $args) {
@@ -131,6 +128,14 @@ abstract class OGL_Command {
 	protected function apply_calls($query) {
 		foreach($this->calls as $call)
 			call_user_func_array(array($query, $call[0]), $call[1]);
+	}
+
+	public function slave() {
+		$this->root = OGL::SLAVE;
+	}
+
+	public function root() {
+		$this->root = OGL::ROOT;
 	}
 
 	abstract protected function is_root();

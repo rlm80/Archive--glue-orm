@@ -14,6 +14,7 @@ class OGL_Entity {
 	protected $model;
 	protected $tables ;
 	protected $fields;
+	protected $db;
 
 	// Internal details :
 	private $partial;
@@ -26,6 +27,7 @@ class OGL_Entity {
 		$this->name	= $name;
 
 		// Init properties (order matters !!!) :
+		if ( ! isset($this->db))		$this->db		= $this->default_db();
 		if ( ! isset($this->model))		$this->model	= $this->default_model();
 		if ( ! isset($this->tables))	$this->tables	= $this->default_tables();
 		if ( ! isset($this->fields))	$this->fields	= $this->default_fields();
@@ -69,6 +71,10 @@ class OGL_Entity {
 				}
 			}
 		}
+	}
+
+	protected function default_db() {
+		return 'default';
 	}
 
 	protected function default_model() {
@@ -321,6 +327,7 @@ class OGL_Entity {
 	public function name()	{ return $this->name;	}
 	public function pk()	{ return $this->pk;		}
 	public function fk()	{ return $this->fk;		}
+	public function db()	{ return $this->db;		}
 
 	// Lazy loads an entity object, stores it in cache, and returns it :
 	static public function get($name) {

@@ -46,6 +46,18 @@ class OGL_Query {
 		return $this;
 	}
 
+	// Sets active command as root :
+	public function root() {
+		$this->active_command->root();
+		return $this;
+	}
+
+	// Sets active command as slave :
+	public function slave() {
+		$this->active_command->slave();
+		return $this;
+	}
+
 	// Creates a new set, add it to cache, and returns it :
 	protected function create_set($name, $entity) {
 		if(isset($this->sets[$name]))

@@ -4,8 +4,8 @@ class OGL_Command_With extends OGL_Command {
 	protected $relationship;
 	protected $src_set;
 
-	public function  __construct($relationship, $src_set, $trg_set, $fields) {
-		parent::__construct($fields, $trg_set);
+	public function  __construct($relationship, $src_set, $trg_set) {
+		parent::__construct($trg_set);
 		$this->relationship			= $relationship;
 		$this->src_set				= $src_set;
 		$this->src_set->commands[]	= $this;
@@ -62,9 +62,9 @@ class OGL_Command_With extends OGL_Command {
 
 	protected function is_root() {
 		switch ($this->root) {
-			case OGL::AUTO :	$is_root = $this->relationship->multiple(); break;
-			case OGL::ROOT :	$is_root = true;	break;
-			case OGL::SLAVE :	$is_root = false;	break;
+			case OGL_Command::AUTO :	$is_root = $this->relationship->multiple(); break;
+			case OGL_Command::ROOT :	$is_root = true;	break;
+			case OGL_Command::SLAVE :	$is_root = false;	break;
 			default : throw new Kohana_Exception("Invalid value for root property in a command.");
 		}
 		return $is_root;

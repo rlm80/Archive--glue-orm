@@ -14,11 +14,11 @@ class OGL {
 		return self::$instance;
 	}
 
-	public static function load($expr) {
-		return self::instance()->_load($expr);
+	public static function load($entity_name, &$set) {
+		return self::instance()->_load($entity_name, $set);
 	}
 
-	protected function _load($expr) {
-		return new OGL_Query($expr);
+	protected function _load($entity_name, &$set) {
+		return new OGL_Query($entity_name, $set);
 	}
 }

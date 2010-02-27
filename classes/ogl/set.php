@@ -29,6 +29,10 @@ class OGL_Set implements Iterator, Countable {
 		return $this->entity->query_exec($query, $this->objects);
 	}
 
+	public function to_array() {
+		return $objects;
+	}
+
 	// Iterator, Countable :
 	public function rewind()	{reset($this->objects);				}
     public function current()	{return current($this->objects);	}

@@ -18,31 +18,26 @@ class OGL_Query {
 	protected $active_command;
 
 	// Constructor, creates a load command :
-	public function __construct($expr, $fields = null) {
-		static $pat = '/\s*([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)\s*/';
-		if (preg_match($pat, $expr, $matches) > 0) {
-			$entity		= OGL_Entity::get(inflector::singular($matches[1]));
-			$trg_set	= $this->create_set($matches[2], $entity);
-		}
-		else
-			throw new Kohana_Exception("Expression '".$expr."' is not valid.");
-		$this->root				= new OGL_Command_Load($entity, $trg_set, $fields);
-		$this->active_command	= $this->root;
+	public function __construct($entity_name, &$set) {
+		$entity = OGL_Entity::get($entity_name);
+		$set = $this->create_set($entity);
+		$this->root = new OGL_Command_Load($entity, $set);
+		$this->active_command = $this->root;
 	}
 
 	// Creates a with command :
-	public function with($expr, $fields = null) {
-		static $pat = '/\s*([a-zA-Z][a-zA-Z0-9_]*)\.([a-zA-Z][a-zA-Z0-9_]*)\s+([a-zA-Z][a-zA-Z0-9_]*)\s*/';
-		if (preg_match($pat, $expr, $matches) > 0) {
-			$src_set		= $this->get_set($matches[1]);
-			$relationship	= $src_set->entity->relationship($matches[2]);
-			$trg_set		= $this->create_set($matches[3], $relationship->to());
-			$command		= new OGL_Command_With($relationship, $src_set, $trg_set, $fields);
-		}
-		else
-			throw new Kohana_Exception("Expression '".$expr."' is not valid.");
+	public function with($src_set, $relationship, &$trg_set) {
+		// Check src_set existence among sets of current query :
+		if ( ! in_array($src_set, $this->sets))
+			throw new Kohana_Exception("Unknown set given as source of with command.");
+		
+		// Create trg_set and command :
+		$relationship	= $src_set->entity->relationship($relationship);
+		$trg_set		= $this->create_set($relationship->to());
+		$command		= new OGL_Command_With($relationship, $src_set, $trg_set);
 		$this->active_command	= $command;
 
+		// Return query for chainability :
 		return $this;
 	}
 
@@ -59,20 +54,12 @@ class OGL_Query {
 	}
 
 	// Creates a new set, add it to cache, and returns it :
-	protected function create_set($name, $entity) {
-		if(isset($this->sets[$name]))
-			throw new Kohana_Exception("Cannot redefine set '".$name."'.");
-		else
-			$this->sets[$name] = new OGL_Set($name, $entity);
+	protected $set_number = 0;
+	protected function create_set($entity) {
+		$this->set_number ++;
+		$name = 's' . $this->set_number;
+		$this->sets[$name] = new OGL_Set($name, $entity);
 		return $this->sets[$name];
-	}
-
-	// Gets an existing set from cache :
-	protected function get_set($name) {
-		if( ! isset($this->sets[$name]))
-			throw new Kohana_Exception("Set '".$name."' is not defined yet.");
-		else
-			return $this->sets[$name];
 	}
 
 	// Store all unknown function calls in active command :

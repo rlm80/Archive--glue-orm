@@ -35,9 +35,8 @@ abstract class OGL_Command {
 	const AUTO	= 3;
 
 	// Constructor :
-	public function  __construct($fields, $trg_set) {
+	public function  __construct($trg_set) {
 		$this->root		= OGL_Command::AUTO;
-		$this->fields	= $fields;
 		$this->trg_set	= $trg_set;
 		$this->trg_set->root_command = $this;
 	}

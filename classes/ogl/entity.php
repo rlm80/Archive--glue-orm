@@ -250,12 +250,21 @@ class OGL_Entity {
 		$pkcols	= array();
 		foreach($this->pk as $f) $pkcols[] = $prefix.$f;
 		foreach($rows as $row) {
-			foreach($pkcols as $i => $col) $arr[$i] = $row[$col];
-			$pks[] = json_encode($arr);
+			$no_obj = true;
+			foreach($pkcols as $i => $col) {
+				if (isset($row[$col]) && $row[$col] !== null) {
+					$arr[$i] = $row[$col];
+					$no_obj = false;
+				}
+				else
+					$arr[$i] = null;
+			}
+			$pks[] = $no_obj ? 0 : json_encode($arr);
 		}
 
 		// Add new objects to id map :
-		$indexes		= array_flip($pks); // distinct pk => row index mapping
+		$indexes		= array_flip($pks); // Distinct pk => row index mapping
+		unset($indexes[0]);					// Remove key that represents "no object".
 		$field_names	= array_keys($this->fields);
 		$diff			= array_diff_key($indexes, $this->map);
 		foreach($diff as $pk => $index) {
@@ -269,8 +278,9 @@ class OGL_Entity {
 
 		// Load objects into result set :
 		$key = $prefix.'__object';
-		foreach($pks as $index => $pk)
-			$rows[$index][$key] = $this->map[$pk];
+		foreach($pks as $index => $pk) {
+			$rows[$index][$key] = ($pk === 0) ? null : $this->map[$pk];
+		}
 
 		// Return distinct objects :
 		return $distinct;

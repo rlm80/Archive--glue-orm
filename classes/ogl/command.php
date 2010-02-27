@@ -29,9 +29,14 @@ abstract class OGL_Command {
 	// Root or slave command ?
 	protected $root;
 
+	// Constants :
+	const ROOT	= 1;
+	const SLAVE	= 2;
+	const AUTO	= 3;
+
 	// Constructor :
 	public function  __construct($fields, $trg_set) {
-		$this->root		= OGL::AUTO;
+		$this->root		= OGL_Command::AUTO;
 		$this->fields	= $fields;
 		$this->trg_set	= $trg_set;
 		$this->trg_set->root_command = $this;
@@ -131,11 +136,11 @@ abstract class OGL_Command {
 	}
 
 	public function slave() {
-		$this->root = OGL::SLAVE;
+		$this->root = OGL_Command::SLAVE;
 	}
 
 	public function root() {
-		$this->root = OGL::ROOT;
+		$this->root = OGL_Command::ROOT;
 	}
 
 	abstract protected function is_root();

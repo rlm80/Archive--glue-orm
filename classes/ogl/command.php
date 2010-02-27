@@ -54,12 +54,12 @@ abstract class OGL_Command {
 		$this->load_result($result);
 	}
 
-	protected function load_result($result) {
+	protected function load_result(&$result) {
 		foreach($this->get_chain() as $command)
 			$command->load_result_self($result);
 	}
 
-	protected function load_result_self($result) {
+	protected function load_result_self(&$result) {
 		$this->trg_set->objects = $this->trg_set->entity->object_load($result, $this->trg_set->name.':');
 	}
 

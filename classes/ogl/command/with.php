@@ -19,12 +19,12 @@ class OGL_Command_With extends OGL_Command {
 			return ! (array_search($method, $allowed) === FALSE);
 	}
 
-	protected function load_result($result) {
-		$this->src_set->entity->object_load($result, $this->src_set->name.':');
+	protected function load_result(&$result) {
+		$this->relationship->from()->object_load($result, $this->src_set->name.':');
 		parent::load_result($result);
 	}
 
-	protected function load_result_self($result) {
+	protected function load_result_self(&$result) {
 		// Load objects :
 		parent::load_result_self($result);
 

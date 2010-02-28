@@ -53,13 +53,13 @@ class OGL_Query {
 		return $this;
 	}
 
-	// Creates a new set, add it to cache, and returns it :
+	// Creates a new set, adds it to cache, and returns it :
 	protected $set_number = 0;
 	protected function create_set($entity) {
-		$this->set_number ++;
-		$name = 's' . $this->set_number;
-		$this->sets[$name] = new OGL_Set($name, $entity);
-		return $this->sets[$name];
+		$name = $entity->name() . ($this->set_number ++);
+		$set = new OGL_Set($name, $entity);
+		$this->sets[] = $set;
+		return $set;
 	}
 
 	// Store all unknown function calls in active command :

@@ -11,7 +11,8 @@
 
 abstract class OGL_Command {
 	// Query builder calls :
-	protected $calls = array();
+	protected $order_by = array();
+	protected $where = array();
 
 	// Set :
 	protected $trg_set;
@@ -117,22 +118,28 @@ abstract class OGL_Command {
 		return DB::select();
 	}
 
+	protected function query_contrib($query) {
+		$this->query_contrib_fields($query);
+		$this->query_contrib_from($query);
+		$this->query_contrib_joins($query);
+		$this->query_contrib_where($query);
+		$this->query_contrib_order_by($query);
+	}
+
+	protected function query_contrib_fields($query) {
+		$this->trg_set->entity->query_fields($query, $this->trg_set->name, $this->fields);
+	}
+
+	protected function query_contrib_order_by($query) {
+		foreach($this->order_by as $ob)
+			$this->trg_set->entity->query_order_by($query, $this->trg_set->name, $ob['field'], $ob['asc']);
+	}
+
+	protected function query_contrib_from($query) { }
+	protected function query_contrib_joins($query) { }
+	protected function query_contrib_where($query) { }
+
 	abstract protected function query_exec();
-	abstract protected function query_contrib($query);
-
-	// Stores a DB query builder call on the call stack :
-	public function store_call($method, $args) {
-		if ($this->is_valid_call($method, $args))
-			$this->calls[] = array($method, $args);
-		else
-			throw new Kohana_Exception("Call to method '".$method."' is invalid in this context.");
-	}
-
-	// Applies all DB builder calls to given query :
-	protected function apply_calls($query) {
-		foreach($this->calls as $call)
-			call_user_func_array(array($query, $call[0]), $call[1]);
-	}
 
 	public function slave() {
 		$this->root = OGL_Command::SLAVE;
@@ -140,6 +147,30 @@ abstract class OGL_Command {
 
 	public function root() {
 		$this->root = OGL_Command::ROOT;
+	}
+
+	public function order_by($field, $asc) {
+		$this->trg_set->entity->fields_validate(array($field));
+		$this->order_by[] = array('field' => $field, 'asc' => $asc);
+	}
+
+	public function fields() {
+		// If fields recieved as a list of strings, turn it to an array :
+		$args = func_get_args();
+		$fields = is_array($args[0]) ? $fields = $args[0] : $args;
+
+		// Validate and set fields :
+		$this->trg_set->entity->fields_validate($fields);
+		$this->fields = $fields;
+	}
+
+	public function not_fields() {
+		// If fields recieved as a list of strings, turn it to an array :
+		$args = func_get_args();
+		$fields = is_array($args[0]) ? $fields = $args[0] : $args;
+
+		// Set fields :
+		$this->fields = $this->trg_set->entity->fields_opposite($fields);
 	}
 
 	abstract protected function is_root();

@@ -16,12 +16,14 @@ class OGL_Command_Load extends OGL_Command {
 		$query = $this->query_get();
 		return $query->execute()->as_array();
 	}
-
-	// Add table, requested fields, db builder calls : (TODO simplifier ça)
-	protected function query_contrib($query) {
+	
+	protected function query_contrib_from($query) {
 		$this->entity->query_from($query, $this->trg_set->name);
-		$this->entity->query_fields($query, $this->trg_set->name, $this->fields);
-		$this->apply_calls($query);
+	}
+
+	protected function query_contrib_where($query) {
+		foreach($this->where as $w)
+			$this->trg_set->entity->query_order_by($query, $this->trg_set->name);
 	}
 	
 	protected function load_relationships($result) {}

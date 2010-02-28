@@ -30,7 +30,7 @@ class OGL_Set implements Iterator, Countable {
 	}
 
 	public function to_array() {
-		return $objects;
+		return $this->objects;
 	}
 
 	// Iterator, Countable :

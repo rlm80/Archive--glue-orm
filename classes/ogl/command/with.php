@@ -57,7 +57,7 @@ class OGL_Command_With extends OGL_Command {
 		$trg_alias	= $this->trg_set->name;
 		$this->relationship->join($query, $src_alias, $trg_alias);
 		$this->relationship->to()->query_fields($query, $trg_alias, $this->fields);
-		$this->apply_calls($query);
+		parent::query_contrib($query);
 	}
 
 	protected function is_root() {

@@ -41,18 +41,6 @@ class OGL_Query {
 		return $this;
 	}
 
-	// Sets active command as root :
-	public function root() {
-		$this->active_command->root();
-		return $this;
-	}
-
-	// Sets active command as slave :
-	public function slave() {
-		$this->active_command->slave();
-		return $this;
-	}
-
 	// Creates a new set, adds it to cache, and returns it :
 	protected $set_number = 0;
 	protected function create_set($entity) {
@@ -60,12 +48,6 @@ class OGL_Query {
 		$set = new OGL_Set($name, $entity);
 		$this->sets[] = $set;
 		return $set;
-	}
-
-	// Store all unknown function calls in active command :
-	public function __call($method, $args) {
-		$this->active_command->store_call($method, $args);
-		return $this;
 	}
 
 	// Executes load query :
@@ -78,5 +60,20 @@ class OGL_Query {
 		foreach($this->sets as $set)
 			$result[] = $set->objects;
 		return $result;
+	}
+
+	// Forward calls to active command :
+	public function root() { $this->active_command->root(); return $this; }
+	public function slave()	{ $this->active_command->slave(); return $this;	}
+	public function order_by($field, $asc = OGL::ASC) { $this->active_command->order_by($field, $asc); return $this; }
+	public function fields() {
+		$args = func_get_args();
+		call_user_func_array(array($this->active_command, 'fields'), $args);
+		return $this;
+	}
+	public function not_fields() {
+		$args = func_get_args();
+		call_user_func_array(array($this->active_command, 'not_fields'), $args);
+		return $this;
 	}
 }

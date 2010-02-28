@@ -228,6 +228,16 @@ class OGL_Entity {
 		return $alias . '__' . $table . '.' . $column;
 	}
 
+	public function fields_validate($fields) {
+		$errors = array_diff($fields, array_keys($this->fields));
+		if (count($errors) > 0)
+			throw new Kohana_Exception("The following fields do not belong to entity ".$this->name." : ".implode(',', $errors));
+	}
+
+	public function fields_opposite($fields) {
+		return array_diff(array_keys($this->fields), $fields);
+	}
+
 	public function object_load(&$rows, $prefix = '') {
 		// No rows ? Do nothing :
 		if (count($rows) === 0) return;

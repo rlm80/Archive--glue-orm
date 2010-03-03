@@ -27,17 +27,8 @@ abstract class OGL_Command {
 	// Trg fields
 	protected $fields;
 
-	// Root or slave command ?
-	protected $root;
-
-	// Constants :
-	const ROOT	= 1;
-	const SLAVE	= 2;
-	const AUTO	= 3;
-
 	// Constructor :
 	public function  __construct($trg_set) {
-		$this->root		= OGL_Command::AUTO;
 		$this->trg_set	= $trg_set;
 		$this->trg_set->root_command = $this;
 	}
@@ -108,14 +99,10 @@ abstract class OGL_Command {
 	}
 
 	protected function query_build() {
-		$query = $this->query_init();
+		$query = DB::select();
 		foreach($this->get_chain() as $command)
 			$command->query_contrib($query);
 		return DB::query(Database::SELECT, $query->compile(Database::instance()));
-	}
-
-	protected function query_init() {
-		return DB::select();
 	}
 
 	protected function query_contrib($query) {
@@ -127,7 +114,12 @@ abstract class OGL_Command {
 	}
 
 	protected function query_contrib_fields($query) {
-		$this->trg_set->entity->query_fields($query, $this->trg_set->name, $this->fields);
+		$trg_entity = $this->trg_set->entity;
+		if ( ! isset($this->fields))
+			$this->fields = $trg_entity->fields_all();
+		else
+			$fields = array_merge($this->fields, array_diff($trg_entity->pk(), $this->fields));
+		$trg_entity->query_select($query, $this->trg_set->name, $this->fields);
 	}
 
 	protected function query_contrib_order_by($query) {
@@ -140,14 +132,6 @@ abstract class OGL_Command {
 	protected function query_contrib_where($query) { }
 
 	abstract protected function query_exec();
-
-	public function slave() {
-		$this->root = OGL_Command::SLAVE;
-	}
-
-	public function root() {
-		$this->root = OGL_Command::ROOT;
-	}
 
 	public function order_by($field, $asc) {
 		$this->trg_set->entity->fields_validate(array($field));

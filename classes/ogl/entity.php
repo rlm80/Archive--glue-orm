@@ -113,22 +113,6 @@ class OGL_Entity {
 		return $fields;
 	}
 
-	public function query_init($query, $alias) {
-		// Build conditions array :
-		$conds = array();
-		if (count($this->pk) === 1)
-			$conds[] = array($this->pk[0], 'IN', new Database_Expression(':_pks'));
-		else
-			foreach($this->pk as $f)
-				$conds[] = array($f, '=', new Database_Expression(':_'.$f));
-		
-		// Add entity to from/where :
-		$this->query_from($query, $alias, $conds);
-		
-		// Add pk to fields :
-		$this->query_fields($query, $alias, $this->pk);
-	}
-
 	public function query_from($query, $alias) {
 		$partial = $this->query_partial($alias);
 		$query->from(DB::expr($partial));
@@ -137,7 +121,16 @@ class OGL_Entity {
 	public function query_join($query, $alias, $type = 'LEFT') {
 		$partial = $this->query_partial($alias);
 		$query->join(DB::expr($partial), $type);
-		
+	}
+
+	public function query_on($query, $alias, $field, $op, $expr) {
+		$col = $this->query_field_expr($alias, $field);
+		$query->on($col, $op, $expr);
+	}
+
+	public function query_where($query, $alias, $field, $op, $expr) {
+		$col = $this->query_field_expr($alias, $field);
+		$query->where($col, $op, $expr);
 	}
 
 	public function query_partial($alias) {
@@ -204,22 +197,12 @@ class OGL_Entity {
 		return $result;
 	}
 
-	public function query_fields($query, $alias, $req_fields) {
-		// Null req_fields means all fields are required :
-		if ( ! isset($req_fields))
-			$req_fields = array_keys($this->fields);
-		else {
-			// Add pk :
-			$req_fields = array_merge($req_fields, array_diff($this->pk, $req_fields));
-
-			// Check fields :
-			$errors = array_diff($req_fields, array_keys($this->fields));
-			if (count($errors) > 0)
-				throw new Kohana_Exception("The following fields do not belong to entity ".$this->name." : ".implode(',', $errors));
-		}
+	public function query_select($query, $alias, $fields) {
+		// Validate fields :
+		$this->fields_validate($fields);
 
 		// Add fields to query :
-		foreach ($req_fields as $name)
+		foreach ($fields as $name)
 			$query->select(array($this->query_field_expr($alias, $name), $alias.':'.$name));
 	}
 
@@ -236,6 +219,10 @@ class OGL_Entity {
 
 	public function fields_opposite($fields) {
 		return array_diff(array_keys($this->fields), $fields);
+	}
+
+	public function fields_all() {
+		return array_keys($this->fields);
 	}
 
 	public function object_load(&$rows, $prefix = '') {

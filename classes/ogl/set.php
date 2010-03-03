@@ -21,10 +21,6 @@ class OGL_Set implements Iterator, Countable {
 		$this->entity	= $entity;
 	}
 
-	public function query_init($query) {
-		$this->entity->query_init($query, $this->name);
-	}
-
 	public function query_exec($query) {
 		return $this->entity->query_exec($query, $this->objects);
 	}

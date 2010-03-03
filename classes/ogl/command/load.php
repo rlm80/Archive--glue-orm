@@ -18,12 +18,8 @@ class OGL_Command_Load extends OGL_Command {
 	}
 	
 	protected function query_contrib_from($query) {
+		parent::query_contrib_from($query);
 		$this->entity->query_from($query, $this->trg_set->name);
-	}
-
-	protected function query_contrib_where($query) {
-		foreach($this->where as $w)
-			$this->trg_set->entity->query_order_by($query, $this->trg_set->name);
 	}
 	
 	protected function load_relationships($result) {}

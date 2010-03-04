@@ -133,7 +133,7 @@ class OGL_Entity {
 		$query->where($col, $op, $expr);
 	}
 
-	public function query_partial($alias) {
+	protected function query_partial($alias) {
 		// Init partial cache :
 		if ( ! isset($this->partial)) {
 			// Init fake select query (we need this hack because query builder doesn't support nested joins) :
@@ -170,40 +170,10 @@ class OGL_Entity {
 		return str_replace('%ALIAS%', $alias, $this->partial);
 	}
 
-	public function query_exec($query, $objects) {
-		// No objects ? No result :
-		if (count($objects) === 0)
-			return array();
-
-		// Get pk values :
-		$pkvals = array_map(array($this, 'object_pk'), $objects);
-
-		// Exec query :
-		$result = array();
-		if (count($this->pk) === 1) {
-			// Use only one query :
-			$result = $query->param(':_pks', $pkvals)->execute()->as_array();
-		}
-		else {
-			// Use one query for each object and aggregate results :
-			foreach($pkvals as $pkval) {
-				foreach($pkval as $f => $val)
-					$query->param( ':_'.$f, $val);
-				$rows = $query->execute()->as_array();
-				if (count($rows) >= 1)
-					array_merge($result, $rows);
-			}
-		}
-		return $result;
-	}
-
 	public function query_select($query, $alias, $fields) {
-		// Validate fields :
 		$this->fields_validate($fields);
-
-		// Add fields to query :
 		foreach ($fields as $name)
-			$query->select(array($this->query_field_expr($alias, $name), $alias.':'.$name));
+			$query->select(array($this->query_field_expr($alias, $name), $alias.':'.$name)); // TODO move aliasing logic to calling function
 	}
 
 	public function query_field_expr($alias, $field) {
@@ -310,18 +280,19 @@ class OGL_Entity {
 
 	// For single column pk, returns the pk value.
 	// For multiple columns pk, returns an associative array with pk field names and values.
-	protected function object_pk($object) {
-		// Efficiently deal with single column pk :
+	public function object_pk($object) {
 		static $prop;
-		if (isset($prop)) return $object->$prop;
+
+		// Single or multiple column pk ?
 		if (count($this->pk) === 1) {
-			$prop = $this->fields[$this->pk[0]]['property'];
-			return $object->$prop;
+			if ( ! isset($prop)) $prop = $this->fields[$this->pk[0]]['property'];
+			$pk = $object->$prop;
+		}
+		else {
+			foreach($this->pk as $f)
+				$pk[$f] = $object->{$this->fields[$f]['property']};
 		}
 
-		// Multiple column pk :
-		foreach($this->pk as $f)
-			$pk[$f] = $object->{$this->fields[$f]['property']};
 		return $pk;
 	}
 

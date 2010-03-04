@@ -118,7 +118,7 @@ abstract class OGL_Command {
 		if ( ! isset($this->fields))
 			$this->fields = $trg_entity->fields_all();
 		else
-			$fields = array_merge($this->fields, array_diff($trg_entity->pk(), $this->fields));
+			$this->fields = array_merge($this->fields, array_diff($trg_entity->pk(), $this->fields));
 		$trg_entity->query_select($query, $this->trg_set->name, $this->fields);
 	}
 
@@ -138,20 +138,20 @@ abstract class OGL_Command {
 		$this->order_by[] = array('field' => $field, 'asc' => $asc);
 	}
 
-	public function fields() {
+	public function select() {
 		// If fields recieved as a list of strings, turn it to an array :
 		$args = func_get_args();
-		$fields = is_array($args[0]) ? $fields = $args[0] : $args;
+		$fields = is_array($args[0]) ? $args[0] : $args;
 
 		// Validate and set fields :
 		$this->trg_set->entity->fields_validate($fields);
 		$this->fields = $fields;
 	}
 
-	public function not_fields() {
+	public function not_select() {
 		// If fields recieved as a list of strings, turn it to an array :
 		$args = func_get_args();
-		$fields = is_array($args[0]) ? $fields = $args[0] : $args;
+		$fields = is_array($args[0]) ? $args[0] : $args;
 
 		// Set fields :
 		$this->fields = $this->trg_set->entity->fields_opposite($fields);

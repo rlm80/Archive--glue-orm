@@ -4,6 +4,9 @@ class OGL {
 	// Constants :
 	const ASC	= 1;
 	const DESC	= 2;
+	const ROOT	= 3;
+	const SLAVE	= 4;
+	const AUTO	= 5;
 
 	// Single OGL instance :
 	protected static $instance;

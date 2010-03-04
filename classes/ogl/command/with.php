@@ -7,14 +7,9 @@ class OGL_Command_With extends OGL_Command {
 	// Root or slave command ?
 	protected $root;
 
-	// Constants :
-	const ROOT	= 1;
-	const SLAVE	= 2;
-	const AUTO	= 3;
-
 	public function  __construct($relationship, $src_set, $trg_set) {
 		parent::__construct($trg_set);
-		$this->root					= self::AUTO;
+		$this->root					= OGL::AUTO;
 		$this->relationship			= $relationship;
 		$this->src_set				= $src_set;
 		$this->src_set->commands[]	= $this;
@@ -43,8 +38,38 @@ class OGL_Command_With extends OGL_Command {
 	}
 
 	protected function query_exec()	{
-		$query = $this->query_get();
-		return $this->src_set->query_exec($query);
+		// Get data :
+		$query		= $this->query_get();
+		$entity		= $this->src_set->entity;
+		$pk			= $entity->pk();
+		$alias		= $this->src_set->name;
+		$objects	= $this->src_set->to_array();
+
+		// No objects ? No result :
+		if (count($objects) === 0)
+			return array();
+
+		// Get pk values :
+		$pkvals = array_map(array($entity, 'object_pk'), $objects);
+
+		// Exec query :
+		$result = array();
+		if (count($pk) === 1) {
+			// Use only one query :
+			$result = $query->param(':_pks', $pkvals)->execute()->as_array();
+		}
+		else {
+			// Use one query for each object and aggregate results :
+			foreach($pkvals as $pkval) {
+				foreach($pkval as $f => $val)
+					$query->param( ':_'.$f, $val);
+				$rows = $query->execute()->as_array();
+				if (count($rows) >= 1)
+					array_merge($result, $rows);
+			}
+		}
+		
+		return $result;
 	}
 
 	protected function query_contrib_from($query) {
@@ -83,18 +108,18 @@ class OGL_Command_With extends OGL_Command {
 	}
 
 	public function slave() {
-		$this->root = self::SLAVE;
+		$this->root = OGL::SLAVE;
 	}
 
 	public function root() {
-		$this->root = self::ROOT;
+		$this->root = OGL::ROOT;
 	}
 
 	protected function is_root() {
 		switch ($this->root) {
-			case self::AUTO :	$is_root = $this->relationship->multiple(); break;
-			case self::ROOT :	$is_root = true;	break;
-			case self::SLAVE :	$is_root = false;	break;
+			case OGL::AUTO :	$is_root = $this->relationship->multiple(); break;
+			case OGL::ROOT :	$is_root = true;	break;
+			case OGL::SLAVE :	$is_root = false;	break;
 			default : throw new Kohana_Exception("Invalid value for root property in a command.");
 		}
 		return $is_root;

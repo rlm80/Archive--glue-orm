@@ -66,14 +66,14 @@ class OGL_Query {
 	public function root() { $this->active_command->root(); return $this; }
 	public function slave()	{ $this->active_command->slave(); return $this;	}
 	public function order_by($field, $asc = OGL::ASC) { $this->active_command->order_by($field, $asc); return $this; }
-	public function fields() {
+	public function select() {
 		$args = func_get_args();
-		call_user_func_array(array($this->active_command, 'fields'), $args);
+		call_user_func_array(array($this->active_command, 'select'), $args);
 		return $this;
 	}
-	public function not_fields() {
+	public function not_select() {
 		$args = func_get_args();
-		call_user_func_array(array($this->active_command, 'not_fields'), $args);
+		call_user_func_array(array($this->active_command, 'not_select'), $args);
 		return $this;
 	}
 }

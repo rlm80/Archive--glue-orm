@@ -103,7 +103,7 @@ class OGL_Command_With extends OGL_Command {
 		parent::query_contrib_fields($query);
 		if ($this->is_root()) {
 			$src_entity = $this->src_set->entity;
-			$src_entity->query_fields($query, $this->src_set->name, $src_entity->pk());
+			$src_entity->query_select($query, $this->src_set->name, $src_entity->pk());
 		}
 	}
 

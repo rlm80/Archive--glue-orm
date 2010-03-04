@@ -134,7 +134,6 @@ abstract class OGL_Command {
 	abstract protected function query_exec();
 
 	public function order_by($field, $asc) {
-		$this->trg_set->entity->fields_validate(array($field));
 		$this->order_by[] = array('field' => $field, 'asc' => $asc);
 	}
 
@@ -143,8 +142,7 @@ abstract class OGL_Command {
 		$args = func_get_args();
 		$fields = is_array($args[0]) ? $args[0] : $args;
 
-		// Validate and set fields :
-		$this->trg_set->entity->fields_validate($fields);
+		// Set fields :
 		$this->fields = $fields;
 	}
 

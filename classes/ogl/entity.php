@@ -133,6 +133,11 @@ class OGL_Entity {
 		$query->where($col, $op, $expr);
 	}
 
+	public function query_order_by($query, $alias, $field, $order) {
+		$col = $this->query_field_expr($alias, $field);
+		$query->order_by($col, ($order === OGL::ASC) ? 'ASC' : 'DESC');
+	}
+
 	protected function query_partial($alias) {
 		// Init partial cache :
 		if ( ! isset($this->partial)) {
@@ -177,6 +182,7 @@ class OGL_Entity {
 	}
 
 	public function query_field_expr($alias, $field) {
+		$this->fields_validate(array($field));
 		list($table, $column) = explode('.', $this->fields[$field]['columns'][0]);
 		return $alias . '__' . $table . '.' . $column;
 	}

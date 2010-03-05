@@ -106,14 +106,15 @@ abstract class OGL_Command {
 	}
 
 	protected function query_contrib($query) {
-		$this->query_contrib_fields($query);
+		$this->query_contrib_select($query);
 		$this->query_contrib_from($query);
-		$this->query_contrib_joins($query);
+		$this->query_contrib_join($query);
+		$this->query_contrib_on($query);
 		$this->query_contrib_where($query);
 		$this->query_contrib_order_by($query);
 	}
 
-	protected function query_contrib_fields($query) {
+	protected function query_contrib_select($query) {
 		$trg_entity = $this->trg_set->entity;
 		if ( ! isset($this->fields))
 			$this->fields = $trg_entity->fields_all();
@@ -128,7 +129,8 @@ abstract class OGL_Command {
 	}
 
 	protected function query_contrib_from($query) { }
-	protected function query_contrib_joins($query) { }
+	protected function query_contrib_join($query) { }
+	protected function query_contrib_on($query) { }
 	protected function query_contrib_where($query) { }
 
 	abstract protected function query_exec();
@@ -153,6 +155,10 @@ abstract class OGL_Command {
 
 		// Set fields :
 		$this->fields = $this->trg_set->entity->fields_opposite($fields);
+	}
+
+	public function where($field, $op, $expr) {
+		$this->where[] = array('field' => $field, 'op' => $op, 'expr' => $expr);
 	}
 
 	abstract protected function is_root();

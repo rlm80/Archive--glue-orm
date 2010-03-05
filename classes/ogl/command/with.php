@@ -92,11 +92,19 @@ class OGL_Command_With extends OGL_Command {
 		}
 	}
 
-	protected function query_contrib_joins($query) {
-		parent::query_contrib_joins($query);
+	protected function query_contrib_join($query) {
+		parent::query_contrib_join($query);
 		$src_alias	= $this->src_set->name;
 		$trg_alias	= $this->trg_set->name;
 		$this->relationship->join($query, $src_alias, $trg_alias);
+	}
+
+	protected function query_contrib_on($query) {
+		parent::query_contrib_on($query);
+		foreach($this->where as $w) {
+			$expr = is_object($w['expr']) ? $w['expr'] : DB::expr(Database::instance()->quote($w['expr']));
+			$this->trg_set->entity->query_on($query, $this->trg_set->name, $w['field'], $w['op'], $expr);
+		}
 	}
 
 	protected function query_contrib_fields($query) {

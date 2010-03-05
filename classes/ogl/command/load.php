@@ -21,6 +21,12 @@ class OGL_Command_Load extends OGL_Command {
 		parent::query_contrib_from($query);
 		$this->entity->query_from($query, $this->trg_set->name);
 	}
+
+	protected function query_contrib_where($query) {
+		parent::query_contrib_where($query);
+		foreach($this->where as $w)
+			$this->trg_set->entity->query_where($query, $this->trg_set->name, $w['field'], $w['op'], $w['expr']);
+	}
 	
 	protected function load_relationships($result) {}
 }

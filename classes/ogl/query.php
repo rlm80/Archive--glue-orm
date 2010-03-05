@@ -63,14 +63,32 @@ class OGL_Query {
 	}
 
 	// Forward calls to active command :
-	public function root() { $this->active_command->root(); return $this; }
-	public function slave()	{ $this->active_command->slave(); return $this;	}
-	public function order_by($field, $asc = OGL::ASC) { $this->active_command->order_by($field, $asc); return $this; }
+	public function where($field, $op, $expr) {
+		$this->active_command->where($field, $op, $expr);
+		return $this;
+	}
+
+	public function root() {
+		$this->active_command->root();
+		return $this;
+	}
+
+	public function slave()	{
+		$this->active_command->slave();
+		return $this;
+	}
+
+	public function order_by($field, $asc = OGL::ASC) {
+		$this->active_command->order_by($field, $asc);
+		return $this;
+	}
+
 	public function select() {
 		$args = func_get_args();
 		call_user_func_array(array($this->active_command, 'select'), $args);
 		return $this;
 	}
+
 	public function not_select() {
 		$args = func_get_args();
 		call_user_func_array(array($this->active_command, 'not_select'), $args);

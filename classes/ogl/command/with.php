@@ -37,9 +37,9 @@ class OGL_Command_With extends OGL_Command {
 		}
 	}
 
-	protected function query_exec()	{
+	protected function query_exec($parameters)	{
 		// Get data :
-		$query		= $this->query_get();
+		$query		= $this->query_get()->parameters($parameters);
 		$entity		= $this->src_set->entity;
 		$pk			= $entity->pk();
 		$alias		= $this->src_set->name;

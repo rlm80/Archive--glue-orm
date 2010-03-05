@@ -33,18 +33,18 @@ abstract class OGL_Command {
 		$this->trg_set->root_command = $this;
 	}
 
-	public function execute() {
+	public function execute($parameters) {
 		// Execute command subtree with current command as root :
-		$this->execute_self();
+		$this->execute_self($parameters);
 
 		// Cascade execution to next root commands :
 		foreach($this->get_roots() as $root)
-			$root->execute();
+			$root->execute($parameters);
 	}
 
-	protected function execute_self() {
+	protected function execute_self($parameters) {
 		// Execute query :
-		$result = $this->query_exec();
+		$result = $this->query_exec($parameters);
 
 		// Load objects and relationships from result set :
 		$this->load_result($result);
@@ -133,7 +133,7 @@ abstract class OGL_Command {
 	protected function query_contrib_on($query) { }
 	protected function query_contrib_where($query) { }
 
-	abstract protected function query_exec();
+	abstract protected function query_exec($parameters);
 
 	public function order_by($field, $asc) {
 		$this->order_by[] = array('field' => $field, 'asc' => $asc);

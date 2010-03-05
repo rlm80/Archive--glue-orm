@@ -12,8 +12,8 @@ class OGL_Command_Load extends OGL_Command {
 		return true;
 	}
 
-	protected function query_exec()	{
-		$query = $this->query_get();
+	protected function query_exec($parameters)	{
+		$query = $this->query_get()->parameters($parameters);
 		return $query->execute()->as_array();
 	}
 	

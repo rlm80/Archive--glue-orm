@@ -28,4 +28,12 @@ class OGL {
 	protected function _load($entity_name, &$set) {
 		return new OGL_Query($entity_name, $set);
 	}
+
+	public static function param($name) {
+		return self::instance()->_param($name);
+	}
+
+	protected function _param($name) {
+		return DB::expr($name);
+	}
 }

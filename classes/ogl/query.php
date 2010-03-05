@@ -11,6 +11,9 @@ class OGL_Query {
 	// Set cache :
 	protected $sets = array();
 
+	// Query parameters
+	protected $parameters = array();
+
 	// Root command :
 	protected $root;
 
@@ -50,16 +53,21 @@ class OGL_Query {
 		return $set;
 	}
 
-	// Executes load query :
+	// Init execution cascade :
 	public function execute() {
-		// Init execution cascade :
-		$this->root->execute();
+		$this->root->execute($this->parameters);
+	}
 
-		// Return result array :
-		$result = array();
-		foreach($this->sets as $set)
-			$result[] = $set->objects;
-		return $result;
+	// Set the value of a parameter in the query.
+	public function param($param, $value) {
+		$this->parameters[$param] = $value;
+		return $this;
+	}
+
+	// Add multiple parameters to the query.
+	public function parameters($params) {
+		$this->parameters = $params + $this->_parameters;
+		return $this;
 	}
 
 	// Forward calls to active command :

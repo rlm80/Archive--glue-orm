@@ -34,6 +34,14 @@ class OGL {
 	}
 
 	protected function _param($name) {
-		return DB::expr($name);
+		return new OGL_Param_Set($name);
+	}
+
+	public static function bind(&$var) {
+		return self::instance()->_bind($var);
+	}
+
+	protected function _bind(&$var) {
+		return new OGL_Param_Bound($var);
 	}
 }

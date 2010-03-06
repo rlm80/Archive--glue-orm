@@ -72,12 +72,20 @@ class OGL_Command_With extends OGL_Command {
 		return $result;
 	}
 
+	protected function query_contrib_select($query) {
+		parent::query_contrib_select($query);
+		if ($this->is_root()) {
+			$this->src_set->entity->query_select($query, $this->src_set->name, $this->src_set->entity->pk());
+		}
+	}
+
 	protected function query_contrib_from($query) {
 		parent::query_contrib_from($query);
 		if ($this->is_root()) {
 			$this->src_set->entity->query_from($query, $this->src_set->name);
 		}
 	}
+
 	protected function query_contrib_where($query) {
 		parent::query_contrib_where($query);
 		if ($this->is_root()) {

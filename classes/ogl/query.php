@@ -12,13 +12,17 @@ class OGL_Query {
 	protected $sets = array();
 
 	// Query parameters
-	protected $parameters = array();
+	protected $params = array();
+	protected $bound_params = array();
 
 	// Root command :
 	protected $root;
 
 	// Target command of db builder calls :
 	protected $active_command;
+
+	// Param id counter :
+	protected $param_id = 0;
 
 	// Constructor, creates a load command :
 	public function __construct($entity_name, &$set) {
@@ -55,24 +59,44 @@ class OGL_Query {
 
 	// Init execution cascade :
 	public function execute() {
-		$this->root->execute($this->parameters);
+		$this->root->execute($this->get_params());
 	}
 
 	// Set the value of a parameter in the query.
-	public function param($param, $value) {
-		$this->parameters[$param] = $value;
+	public function param($name, $value) {
+		$this->params[$name]->value = $value;
 		return $this;
 	}
 
-	// Add multiple parameters to the query.
-	public function parameters($params) {
-		$this->parameters = $params + $this->_parameters;
-		return $this;
+	// Registers a parameter and returns its symbolic representation in the query :
+	protected function register_param($param) {
+		$param->symbol = ':param' . ($this->param_id ++);
+		if ($param instanceof OGL_Param_Set)
+			$this->params[$param->name] = $param;
+		else
+			$this->bound_params[] = $param;
+		return $param->symbol;
+	}
+
+	// Get symbol/values parameter array :
+	protected function get_params() {
+		$parameters = array();
+		foreach (array_merge($this->bound_params, $this->params) as $p)
+			$parameters[$p->symbol] = $p->value();
+		return $parameters;
 	}
 
 	// Forward calls to active command :
 	public function where($field, $op, $expr) {
+		// If $expr is a parameter, replace it with its symbolic representation in the query :
+		if ($expr instanceof OGL_Param) {
+			$symbol	= $this->register_param($expr);
+			$expr	= DB::expr($symbol);
+		}
+
+		// Forward call :
 		$this->active_command->where($field, $op, $expr);
+		
 		return $this;
 	}
 

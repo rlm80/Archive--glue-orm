@@ -56,7 +56,8 @@ abstract class OGL_Command {
 	}
 
 	protected function load_result_self(&$result) {
-		$this->trg_set->objects = $this->trg_set->entity->object_load($result, $this->trg_set->name.':');
+		$objects = $this->trg_set->entity->object_load($result, $this->trg_set->name.':');
+		$this->trg_set->set_objects($objects);
 	}
 
 	protected function get_children() {

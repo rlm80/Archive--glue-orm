@@ -12,7 +12,8 @@
 class OGL_Set implements Iterator, Countable {
 	public $name;
 	public $entity;
-	public $objects = array();
+	protected $sort;
+	protected $objects = array();
 	public $commands = array();
 	public $root_command;
 
@@ -21,12 +22,23 @@ class OGL_Set implements Iterator, Countable {
 		$this->entity	= $entity;
 	}
 
-	public function to_array() {
-		return $this->objects;
+	public function sort($sort) {
+		$this->sort = $sort;
+		$this->do_sort();
+	}
+	
+	protected function do_sort() {
+		if (isset($this->sort))
+			$this->entity->object_sort($this->objects, $this->sort);
 	}
 
-	public function sort($sort, $order = OGL::ASC) {
-		$this->entity->object_sort($this->objects, $sort, $order);
+	public function set_objects($objects) {
+		$this->objects = $objects;
+		$this->do_sort();
+	}
+
+	public function to_array() {
+		return $this->objects;
 	}
 
 	// Iterator, Countable :

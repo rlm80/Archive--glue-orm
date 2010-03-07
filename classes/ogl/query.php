@@ -115,8 +115,8 @@ class OGL_Query {
 		return $this;
 	}
 
-	public function order_by($field, $asc = OGL::ASC) {
-		$this->active_command->order_by($field, $asc);
+	public function order_by($sort) {
+		$this->active_command->order_by($sort);
 		return $this;
 	}
 

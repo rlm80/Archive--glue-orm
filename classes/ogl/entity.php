@@ -138,7 +138,7 @@ class OGL_Entity {
 
 	public function query_order_by($query, $alias, $field, $order) {
 		$col = $this->query_field_expr($alias, $field);
-		$query->order_by($col, ($order === OGL::ASC) ? 'ASC' : 'DESC');
+		$query->order_by($col, $order);
 	}
 
 	protected function query_partial($alias) {

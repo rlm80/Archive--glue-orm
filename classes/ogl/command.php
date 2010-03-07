@@ -125,8 +125,8 @@ abstract class OGL_Command {
 	}
 
 	protected function query_contrib_order_by($query) {
-		foreach($this->order_by as $ob)
-			$this->trg_set->entity->query_order_by($query, $this->trg_set->name, $ob['field'], $ob['asc']);
+		foreach($this->order_by as $field => $order)
+			$this->trg_set->entity->query_order_by($query, $this->trg_set->name, $field, $order);
 	}
 
 	protected function query_contrib_from($query) { }
@@ -136,8 +136,17 @@ abstract class OGL_Command {
 
 	abstract protected function query_exec($parameters);
 
-	public function order_by($field, $asc) {
-		$this->order_by[] = array('field' => $field, 'asc' => $asc);
+	public function order_by($clause) {
+		// Parse order by clause and set current order by :
+		$this->order_by = array();
+		$clause = preg_replace('/\s+/', ' ', $clause);
+		$clause = explode(',', $clause);
+		foreach($clause as $c) {
+			$parts	= explode(' ', $c);
+			$field	= $parts[0];
+			$order	= ((! isset($parts[1])) || strtolower(substr($parts[1], 0, 1)) === 'a') ? 'ASC' : 'DESC';
+			$this->order_by[$field] = $order;
+		}
 	}
 
 	public function select() {

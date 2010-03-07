@@ -110,6 +110,11 @@ class OGL_Query {
 		return $this;
 	}
 
+	public function sort($sort) {
+		$this->active_command->sort($sort);
+		return $this;
+	}
+
 	public function order_by($field, $asc = OGL::ASC) {
 		$this->active_command->order_by($field, $asc);
 		return $this;

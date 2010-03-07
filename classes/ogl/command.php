@@ -162,6 +162,10 @@ abstract class OGL_Command {
 		$this->where[] = array('field' => $field, 'op' => $op, 'expr' => $expr);
 	}
 
+	public function sort($sort) {
+		$this->trg_set->sort($sort);
+	}
+
 	abstract protected function is_root();
 }
 

@@ -19,6 +19,9 @@ class OGL_Entity {
 	// Internal details :
 	private $partial;
 
+	// Current sort criteria :
+	protected $sort;
+
 	// Identity map :
 	protected $map = array();
 
@@ -301,6 +304,39 @@ class OGL_Entity {
 
 		return $pk;
 	}
+
+	// Sorts an array of objects according to sort criteria.
+	public function object_sort(&$objects, $clause) {
+		// Parse sort clause and set current sort :
+		$this->sort = array();
+		$clause = preg_replace('/\s+/', ' ', $clause);
+		$clause = explode(',', $clause);
+		foreach($clause as $c) {
+			$parts	= explode(' ', $c);
+			$sort	= $this->fields[$parts[0]]['property'];
+			$order	= ((! isset($parts[1])) || strtolower(substr($parts[1], 0, 1)) === 'a') ? +1 : -1;
+			$this->sort[$sort] = $order;
+		}
+
+		// Sort objects :
+		uasort($objects, array($this, 'object_multi_cmp'));
+	}
+
+	// Compares two objects according to current sort criteria.
+	private function object_multi_cmp($a, $b) {
+        foreach($this->sort as $sort => $order) {
+			$cmp = $this->object_cmp($sort, $a, $b) * $order;
+            if ($cmp !== 0) return $cmp;
+        }
+        return 0;
+    }
+
+	// Compares two objects according to given sort criteria.
+	protected function object_cmp($sort, $a, $b) {
+		if ($a->$sort < $b->$sort) return -1;
+		if ($a->$sort > $b->$sort) return +1;
+		return 0;
+    }
 
 	// Return relationship $name of this entity.
 	public function relationship($name) {

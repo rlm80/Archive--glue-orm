@@ -44,4 +44,12 @@ class OGL {
 	protected function _bind(&$var) {
 		return new OGL_Param_Bound($var);
 	}
+
+	public static function sort($entity_name, &$objects, $clause) {
+		return self::instance()->_sort($entity_name, $objects, $clause);
+	}
+
+	protected function _sort($entity_name, &$objects, $clause) {
+		OGL_Entity::get($entity_name)->object_sort($objects, $clause);
+	}
 }

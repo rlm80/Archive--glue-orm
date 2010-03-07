@@ -21,12 +21,12 @@ class OGL_Set implements Iterator, Countable {
 		$this->entity	= $entity;
 	}
 
-	public function query_exec($query) {
-		return $this->entity->query_exec($query, $this->objects);
-	}
-
 	public function to_array() {
 		return $this->objects;
+	}
+
+	public function sort($sort, $order = OGL::ASC) {
+		$this->entity->object_sort($this->objects, $sort, $order);
 	}
 
 	// Iterator, Countable :

@@ -54,72 +54,56 @@ class OGL_Command_With extends OGL_Command {
 
 		// Exec query :
 		$result = array();
-		if (count($pk) === 1) {
-			// Use only one query :
-			$result = $query->param(':_pks', $pkvals)->execute()->as_array();
-		}
-		else {
+		if ($this->is_unitary()) {
 			// Use one query for each object and aggregate results :
 			foreach($pkvals as $pkval) {
-				foreach($pkval as $f => $val)
-					$query->param( ':_'.$f, $val);
+				if (count($pk) > 1) {
+					foreach($pkval as $f => $val)
+						$query->param( ':__'.$f, $val);
+				}
+				else
+					$query->param( ':__'.$pk[0], $pkval);
 				$rows = $query->execute()->as_array();
 				if (count($rows) >= 1)
-					array_merge($result, $rows);
+					$result = array_merge($result, $rows);
 			}
+		}
+		else {
+			// Use only one query :
+			$result = $query->param(':__pks', $pkvals)->execute()->as_array();
 		}
 		
 		return $result;
 	}
 
-	protected function query_contrib_select($query) {
-		parent::query_contrib_select($query);
-		if ($this->is_root()) {
-			$this->src_set->entity->query_select($query, $this->src_set->name, $this->src_set->entity->pk());
-		}
-	}
-
-	protected function query_contrib_from($query) {
-		parent::query_contrib_from($query);
-		if ($this->is_root()) {
-			$this->src_set->entity->query_from($query, $this->src_set->name);
-		}
-	}
-
-	protected function query_contrib_where($query) {
-		parent::query_contrib_where($query);
-		if ($this->is_root()) {
-			$entity	= $this->src_set->entity;
-			$pk		= $entity->pk();
-			$alias	= $this->src_set->name;
-			if (count($pk) === 1)
-				$entity->query_where($query, $alias, $pk[0], 'IN', new Database_Expression(':_pks'));
-			else
-				foreach($pk as $f)
-					$entity->query_where($query, $alias, $f, '=', new Database_Expression(':_'.$f));
-		}
-	}
-
-	protected function query_contrib_join($query) {
-		parent::query_contrib_join($query);
+	protected function query_contrib($query, $is_root) {
+		parent::query_contrib($query, $is_root);
+		
+		// Entities and aliases :
+		$src_entity	= $this->src_set->entity;
+		$trg_entity = $this->trg_set->entity;
 		$src_alias	= $this->src_set->name;
 		$trg_alias	= $this->trg_set->name;
-		$this->relationship->join($query, $src_alias, $trg_alias);
-	}
 
-	protected function query_contrib_on($query) {
-		parent::query_contrib_on($query);
+		// Root ? Must base query on src set :
+		if ($is_root) {
+			$pk = $src_entity->pk();
+			$src_entity->query_select($query, $src_alias, $pk);
+			$src_entity->query_from($query, $src_alias);
+			if ($this->is_unitary())
+				foreach($pk as $f)
+					$src_entity->query_where($query, $src_alias, $f, '=', new Database_Expression(':__'.$f));
+			else
+				$src_entity->query_where($query, $src_alias, $pk[0], 'IN', new Database_Expression(':__pks'));
+		}
+
+		// Add joins to trg entity :
+		$this->relationship->join($query, $src_alias, $trg_alias);
+
+		// Restrict result with where conditions (in ON clause !!!) :
 		foreach($this->where as $w) {
 			$expr = is_object($w['expr']) ? $w['expr'] : DB::expr(Database::instance()->quote($w['expr']));
-			$this->trg_set->entity->query_on($query, $this->trg_set->name, $w['field'], $w['op'], $expr);
-		}
-	}
-
-	protected function query_contrib_fields($query) {
-		parent::query_contrib_fields($query);
-		if ($this->is_root()) {
-			$src_entity = $this->src_set->entity;
-			$src_entity->query_select($query, $this->src_set->name, $src_entity->pk());
+			$trg_entity->query_on($query, $trg_alias, $w['field'], $w['op'], $expr);
 		}
 	}
 
@@ -131,13 +115,12 @@ class OGL_Command_With extends OGL_Command {
 		$this->root = OGL::ROOT;
 	}
 
-	protected function is_root() {
-		switch ($this->root) {
-			case OGL::AUTO :	$is_root = $this->relationship->multiple(); break;
-			case OGL::ROOT :	$is_root = true;	break;
-			case OGL::SLAVE :	$is_root = false;	break;
-			default : throw new Kohana_Exception("Invalid value for root property in a command.");
-		}
-		return $is_root;
+	protected function is_unitary() {
+		$src_entity	= $this->src_set->entity;
+		$pk	= $src_entity->pk();
+		if (count($pk) > 1 || isset($this->limit) || isset($this->offset))
+			return true;
+		else
+			return false;
 	}
 }

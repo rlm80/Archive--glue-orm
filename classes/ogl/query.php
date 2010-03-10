@@ -64,6 +64,7 @@ class OGL_Query {
 
 	// Set the value of a parameter in the query.
 	public function param($name, $value) {
+		if ( ! isset($this->params[$name])) throw new Kohana_Exception("Undefined parameter '".$name."'");
 		$this->params[$name]->value = $value;
 		return $this;
 	}
@@ -117,6 +118,16 @@ class OGL_Query {
 
 	public function order_by($sort) {
 		$this->active_command->order_by($sort);
+		return $this;
+	}
+
+	public function limit($limit) {
+		$this->active_command->limit($limit);
+		return $this;
+	}
+	
+	public function offset($offset) {
+		$this->active_command->offset($offset);
 		return $this;
 	}
 

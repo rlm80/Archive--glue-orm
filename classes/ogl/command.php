@@ -13,15 +13,15 @@ abstract class OGL_Command {
 	// Query builder calls :
 	protected $order_by = array();
 	protected $where = array();
+	protected $limit;
+	protected $offset;
 
 	// Set :
 	protected $trg_set;
 
-	// Chain :
+	// Cache chain, roots and query :
 	protected $chain;
 	protected $roots;
-
-	// Query :
 	protected $query;
 
 	// Trg fields
@@ -66,26 +66,24 @@ abstract class OGL_Command {
 
 	protected function get_chain() {
 		if ( ! isset($this->chain))
-			list($this->chain, $this->roots) = $this->build_chain();
+			list($this->chain, $this->roots) = $this->find_chain($this);
 		return $this->chain;
 	}
 
 	protected function get_roots() {
 		if ( ! isset($this->roots))
-			list($this->chain, $this->roots) = $this->build_chain();
+			list($this->chain, $this->roots) = $this->find_chain($this);
 		return $this->roots;
 	}
 
-	// Returns command chain that starts with this command and all roots that form its boundaries in
-	// the command tree.
-	protected function build_chain() {
+	protected function find_chain($root) {
 		$chain = array($this);
 		$roots = array();
 		foreach($this->get_children() as $command) {
-			if ($command->is_root())
+			if ($root->is_relative_root($command))
 				$roots[] = $command;
 			else {
-				list($new_chain, $new_roots) = $command->build_chain();
+				list($new_chain, $new_roots) = $command->find_chain($root);
 				$chain = array_merge($chain, $new_chain);
 				$roots = array_merge($roots, $new_roots);
 			}
@@ -101,38 +99,56 @@ abstract class OGL_Command {
 
 	protected function query_build() {
 		$query = DB::select();
-		foreach($this->get_chain() as $command)
-			$command->query_contrib($query);
+		foreach($this->get_chain() as $command) {
+			$is_root = ($command === $this) ? true : false;
+			$command->query_contrib($query, $is_root);
+		}
 		return DB::query(Database::SELECT, $query->compile(Database::instance()));
 	}
 
-	protected function query_contrib($query) {
-		$this->query_contrib_select($query);
-		$this->query_contrib_from($query);
-		$this->query_contrib_join($query);
-		$this->query_contrib_on($query);
-		$this->query_contrib_where($query);
-		$this->query_contrib_order_by($query);
-	}
-
-	protected function query_contrib_select($query) {
-		$trg_entity = $this->trg_set->entity;
+	protected function query_contrib($query, $is_root) {
+		// Entities and aliases :
+		$trg_entity	= $this->trg_set->entity;
+		$trg_alias	= $this->trg_set->name;
+		
+		// trg fields :
 		if ( ! isset($this->fields))
 			$this->fields = $trg_entity->fields_all();
 		else
 			$this->fields = array_merge($this->fields, array_diff($trg_entity->pk(), $this->fields));
-		$trg_entity->query_select($query, $this->trg_set->name, $this->fields);
-	}
+		$trg_entity->query_select($query, $trg_alias, $this->fields);
 
-	protected function query_contrib_order_by($query) {
+		// Order by :
 		foreach($this->order_by as $field => $order)
-			$this->trg_set->entity->query_order_by($query, $this->trg_set->name, $field, $order);
+			$trg_entity->query_order_by($query, $trg_alias, $field, $order);
+
+		// Limit :
+		if (isset($this->limit))
+			$query->limit($this->limit);
+
+		// Offset :
+		if (isset($this->offset))
+			$query->offset($this->offset);
 	}
 
-	protected function query_contrib_from($query) { }
-	protected function query_contrib_join($query) { }
-	protected function query_contrib_on($query) { }
-	protected function query_contrib_where($query) { }
+	protected function is_relative_root($command) {
+		// Limit or offset required in command ? No choice, command must be a root.
+		if (isset($command->limit) || isset($command->offset))
+			return true;
+
+		// Limit or offset required in current command and relative command with multiple relationship ? No choice, command must be a root.
+		if ((isset($this->limit) || isset($this->offset)) && $command->relationship->multiple())
+			return true;
+
+		// Otherwise let the user decide :
+		switch ($command->root) {
+			case OGL::AUTO :	$is_root = $command->relationship->multiple(); break;
+			case OGL::ROOT :	$is_root = true;	break;
+			case OGL::SLAVE :	$is_root = false;	break;
+			default : throw new Kohana_Exception("Invalid value for root property in a command.");
+		}
+		return $is_root;
+	}
 
 	abstract protected function query_exec($parameters);
 
@@ -175,7 +191,13 @@ abstract class OGL_Command {
 		$this->trg_set->sort($sort);
 	}
 
-	abstract protected function is_root();
+	public function limit($limit) {
+		$this->limit = $limit;
+	}
+
+	public function offset($offset) {
+		$this->offset = $offset;
+	}
 }
 
 

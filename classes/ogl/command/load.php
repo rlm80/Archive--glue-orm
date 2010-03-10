@@ -8,24 +8,24 @@ class OGL_Command_Load extends OGL_Command {
 		$this->entity = $entity;
 	}
 
-	protected function is_root() {
-		return true;
-	}
-
 	protected function query_exec($parameters)	{
 		$query = $this->query_get()->parameters($parameters);
 		return $query->execute()->as_array();
 	}
 	
-	protected function query_contrib_from($query) {
-		parent::query_contrib_from($query);
-		$this->entity->query_from($query, $this->trg_set->name);
-	}
+	protected function query_contrib($query, $is_root) {
+		parent::query_contrib($query, $is_root);
 
-	protected function query_contrib_where($query) {
-		parent::query_contrib_where($query);
+		// Entities and aliases :
+		$trg_entity = $this->trg_set->entity;
+		$trg_alias	= $this->trg_set->name;
+
+		// From :
+		$trg_entity->query_from($query, $trg_alias);
+
+		// Restrict result with where conditions (in WHERE clause !!!) :
 		foreach($this->where as $w)
-			$this->trg_set->entity->query_where($query, $this->trg_set->name, $w['field'], $w['op'], $w['expr']);
+			$trg_entity->query_where($query, $trg_alias, $w['field'], $w['op'], $w['expr']);
 	}
 	
 	protected function load_relationships($result) {}

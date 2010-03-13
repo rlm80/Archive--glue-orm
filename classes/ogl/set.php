@@ -26,6 +26,10 @@ class OGL_Set implements Iterator, Countable {
 		$this->sort = $sort;
 		$this->do_sort();
 	}
+
+	public function delete() {
+		$this->entity->object_delete($this->objects);
+	}
 	
 	protected function do_sort() {
 		if (isset($this->sort))

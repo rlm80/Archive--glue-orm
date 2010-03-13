@@ -50,4 +50,12 @@ class OGL {
 	protected function _sort($entity_name, &$objects, $clause) {
 		OGL_Entity::get($entity_name)->object_sort($objects, $clause);
 	}
+
+	public static function delete($entity_name, $objects) {
+		return self::instance()->_delete($entity_name, $objects);
+	}
+
+	protected function _delete($entity_name, $objects) {
+		OGL_Entity::get($entity_name)->object_delete($objects);
+	}
 }

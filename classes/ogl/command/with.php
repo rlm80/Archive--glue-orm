@@ -92,9 +92,9 @@ class OGL_Command_With extends OGL_Command {
 			$src_entity->query_from($query, $src_alias);
 			if ($this->is_unitary())
 				foreach($pk as $f)
-					$src_entity->query_where($query, $src_alias, $f, '=', new Database_Expression(':__'.$f));
+					$src_entity->query_where($query, $src_alias, $f, '=', DB::expr(':__'.$f));
 			else
-				$src_entity->query_where($query, $src_alias, $pk[0], 'IN', new Database_Expression(':__pks'));
+				$src_entity->query_where($query, $src_alias, $pk[0], 'IN', DB::expr(':__pks'));
 		}
 
 		// Add joins to trg entity :

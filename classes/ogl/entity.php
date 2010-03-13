@@ -8,7 +8,6 @@ class OGL_Entity {
 	protected $name;
 	protected $pk;
 	protected $fk;
-	protected $joins;
 
 	// Properties that may be set in children classes :
 	protected $model;
@@ -52,26 +51,6 @@ class OGL_Entity {
 			if (isset($data['pk'])) {
 				$this->pk[]			= $name;
 				$this->fk[$name]	= $data['pk'];
-			}
-		}
-
-		// Build joins array :
-		$this->joins = array();
-		if (count($this->tables) > 1) {
-			foreach($this->fields as $name => $data) {
-				$columns	= $data['columns'];
-				$count		= count($columns);
-				if ($count > 1) {
-					for ($i = 0; $i < $count; $i++) {
-						list($table_i, $col_i) = explode('.', $columns[$i]);
-						for ($j = 0; $j < $count; $j++) {
-							if ($j !== $i) {
-								list($table_j, $col_j) = explode('.', $columns[$j]);
-								$this->joins[$table_i][$table_j][$col_i] = $col_j;
-							}
-						}
-					}
-				}
 			}
 		}
 	}
@@ -146,6 +125,26 @@ class OGL_Entity {
 		if ( ! isset($this->partial)) {
 			// Init fake select query (we need this hack because query builder doesn't support nested joins) :
 			$fake = DB::select();
+
+			// Build joins array :
+			$joins = array();
+			if (count($this->tables) > 1) {
+				foreach($this->fields as $name => $data) {
+					$columns	= $data['columns'];
+					$count		= count($columns);
+					if ($count > 1) {
+						for ($i = 0; $i < $count; $i++) {
+							list($table_i, $col_i) = explode('.', $columns[$i]);
+							for ($j = 0; $j < $count; $j++) {
+								if ($j !== $i) {
+									list($table_j, $col_j) = explode('.', $columns[$j]);
+									$joins[$table_i][$table_j][$col_i] = $col_j;
+								}
+							}
+						}
+					}
+				}
+			}			
 
 			// Add tables :
 			$count = count($this->tables);
@@ -337,6 +336,43 @@ class OGL_Entity {
 		if ($a->$sort > $b->$sort) return +1;
 		return 0;
     }
+
+	public function object_delete($objects) {
+		// Get pk values :
+		$pkvals = array_map(array($this, 'object_pk'), $objects);
+
+		// Delete rows, table by table :
+		foreach($this->tables as $table) {
+			// Find pk columns for current table :
+			$cols = array();
+			foreach($this->fields as $name => $data) {
+				if (isset($data['pk'])) {
+					foreach ($data['columns'] as $column) {
+						list($t, $c) = explode('.', $column);
+						if ($t === $table) $cols[$name] = $c;
+					}
+				}
+			}
+
+			// Delete rows :
+			$query = DB::delete($table);
+			if (count($cols) === 1) {	// Single column pk => one query
+				list($col) = array_values($cols);
+				$query->where($col, 'IN', $pkvals);
+				$query->execute();
+			}
+			else {						// Multiple columns pk => one query by object
+				// Build query :
+				foreach($cols as $name => $c)
+					$query->where($c, '=', DB::expr(':__'.$name));
+
+				// Exec queries :
+				foreach($pkvals as $pkval)
+					foreach($pkval as $f => $val)
+						$query->param( ':__'.$f, $val);
+			}
+		}
+	}
 
 	// Return relationship $name of this entity.
 	public function relationship($name) {

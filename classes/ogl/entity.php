@@ -51,7 +51,7 @@ class OGL_Entity {
 		foreach($this->fields as $name => $data) {
 			if (isset($data['pk'])) {
 				$this->pk[]			= $name;
-				$this->fk[$name]	= $this->name.'_'.$name;
+				$this->fk[$name]	= $data['pk'];
 			}
 		}
 

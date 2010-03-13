@@ -28,12 +28,12 @@ class OGL_Set implements Iterator, Countable {
 	}
 
 	public function delete() {
-		$this->entity->object_delete($this->objects);
+		$this->entity->delete($this->objects);
 	}
 	
 	protected function do_sort() {
 		if (isset($this->sort))
-			$this->entity->object_sort($this->objects, $this->sort);
+			$this->entity->sort($this->objects, $this->sort);
 	}
 
 	public function set_objects($objects) {
@@ -41,7 +41,7 @@ class OGL_Set implements Iterator, Countable {
 		$this->do_sort();
 	}
 
-	public function to_array() {
+	public function as_array() {
 		return $this->objects;
 	}
 

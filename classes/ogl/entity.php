@@ -305,7 +305,7 @@ class OGL_Entity {
 	}
 
 	// Sorts an array of objects according to sort criteria.
-	public function object_sort(&$objects, $clause) {
+	public function sort(&$objects, $clause) {
 		// Parse sort clause and set current sort :
 		$this->sort = array();
 		$clause = preg_replace('/\s+/', ' ', $clause);
@@ -337,7 +337,7 @@ class OGL_Entity {
 		return 0;
     }
 
-	public function object_delete($objects) {
+	public function delete($objects) {
 		// Get pk values :
 		$pkvals = array_map(array($this, 'object_pk'), $objects);
 

@@ -41,6 +41,10 @@ class OGL_Set implements Iterator, Countable {
 		$this->do_sort();
 	}
 
+	public function entity() {
+		return $this->entity;
+	}
+
 	public function as_array() {
 		return $this->objects;
 	}

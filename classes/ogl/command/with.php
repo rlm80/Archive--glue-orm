@@ -43,7 +43,7 @@ class OGL_Command_With extends OGL_Command {
 		$entity		= $this->src_set->entity;
 		$pk			= $entity->pk();
 		$alias		= $this->src_set->name;
-		$objects	= $this->src_set->to_array();
+		$objects	= $this->src_set->as_array();
 
 		// No objects ? No result :
 		if (count($objects) === 0)

@@ -7,7 +7,11 @@ class OGL {
 	const AUTO	= 3;
 
 	public static function load($entity_name, &$set) {
-		return new OGL_Query($entity_name, $set);
+		return new OGL_Query_Load($entity_name, $set);
+	}
+
+	public static function delete($entity_name, &$set) {
+		return new OGL_Query_Delete($entity_name, $set);
 	}
 
 	public static function param($name) {

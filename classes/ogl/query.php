@@ -111,11 +111,6 @@ class OGL_Query {
 		return $this;
 	}
 
-	public function sort($sort) {
-		$this->active_command->sort($sort);
-		return $this;
-	}
-
 	public function order_by($sort) {
 		$this->active_command->order_by($sort);
 		return $this;
@@ -128,18 +123,6 @@ class OGL_Query {
 	
 	public function offset($offset) {
 		$this->active_command->offset($offset);
-		return $this;
-	}
-
-	public function select() {
-		$args = func_get_args();
-		call_user_func_array(array($this->active_command, 'select'), $args);
-		return $this;
-	}
-
-	public function not_select() {
-		$args = func_get_args();
-		call_user_func_array(array($this->active_command, 'not_select'), $args);
 		return $this;
 	}
 }

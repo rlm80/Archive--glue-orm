@@ -4,16 +4,23 @@ class OGL_Entity {
 	// Entity cache :
 	static protected $entities = array();
 
-	// Properties that may NOT be set in children classes (either passed to constructor or deduced from other properties) :
+	// Properties that may NOT be set in children classes (either passed to constructor) :
 	protected $name;
-	protected $pk;
-	protected $fk;
 
 	// Properties that may be set in children classes :
 	protected $model;
 	protected $tables ;
 	protected $fields;
 	protected $db;
+
+	// Properties that may NOT be set in children classes (deduced from other properties) :
+	protected $pk;			// PK fields (deduced from fields)
+	protected $fk;			// PK fields => FK fields mappings (deduced from fields)
+	protected $single_pk;	// Single column vs multiple columns PK (deduced from pk)
+	protected $pk_props;	// PK field names => PK properties mapping
+	protected $pk_prop;		// PK property (only set if single_pk is true)
+	protected $ftc;			// field names => tables => column mapping
+	protected $tfc;			// tables => field name => column mapping
 
 	// Internal details :
 	private $partial;
@@ -44,13 +51,30 @@ class OGL_Entity {
 					throw new Kohana_Exception("Format 'table.column' expected, '".$col."' found instead.");
 		}
 
-		// Extract pk and fk from fields array for efficiency purposes :
-		$this->pk = array();
-		$this->fk = array();
-		foreach($this->fields as $name => $data) {
-			if (isset($data['pk'])) {
-				$this->pk[]			= $name;
-				$this->fk[$name]	= $data['pk'];
+		// Extract fk from fields array :
+		foreach($this->fields as $f => $data) {
+			if (isset($data['pk']))
+				$this->fk[$f] = $data['pk'];
+		}
+		
+		// Extract pk from fk :
+		$this->pk = array_keys($this->fk);
+		
+		// Single column or multiple columns pk ?
+		$this->single_pk = (count($this->pk) === 1) ? true : false;
+
+		// PK field names => PK properties mapping
+		foreach ($this->pk as $f)
+			$this->pk_props[$f]	= $this->fields[$f]['property'];
+		if ($this->single_pk)
+			$this->pk_prop = $this->pk_props[$this->pk[0]];
+
+		// Field names => tables => column mapping
+		foreach($this->fields as $f => $data) {
+			foreach ($data['columns'] as $column) {
+				list($t, $c) = explode('.', $column);
+				$this->ftc[$f][$t] = $c;
+				$this->tfc[$t][$f] = $c;
 			}
 		}
 	}
@@ -126,26 +150,6 @@ class OGL_Entity {
 			// Init fake select query (we need this hack because query builder doesn't support nested joins) :
 			$fake = DB::select();
 
-			// Build joins array :
-			$joins = array();
-			if (count($this->tables) > 1) {
-				foreach($this->fields as $name => $data) {
-					$columns	= $data['columns'];
-					$count		= count($columns);
-					if ($count > 1) {
-						for ($i = 0; $i < $count; $i++) {
-							list($table_i, $col_i) = explode('.', $columns[$i]);
-							for ($j = 0; $j < $count; $j++) {
-								if ($j !== $i) {
-									list($table_j, $col_j) = explode('.', $columns[$j]);
-									$joins[$table_i][$table_j][$col_i] = $col_j;
-								}
-							}
-						}
-					}
-				}
-			}			
-
 			// Add tables :
 			$count = count($this->tables);
 			for ($i = 0; $i < $count; $i++) {
@@ -161,14 +165,15 @@ class OGL_Entity {
 				for($j = $i - 1; $j >= 0; $j--) {
 					$table2			= $this->tables[$j];
 					$table2_alias	= '%ALIAS%'.'__'.$table2;
-					if (isset($this->joins[$table1][$table2])) {
-						foreach($this->joins[$table1][$table2] as $col1 => $col2)
-							$fake->on($table1_alias.'.'.$col1, '=', $table2_alias.'.'.$col2);
+					foreach($this->pk as $pkf) {
+						$col1 = $this->tfc[$table1][$pkf];
+						$col2 = $this->tfc[$table2][$pkf];
+						$fake->on($table1_alias.'.'.$col1, '=', $table2_alias.'.'.$col2);
 					}
 				}
 			}
 
-			// Capture partial query :
+			// Capture from clause :
 			$sql			= $fake->compile(Database::instance());
 			list(, $sql)	= explode('FROM ', $sql);
 			$this->partial	= ($count > 1) ? '('.$sql.')' : $sql;
@@ -178,15 +183,15 @@ class OGL_Entity {
 	}
 
 	public function query_select($query, $alias, $fields) {
-		$this->fields_validate($fields);
+		$this->fields_validate($fields); // TODO ça ne serait pas mieux au niveau de l'appel ?
 		foreach ($fields as $name)
 			$query->select(array($this->query_field_expr($alias, $name), $alias.':'.$name)); // TODO move aliasing logic to calling function
 	}
 
 	public function query_field_expr($alias, $field) {
-		$this->fields_validate(array($field));
-		list($table, $column) = explode('.', $this->fields[$field]['columns'][0]);
-		return $alias . '__' . $table . '.' . $column;
+		$this->fields_validate(array($field)); // TODO ça ne serait pas mieux au niveau de l'appel ?
+		foreach($this->ftc[$field] as $table => $column)
+			return $alias . '__' . $table . '.' . $column;
 	}
 
 	public function fields_validate($fields) {
@@ -205,7 +210,7 @@ class OGL_Entity {
 
 	public function object_load(&$rows, $prefix = '') {
 		// No rows ? Do nothing :
-		if (count($rows) === 0) return;
+		if (count($rows) === 0) return array();
 
 		// Build columns => fields mapping :
 		$mapping = array();
@@ -289,18 +294,13 @@ class OGL_Entity {
 	// For single column pk, returns the pk value.
 	// For multiple columns pk, returns an associative array with pk field names and values.
 	public function object_pk($object) {
-		static $prop;
+		// Single column pk :
+		if ($this->single_pk)
+			return $object->{$this->pk_prop};
 
-		// Single or multiple column pk ?
-		if (count($this->pk) === 1) {
-			if ( ! isset($prop)) $prop = $this->fields[$this->pk[0]]['property'];
-			$pk = $object->$prop;
-		}
-		else {
-			foreach($this->pk as $f)
-				$pk[$f] = $object->{$this->fields[$f]['property']};
-		}
-
+		// Multiple columns pk :
+		foreach($this->pk_props as $f => $p)
+			$pk[$f] = $object->$p;
 		return $pk;
 	}
 
@@ -338,40 +338,34 @@ class OGL_Entity {
     }
 
 	public function delete($objects) {
+		// No objects ? Do nothing :
+		if (count($objects) === 0) return;
+
 		// Get pk values :
 		$pkvals = array_map(array($this, 'object_pk'), $objects);
 
 		// Delete rows, table by table :
 		foreach($this->tables as $table) {
-			// Find pk columns for current table :
-			$cols = array();
-			foreach($this->fields as $name => $data) {
-				if (isset($data['pk'])) {
-					foreach ($data['columns'] as $column) {
-						list($t, $c) = explode('.', $column);
-						if ($t === $table) $cols[$name] = $c;
-					}
-				}
-			}
-
-			// Delete rows :
 			$query = DB::delete($table);
-			if (count($cols) === 1) {	// Single column pk => one query
-				list($col) = array_values($cols);
-				$query->where($col, 'IN', $pkvals);
+			if ($this->single_pk) {
+				$pkcol = $this->ftc[$this->pk[0]][$table];
+				$query->where($pkcol, 'IN', $pkvals);
 				$query->execute();
 			}
-			else {						// Multiple columns pk => one query by object
+			else {
 				// Build query :
-				foreach($cols as $name => $c)
-					$query->where($c, '=', DB::expr(':__'.$name));
+				foreach($this->pk as $f)
+					$query->where($this->ftc[$f][$table], '=', DB::expr(':__'.$f));
+				$query = DB::query(Database::DELETE, $query->compile(Database::instance())); // Needed because query builder doesn't support parameters
 
 				// Exec queries :
-				foreach($pkvals as $pkval)
+				foreach($pkvals as $pkval) {
 					foreach($pkval as $f => $val)
 						$query->param( ':__'.$f, $val);
+					$query->execute();
+				}
 			}
-		}
+		} 
 	}
 
 	// Return relationship $name of this entity.

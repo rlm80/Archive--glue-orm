@@ -378,6 +378,9 @@ class OGL_Entity {
     }
 
 	public function delete($objects) {
+		// Only one object ? Wrap it in an array :
+		if ( ! is_array($objects)) $objects = array($objects);
+
 		// No objects ? Do nothing :
 		if (count($objects) === 0) return;
 
@@ -409,7 +412,32 @@ class OGL_Entity {
 	}
 
 	public function insert($objects) {
+		// Only one object ? Wrap it in an array :
+		if ( ! is_array($objects)) $objects = array($objects);
 
+		// Insert rows, table by table :
+		foreach($this->tables as $table) {
+			// Build columns - properties array :
+			$cp = array();
+			foreach($this->columns as $f => $data) {
+				if (isset($data[$table]))
+					$cp[$data[$table]] = $this->properties[$f];
+			}
+
+			// Build query :
+			$query = DB::insert($table, array_keys($cp));
+
+			// Add values :
+			foreach($objects as $obj) {
+				$values = array();
+				foreach($cp as $column => $property)
+					$values[] = $obj->$property;
+				$query->values($values);
+			}			
+
+			// Exec query :
+			$query->execute($this->db);
+		}
 	}
 
 	// Return relationship $name of this entity.

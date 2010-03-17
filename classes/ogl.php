@@ -9,6 +9,10 @@ class OGL {
 		return new OGL_Query_Delete($entity_name, $set);
 	}
 
+	public static function insert($entity_name, $objects) {
+		OGL::entity($entity_name)->insert($objects);
+	}	
+
 	public static function param($name) {
 		return new OGL_Param_Set($name);
 	}

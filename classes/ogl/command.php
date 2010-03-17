@@ -142,9 +142,9 @@ abstract class OGL_Command {
 
 		// Otherwise let the user decide :
 		switch ($command->root) {
-			case OGL::AUTO :	$is_root = $command->relationship->multiple(); break;
-			case OGL::ROOT :	$is_root = true;	break;
-			case OGL::SLAVE :	$is_root = false;	break;
+			case OGL_Command_With::AUTO :	$is_root = $command->relationship->multiple(); break;
+			case OGL_Command_With::ROOT :	$is_root = true;	break;
+			case OGL_Command_With::SLAVE :	$is_root = false;	break;
 			default : throw new Kohana_Exception("Invalid value for root property in a command.");
 		}
 		return $is_root;

@@ -1,6 +1,11 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 class OGL_Command_With extends OGL_Command {
+	// Constants :
+	const ROOT	= 1;
+	const SLAVE	= 2;
+	const AUTO	= 3;
+
 	protected $relationship;
 	protected $src_set;
 
@@ -9,7 +14,7 @@ class OGL_Command_With extends OGL_Command {
 
 	public function  __construct($relationship, $src_set, $trg_set) {
 		parent::__construct($trg_set);
-		$this->root					= OGL::AUTO;
+		$this->root					= self::AUTO;
 		$this->relationship			= $relationship;
 		$this->src_set				= $src_set;
 		$this->src_set->commands[]	= $this;
@@ -108,11 +113,11 @@ class OGL_Command_With extends OGL_Command {
 	}
 
 	public function slave() {
-		$this->root = OGL::SLAVE;
+		$this->root = self::SLAVE;
 	}
 
 	public function root() {
-		$this->root = OGL::ROOT;
+		$this->root = self::ROOT;
 	}
 
 	protected function is_unitary() {

@@ -3,80 +3,45 @@
 class OGL_Entity {
 	// Entity cache :
 	static protected $entities = array();
+	
+	// Identity map :
+	protected $map = array();
 
-	// Properties that may NOT be set in children classes (either passed to constructor) :
+	// Properties that may NOT be set in children classes (passed to constructor) :
 	protected $name;
 
 	// Properties that may be set in children classes :
-	protected $model;
-	protected $tables ;
-	protected $fields;
 	protected $db;
-
-	// Properties that may NOT be set in children classes (deduced from other properties) :
-	protected $pk;			// PK fields (deduced from fields)
-	protected $fk;			// PK fields => FK fields mappings (deduced from fields)
-	protected $single_pk;	// Single column vs multiple columns PK (deduced from pk)
-	protected $pk_props;	// PK field names => PK properties mapping
-	protected $pk_prop;		// PK property (only set if single_pk is true)
-	protected $ftc;			// field names => tables => column mapping
-	protected $tfc;			// tables => field name => column mapping
+	protected $model;
+	protected $tables;
+	protected $fields;
+	protected $properties;
+	protected $columns;
+	protected $types;
+	protected $auto;
+	protected $pk;
+	protected $fk;
 
 	// Internal details :
 	private $partial;
-
-	// Current sort criteria :
-	protected $sort;
-
-	// Identity map :
-	protected $map = array();
+	private $introspect;
+	private $sort;
 
 	protected function __construct($name) {
 		// Set properties :
 		$this->name	= $name;
 
 		// Init properties (order matters !!!) :
-		if ( ! isset($this->db))		$this->db		= $this->default_db();
-		if ( ! isset($this->model))		$this->model	= $this->default_model();
-		if ( ! isset($this->tables))	$this->tables	= $this->default_tables();
-		if ( ! isset($this->fields))	$this->fields	= $this->default_fields();
-
-		// Check fields array format :
-		foreach($this->fields as $name => $data) {
-			// Check columns property :
-			if ( ! isset($data['columns']) || ! is_array($data['columns']))
-				throw new Kohana_Exception("No 'columns' property found for field '".$this->name.".".$name."' or property not an array.");
-			foreach ($data['columns'] as $col)
-				if (strpos($col, '.') === false)
-					throw new Kohana_Exception("Format 'table.column' expected, '".$col."' found instead.");
-		}
-
-		// Extract fk from fields array :
-		foreach($this->fields as $f => $data) {
-			if (isset($data['pk']))
-				$this->fk[$f] = $data['pk'];
-		}
-		
-		// Extract pk from fk :
-		$this->pk = array_keys($this->fk);
-		
-		// Single column or multiple columns pk ?
-		$this->single_pk = (count($this->pk) === 1) ? true : false;
-
-		// PK field names => PK properties mapping
-		foreach ($this->pk as $f)
-			$this->pk_props[$f]	= $this->fields[$f]['property'];
-		if ($this->single_pk)
-			$this->pk_prop = $this->pk_props[$this->pk[0]];
-
-		// Field names => tables => column mapping
-		foreach($this->fields as $f => $data) {
-			foreach ($data['columns'] as $column) {
-				list($t, $c) = explode('.', $column);
-				$this->ftc[$f][$t] = $c;
-				$this->tfc[$t][$f] = $c;
-			}
-		}
+		if ( ! isset($this->db))			$this->db			= $this->default_db();
+		if ( ! isset($this->model))			$this->model		= $this->default_model();
+		if ( ! isset($this->tables))		$this->tables		= $this->default_tables();
+		if ( ! isset($this->fields))		$this->fields		= $this->default_fields();
+		if ( ! isset($this->properties))	$this->properties	= $this->default_properties();
+		if ( ! isset($this->columns))		$this->columns		= $this->default_columns();
+		if ( ! isset($this->types))			$this->types		= $this->default_types();
+		if ( ! isset($this->pk))			$this->pk			= $this->default_pk();
+		if ( ! isset($this->fk))			$this->fk			= $this->default_fk();
+		if ( ! isset($this->auto))			$this->auto			= $this->default_auto();
 	}
 
 	protected function default_db() {
@@ -96,27 +61,101 @@ class OGL_Entity {
 		// Init fields array :
 		$fields  = array();
 
-		// Loop on tables, look up columns properties by database introspection and populate fields array :
+		// Loop on tables, look up columns by database introspection and populate fields array :
+		$data = $this->introspect();
 		foreach($this->tables as $table) {
-			$cols = Database::instance()->list_columns($table);
-			foreach($cols as $col => $data) {
-				if ( ! isset($fields[$col])) {
-					// Field doesn't exist yet ? Create it :
-					$fields[$col] = array(
-						'columns'	=> array($table.'.'.$col),
-						'phptype'	=> $data['type'],
-						'property'	=> $col
-					);
-					if (isset($data['key']) && $data['key'] === 'PRI')
-						$fields[$col]['pk'] = $this->name.'_'.$col;
-				}
-				else
-					// Otherwise add current column to its columns list :
-					$fields[$col]['columns'][] = $table.'.'.$col;
+			foreach($data[$table] as $col => $data) {
+				if ( ! in_array($col, $fields))
+					$fields[] = $col;
 			}
 		}
 
 		return $fields;
+	}
+	
+	protected function default_properties() {
+		return array_combine($this->fields, $this->fields);
+	}
+
+	// par défault, associe chaque field à la colonne du même nom. Si il y plusieurs tables, ça demande un accès db, sinon pas.
+	protected function default_columns() {
+		$columns = array();
+
+		if (count($this->tables) === 1) {
+			foreach($this->fields as $f)
+				$columns[$f][$this->tables[0]] = $f;
+		}
+		else {
+			$data = $this->introspect();
+			foreach($this->fields as $f) {
+				foreach($this->tables as $table) {
+					if (isset($data[$table][$f]))
+						$columns[$f][$table] = $f;
+				}
+				if ( ! isset($columns[$f]))
+					throw new Kohana_Exception("Impossible to guess onto which table and column the following field must be mapped : '".$f."' (entity '".$this->name."'");
+			}
+		}
+
+		return $columns;
+	}
+
+	protected function default_types() {
+		$types = array();
+
+		$data = $this->introspect();
+		foreach($this->columns as $f => $arr) {
+			foreach ($arr as $table => $column) break;
+			$types[$f] = $data[$table][$column]['type'];
+		}
+
+		return $types;
+	}
+
+	protected function default_pk() {
+		$pk = array();
+
+		$data = $this->introspect();
+		foreach($this->columns as $f => $arr) {
+			foreach ($arr as $table => $column) {
+				if (isset($data[$table][$column]['key']) && $data[$table][$column]['key'] === 'PRI') {
+					$pk[] = $f;
+					break;
+				}
+			}
+		}
+
+		return $pk;
+	}
+
+	protected function default_fk() {
+		$fk = array();
+		foreach($this->pk as $f) $fk[$f] = $this->name.'_'.$f;
+		return $fk;
+	}
+
+	protected function default_auto() {
+		$auto = array();
+
+		$data = $this->introspect();
+		foreach($this->columns as $f => $arr) {
+			foreach ($arr as $table => $column) {
+				if (isset($data[$table][$column]['extra']) && strpos($data[$table][$column]['extra'], 'auto_increment') !== false) {
+					$auto[$f] = array('table' => $table, 'columns' => $column);
+					break;
+				}
+			}
+		}
+
+		return $auto;
+	}
+
+	protected function introspect() {
+		if ( ! isset($this->introspect)) {
+			foreach($this->tables as $table)
+				$this->introspect[$table] = OGL::show_columns($this->db, $table);
+		}
+		return $this->introspect;
 	}
 
 	public function query_from($query, $alias) {
@@ -166,15 +205,15 @@ class OGL_Entity {
 					$table2			= $this->tables[$j];
 					$table2_alias	= '%ALIAS%'.'__'.$table2;
 					foreach($this->pk as $pkf) {
-						$col1 = $this->tfc[$table1][$pkf];
-						$col2 = $this->tfc[$table2][$pkf];
+						$col1 = $this->columns[$pkf][$table1];
+						$col2 = $this->columns[$pkf][$table2];
 						$fake->on($table1_alias.'.'.$col1, '=', $table2_alias.'.'.$col2);
 					}
 				}
 			}
 
 			// Capture from clause :
-			$sql			= $fake->compile(Database::instance());
+			$sql			= $fake->compile(Database::instance($this->db));
 			list(, $sql)	= explode('FROM ', $sql);
 			$this->partial	= ($count > 1) ? '('.$sql.')' : $sql;
 		}
@@ -190,22 +229,22 @@ class OGL_Entity {
 
 	public function query_field_expr($alias, $field) {
 		$this->fields_validate(array($field)); // TODO ça ne serait pas mieux au niveau de l'appel ?
-		foreach($this->ftc[$field] as $table => $column)
+		foreach($this->columns[$field] as $table => $column)
 			return $alias . '__' . $table . '.' . $column;
 	}
 
 	public function fields_validate($fields) {
-		$errors = array_diff($fields, array_keys($this->fields));
+		$errors = array_diff($fields, $this->fields);
 		if (count($errors) > 0)
 			throw new Kohana_Exception("The following fields do not belong to entity ".$this->name." : ".implode(',', $errors));
 	}
 
 	public function fields_opposite($fields) {
-		return array_diff(array_keys($this->fields), $fields);
+		return array_diff($this->fields, $fields);
 	}
 
 	public function fields_all() {
-		return array_keys($this->fields);
+		return $this->fields;
 	}
 
 	public function object_load(&$rows, $prefix = '') {
@@ -218,7 +257,7 @@ class OGL_Entity {
 		foreach($rows[0] as $col => $val) {
 			if (substr($col, 0, $len_prefix) === $prefix) {
 				$field = substr($col, $len_prefix);
-				if ( ! isset($this->fields[$field]))
+				if ( ! in_array($field, $this->fields))
 					throw new Kohana_Exception("The following field doesn't belong to entity '".$this->name."' : '".$field."'");
 				$mapping[$col] = $field;
 			}
@@ -243,10 +282,9 @@ class OGL_Entity {
 		}
 
 		// Add new objects to id map :
-		$indexes		= array_flip($pks); // Distinct pk => row index mapping
+		$indexes = array_flip($pks); // Distinct pk => row index mapping
 		unset($indexes[0]);					// Remove key that represents "no object".
-		$field_names	= array_keys($this->fields);
-		$diff			= array_diff_key($indexes, $this->map);
+		$diff = array_diff_key($indexes, $this->map);
 		foreach($diff as $pk => $index) {
 			$vals	= array_intersect_key($rows[$index], $mapping);
 			$array	= array_combine($mapping, $vals);
@@ -280,12 +318,9 @@ class OGL_Entity {
 
 		// Set object properties :
 		foreach($array as $field => $val) {
-			$data = $this->fields[$field];
-			$prop = $data['property'];
-			$type = $data['phptype'];
-			if ($type !== 'string')
-				settype($val, $type);
-			$object->$prop = $val;
+			$type = $this->types[$field];
+			if ($type !== 'string') settype($val, $type);
+			$object->{$this->properties[$field]} = $val;
 		}
 
 		return $object;
@@ -295,12 +330,12 @@ class OGL_Entity {
 	// For multiple columns pk, returns an associative array with pk field names and values.
 	public function object_pk($object) {
 		// Single column pk :
-		if ($this->single_pk)
-			return $object->{$this->pk_prop};
+		if ( ! isset($this->pk[1]))
+			return $object->{$this->properties[$this->pk[0]]};
 
 		// Multiple columns pk :
-		foreach($this->pk_props as $f => $p)
-			$pk[$f] = $object->$p;
+		foreach($this->pk as $f)
+			$pk[$f] = $object->{$this->properties[$f]};
 		return $pk;
 	}
 
@@ -312,7 +347,7 @@ class OGL_Entity {
 		$clause = explode(',', $clause);
 		foreach($clause as $c) {
 			$parts	= explode(' ', $c);
-			$sort	= $this->fields[$parts[0]]['property'];
+			$sort	= $this->properties[$parts[0]];
 			$order	= ((! isset($parts[1])) || strtolower(substr($parts[1], 0, 1)) === 'a') ? +1 : -1;
 			$this->sort[$sort] = $order;
 		}
@@ -347,25 +382,29 @@ class OGL_Entity {
 		// Delete rows, table by table :
 		foreach($this->tables as $table) {
 			$query = DB::delete($table);
-			if ($this->single_pk) {
-				$pkcol = $this->ftc[$this->pk[0]][$table];
+			if ( ! isset($this->pk[1])) {	// single pk
+				$pkcol = $this->columns[$this->pk[0]][$table];
 				$query->where($pkcol, 'IN', $pkvals);
-				$query->execute();
+				$query->execute($this->db);
 			}
-			else {
+			else {							// multiple pk
 				// Build query :
 				foreach($this->pk as $f)
-					$query->where($this->ftc[$f][$table], '=', DB::expr(':__'.$f));
-				$query = DB::query(Database::DELETE, $query->compile(Database::instance())); // Needed because query builder doesn't support parameters
+					$query->where($this->columns[$f][$table], '=', DB::expr(':__'.$f));
+				$query = DB::query(Database::DELETE, $query->compile(Database::instance($this->db))); // Needed because query builder doesn't support parameters
 
 				// Exec queries :
 				foreach($pkvals as $pkval) {
 					foreach($pkval as $f => $val)
 						$query->param( ':__'.$f, $val);
-					$query->execute();
+					$query->execute($this->db);
 				}
 			}
 		} 
+	}
+
+	public function insert($objects) {
+
 	}
 
 	// Return relationship $name of this entity.

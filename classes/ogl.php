@@ -1,11 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 class OGL {
-	// Constants :
-	const ROOT	= 1;
-	const SLAVE	= 2;
-	const AUTO	= 3;
-
 	public static function load($entity_name, &$set) {
 		return new OGL_Query_Load($entity_name, $set);
 	}
@@ -24,5 +19,12 @@ class OGL {
 
 	public static function entity($entity_name) {
 		return OGL_Entity::get($entity_name);
+	}
+
+	public static function show_columns($db, $table) {
+		static $cache = array();
+		if ( ! isset($cache[$db][$table]))
+			$cache[$db][$table] = Database::instance($db)->list_columns($table);
+		return $cache[$db][$table];
 	}
 }

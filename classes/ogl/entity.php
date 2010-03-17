@@ -18,7 +18,7 @@ class OGL_Entity {
 	protected $properties;
 	protected $columns;
 	protected $types;
-	protected $auto;
+	protected $autoincrement;
 	protected $pk;
 	protected $fk;
 
@@ -32,16 +32,16 @@ class OGL_Entity {
 		$this->name	= $name;
 
 		// Init properties (order matters !!!) :
-		if ( ! isset($this->db))			$this->db			= $this->default_db();
-		if ( ! isset($this->model))			$this->model		= $this->default_model();
-		if ( ! isset($this->tables))		$this->tables		= $this->default_tables();
-		if ( ! isset($this->fields))		$this->fields		= $this->default_fields();
-		if ( ! isset($this->properties))	$this->properties	= $this->default_properties();
-		if ( ! isset($this->columns))		$this->columns		= $this->default_columns();
-		if ( ! isset($this->types))			$this->types		= $this->default_types();
-		if ( ! isset($this->pk))			$this->pk			= $this->default_pk();
-		if ( ! isset($this->fk))			$this->fk			= $this->default_fk();
-		if ( ! isset($this->auto))			$this->auto			= $this->default_auto();
+		if ( ! isset($this->db))			$this->db			 = $this->default_db();
+		if ( ! isset($this->model))			$this->model		 = $this->default_model();
+		if ( ! isset($this->tables))		$this->tables		 = $this->default_tables();
+		if ( ! isset($this->fields))		$this->fields		 = $this->default_fields();
+		if ( ! isset($this->properties))	$this->properties	 = $this->default_properties();
+		if ( ! isset($this->columns))		$this->columns		 = $this->default_columns();
+		if ( ! isset($this->types))			$this->types		 = $this->default_types();
+		if ( ! isset($this->pk))			$this->pk			 = $this->default_pk();
+		if ( ! isset($this->fk))			$this->fk			 = $this->default_fk();
+		if ( ! isset($this->autoincrement))	$this->autoincrement = $this->default_autoincrement();
 	}
 
 	protected function default_db() {
@@ -134,16 +134,21 @@ class OGL_Entity {
 		return $fk;
 	}
 
-	protected function default_auto() {
-		$auto = array();
-
-		$data = $this->introspect();
-		foreach($this->columns as $f => $arr) {
-			foreach ($arr as $table => $column) {
-				if (isset($data[$table][$column]['extra']) && strpos($data[$table][$column]['extra'], 'auto_increment') !== false) {
-					$auto[$f] = array('table' => $table, 'columns' => $column);
-					break;
-				}
+	protected function default_autoincrement() {
+		if (isset($this->pk[1]))
+			$auto = false;
+		else {
+			$pk = $this->pk[0];
+			if ($this->types[$pk] !== 'integer')
+				$auto =  false;
+			else {
+				$table	= $this->tables[0];
+				$column	= $this->columns[$this->pk[0]][$table];
+				$data	= $this->introspect();
+				if (isset($data[$table][$column]['extra']) && strpos($data[$table][$column]['extra'], 'auto_increment') !== false)
+					$auto =  true;
+				else
+					$auto =  false;
 			}
 		}
 

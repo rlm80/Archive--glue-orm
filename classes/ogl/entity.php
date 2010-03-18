@@ -139,7 +139,7 @@ class OGL_Entity {
 			$auto = false;
 		else {
 			$pk = $this->pk[0];
-			if ($this->types[$pk] !== 'integer')
+			if ($this->types[$pk] !== 'int')
 				$auto =  false;
 			else {
 				$table	= $this->tables[0];
@@ -420,7 +420,7 @@ class OGL_Entity {
 			// Build columns - properties array :
 			$cp = array();
 			foreach($this->columns as $f => $data) {
-				if (isset($data[$table]))
+				if (isset($data[$table]) && ! ($this->autoincrement && $f === $this->pk[0]))
 					$cp[$data[$table]] = $this->properties[$f];
 			}
 
@@ -436,7 +436,17 @@ class OGL_Entity {
 			}			
 
 			// Exec query :
-			$query->execute($this->db);
+			$result = $query->execute($this->db);
+
+			// Set auto-increment values :
+			if ($this->autoincrement) {
+				$i = $result[0];
+				$p = $this->properties[$this->pk[0]];
+				foreach($objects as $obj) {
+					$obj->$p = $i;
+					$i++;
+				}
+			}
 		}
 	}
 

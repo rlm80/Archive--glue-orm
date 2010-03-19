@@ -452,6 +452,35 @@ class OGL_Entity {
 		}
 	}
 
+	function update($objects, $fields) {
+		// Validate fields :
+		$this->fields_validate($fields);
+
+		// Build queries :
+		foreach($this->tables as $table) {
+			// Init query :
+			$q = DB::update($table);
+
+			// Add where :
+			foreach($this->pk as $f)
+				$q->where($this->columns[$f][$table], '=', DB::expr(':__'.$f));
+
+			// Add values :
+			foreach($fields as $f) {
+				$q->value($col, DB::expr(':__'.$f))
+			}
+
+			// Compile :
+			 $query[$table] = $q->compile(Database::instance($this->db));
+		}
+
+
+		// Loop on objects and update db :
+		foreach($objects as $obj) {
+			// Get pk :
+		}
+	}
+
 	// Return relationship $name of this entity.
 	public function relationship($name) {
 		return OGL_Relationship::get($this->name, $name);

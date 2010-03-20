@@ -165,7 +165,7 @@ abstract class OGL_Command {
 		}
 	}
 
-	public function select() {
+	public function fields() {
 		// If fields recieved as a list of strings, turn it to an array :
 		$args = func_get_args();
 		$fields = is_array($args[0]) ? $args[0] : $args;
@@ -174,7 +174,7 @@ abstract class OGL_Command {
 		$this->fields = $fields;
 	}
 
-	public function not_select() {
+	public function not_fields() {
 		// If fields recieved as a list of strings, turn it to an array :
 		$args = func_get_args();
 		$fields = is_array($args[0]) ? $args[0] : $args;

@@ -306,7 +306,7 @@ class OGL_Entity {
 		}
 
 		// Return distinct objects :
-		return $distinct;
+		return array_values($distinct);
 	}
 
 	protected function object_create($array) {

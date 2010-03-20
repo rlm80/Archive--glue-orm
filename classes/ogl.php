@@ -1,8 +1,8 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 class OGL {
-	public static function load($entity_name, &$set) {
-		return new OGL_Query_Load($entity_name, $set);
+	public static function select($entity_name, &$set) {
+		return new OGL_Query_Select($entity_name, $set);
 	}
 
 	public static function delete($entity_name, &$set) {

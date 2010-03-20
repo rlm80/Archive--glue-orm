@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-class OGL_Query_Load extends OGL_Query{
+class OGL_Query_Select extends OGL_Query{
 	public function __construct($entity_name, &$set) {
 		parent::__construct($entity_name, $set);
 	}
@@ -10,15 +10,15 @@ class OGL_Query_Load extends OGL_Query{
 		return $this;
 	}
 
-	public function select() {
+	public function fields() {
 		$args = func_get_args();
-		call_user_func_array(array($this->active_command, 'select'), $args);
+		call_user_func_array(array($this->active_command, 'fields'), $args);
 		return $this;
 	}
 
-	public function not_select() {
+	public function not_fields() {
 		$args = func_get_args();
-		call_user_func_array(array($this->active_command, 'not_select'), $args);
+		call_user_func_array(array($this->active_command, 'not_fields'), $args);
 		return $this;
 	}
 }

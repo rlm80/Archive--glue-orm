@@ -9,7 +9,7 @@
  * - 'p' : set of all posts related to users in u by the relationship 'postS'.
  */
 
-class OGL_Set implements Iterator, Countable {
+class OGL_Set implements Iterator, Countable, ArrayAccess {
 	public $name;
 	public $entity;
 	protected $sort;
@@ -46,7 +46,7 @@ class OGL_Set implements Iterator, Countable {
 	}
 
 	public function as_array() {
-		return array_values($this->objects);
+		return $this->objects;
 	}
 
 	// Iterator, Countable :
@@ -56,4 +56,8 @@ class OGL_Set implements Iterator, Countable {
     public function next()		{return next($this->objects);		}
     public function valid()		{return $this->current() !== false;	}
     public function count()		{return count($this->objects);		}
+	public function offsetSet($offset, $value)	{$this->objects[$offset] = $value;}
+    public function offsetExists($offset)		{return isset($this->objects[$offset]);}
+    public function offsetUnset($offset)		{unset($this->objects[$offset]);}
+    public function offsetGet($offset)			{return isset($this->objects[$offset]) ? $this->objects[$offset] : null;}
 }

@@ -46,7 +46,7 @@ class OGL_Set implements Iterator, Countable {
 	}
 
 	public function as_array() {
-		return $this->objects;
+		return array_values($this->objects);
 	}
 
 	// Iterator, Countable :

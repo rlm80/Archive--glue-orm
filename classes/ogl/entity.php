@@ -378,7 +378,7 @@ class OGL_Entity {
     }
 
 	public function delete($objects) {
-		// Only one object ? Wrap it in an array :
+		// Object given ? Wrap it in an array :
 		if ( ! is_array($objects)) $objects = array($objects);
 
 		// No objects ? Do nothing :
@@ -412,8 +412,11 @@ class OGL_Entity {
 	}
 
 	public function insert($objects) {
-		// Only one object ? Wrap it in an array :
+		// Object given ? Wrap it in an array :
 		if ( ! is_array($objects)) $objects = array($objects);
+
+		// No objects ? Do nothing :
+		if (count($objects) === 0) return;
 
 		// Insert rows, table by table :
 		foreach($this->tables as $table) {
@@ -452,32 +455,57 @@ class OGL_Entity {
 		}
 	}
 
-	function update($objects, $fields) {
+	function update($objects, $fields = null) {
+		// Object given ? Wrap it in an array :
+		if ( ! is_array($objects)) $objects = array($objects);
+
+		// No objects ? Do nothing :
+		if (count($objects) === 0) return;
+
+		// No fields given ? Default = all fields except pk :
+		if ( ! isset($fields))
+			$fields = $this->fields_all();
+
+		// Remove pk :
+		$fields = array_diff($fields, $this->pk);
+
 		// Validate fields :
 		$this->fields_validate($fields);
 
-		// Build queries :
-		foreach($this->tables as $table) {
-			// Init query :
-			$q = DB::update($table);
+		// Build list of tables to be updated :
+		$tables = array();
+		foreach($fields as $f)
+			foreach ($this->columns[$f] as $table => $column)
+				$tables[$table] = 1;
+		$tables = array_keys($tables);
 
-			// Add where :
+		// Update tables :
+		foreach($tables as $table) {
+			// Build query :
+			$query = DB::update($table);
 			foreach($this->pk as $f)
-				$q->where($this->columns[$f][$table], '=', DB::expr(':__'.$f));
+				$query->where($this->columns[$f][$table], '=', DB::expr(':__'.$f));
+			foreach($fields as $f)
+				$query->value($this->columns[$f][$table], DB::expr(':__'.$f));
+			 $query = DB::query(Database::UPDATE, $query->compile(Database::instance($this->db)));
 
-			// Add values :
-			foreach($fields as $f) {
-				$q->value($col, DB::expr(':__'.$f))
+			// Loop on objects and update table :
+			foreach($objects as $obj) {
+				// Set pk values :
+				$pk = $this->object_pk($obj);
+				if (isset($this->pk[1]))
+					foreach($pk as $f => $val)
+						$query->param(':__'.$f, $val);
+				else
+					$query->param(':__'.$this->pk[0], $pk);
+
+				// Set fields values :
+				foreach($fields as $f)
+					$query->param(':__'.$f, $obj->{$this->properties[$f]});
+
+				// Execute query :
+				$query->execute($this->db);
 			}
-
-			// Compile :
-			 $query[$table] = $q->compile(Database::instance($this->db));
-		}
-
-
-		// Loop on objects and update db :
-		foreach($objects as $obj) {
-			// Get pk :
 		}
 	}
 

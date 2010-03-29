@@ -227,21 +227,17 @@ class OGL_Entity {
 	}
 
 	public function query_select($query, $alias, $fields) {
-		$this->fields_validate($fields); // TODO ça ne serait pas mieux au niveau de l'appel ?
 		foreach ($fields as $name)
 			$query->select(array($this->query_field_expr($alias, $name), $alias.':'.$name)); // TODO move aliasing logic to calling function
 	}
 
 	public function query_field_expr($alias, $field) {
-		$this->fields_validate(array($field)); // TODO ça ne serait pas mieux au niveau de l'appel ?
 		foreach($this->columns[$field] as $table => $column)
 			return $alias . '__' . $table . '.' . $column;
 	}
-
+	
 	public function fields_validate($fields) {
-		$errors = array_diff($fields, $this->fields);
-		if (count($errors) > 0)
-			throw new Kohana_Exception("The following fields do not belong to entity ".$this->name." : ".implode(',', $errors));
+		return array_diff($fields, $this->fields);
 	}
 
 	public function fields_opposite($fields) {

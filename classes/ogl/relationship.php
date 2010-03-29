@@ -22,9 +22,7 @@ class OGL_Relationship {
 
 		// Fill in any missing properties with default values based on $from and $name :
 		if ( ! isset($this->to))		$this->to		= $this->default_to();
-		if ( ! isset($this->property))	$this->property	= $this->default_property();
 		if ( ! isset($this->reverse))	$this->reverse	= $this->default_reverse();
-		if ( ! isset($this->multiple))	$this->multiple	= $this->default_multiple();
 		if ( ! isset($this->mapping))	$this->mapping	= $this->default_mapping();
 
 		// Turn mapping into something easier to work with :
@@ -40,6 +38,10 @@ class OGL_Relationship {
 			$new[$trg_entity][$src_entity][$trg_field] = $src_field;
 		}
 		$this->mapping = $new;
+
+		// Keep filling in missing properties with default values :
+		if ( ! isset($this->multiple))	$this->multiple	= $this->default_multiple();
+		if ( ! isset($this->property))	$this->property	= $this->default_property();
 	}
 
 	// Getters :
@@ -49,54 +51,71 @@ class OGL_Relationship {
 	public function multiple()	{	return $this->multiple;					}
 
 	protected function default_to() {
-		switch (substr($this->name, -1)) {
-			case 'Z': case 'S': case '1': $to = substr($this->name, 0, -1); break;
-			default : $to = $this->name;
-		}
-		return $to;
+		return Inflector::singular($this->name);
 	}
 
 	protected function default_reverse() {
-		switch (substr($this->name, -1)) {
-			case 'Z': $reverse = $this->from.'Z';	break;
-			case 'S': $reverse = $this->from;		break;
-			case '1': $reverse = $this->from.'1';	break;
-			default : $reverse = $this->from.'S';
-		}
-		return $reverse;
+		return $this->from;
+	}
+
+	protected function default_mapping() {
+		// Get entity mappers :
+		$from	= $this->from();
+		$to		= $this->to();
+
+		// Fk of source entity exists in target entity ? => one to many
+		$fk		= $from->fk();
+		$errors	= $to->fields_validate(array_values($fk));
+		if (count($errors) === 0)
+			return $fk;
+
+		// Fk of target entity exists in source entity ? => many to one
+		$fk		= $to->fk();
+		$errors	= $from->fields_validate(array_values($fk));
+		if (count($errors) === 0)
+			return array_flip($fk);
+
+		// Associative entity ? => many to many
+		try {
+			$pivot		= ($this->from < $this->to) ? $this->from.'2'.$this->to : $this->to.'2'.$this->from;
+			$pivot		= OGL::entity($pivot); // Will raise exception if no such entity.
+			$from_fk	= $from->fk();
+			$to_fk		= $to->fk();
+			$errors		= $pivot->fields_validate(array_merge(array_values($from_fk), array_values($to_fk)));
+			if (count($errors) === 0) {
+				foreach($from_fk as $src => $trg) $mapping[$src] = $pivot->name().'.'.$trg;
+				foreach($to_fk   as $trg => $src) $mapping[$pivot->name().'.'.$src] = $trg;
+				return $mapping;
+			}
+		} catch(Exception $e) { /* means there is no such associative entity */ }
+
+		// Matching pk ? => one to one
+		$from_pk	= $from->pk();
+		$to_pk		= $to->pk();
+		if (count($from_pk) === count($to_pk) && count(array_diff($from_pk, $to_pk)) === 0)
+			return array_combine($from_pk, $from_pk);
+
+		// Otherwise error.
+		throw new Kohana_Exception("Impossible to guess field mapping from entity '".$this->from."' to entity'".$this->to."'");
+	}
+
+	// TODO faut vérifier toutes les pk des entités associatives aussi !!!
+	protected function default_multiple() {
+		// Find target fields :
+		$trg_fields = array();
+		foreach($this->mapping[$this->to] as $src_entity => $arr)
+			$trg_fields = array_merge($trg_fields, array_keys($arr));
+
+		// Compare target fields with target entity pk :
+		$to_pk = $this->to()->pk();
+		if (count($to_pk) === count($trg_fields) && count(array_diff($trg_fields, $to_pk)) === 0)
+			return false;	// trg fields = trg entity pk => single
+		else
+			return true;	// trg fields = trg entity pk => multiple
 	}
 
 	protected function default_property() {
 		return $this->name;
-	}
-
-	protected function default_multiple() {
-		switch (substr($this->name, -1)) {
-			case 'Z': case 'S': $multiple = true; break;
-			default : $multiple = false;
-		}
-		return $multiple;
-	}
-
-	protected function default_mapping() {
-		$mapping = array();
-		switch (substr($this->name, -1)) {
-			case 'Z':
-				$pivot = ($this->from < $this->to) ? $this->from.'2'.$this->to : $this->to.'2'.$this->from;
-				foreach($this->from()->fk() as $src => $trg) $mapping[$src] = $pivot.'.'.$trg;
-				foreach($this->to()->fk()   as $trg => $src) $mapping[$pivot.'.'.$src] = $trg;
-				break;
-			case 'S':
-				$mapping = $this->from()->fk();
-				break;
-			case '1':
-				$pk = array_values($this->from()->pk());
-				$mapping = array_combine($pk, $pk);
-				break;
-			default :
-				$mapping = array_flip($this->to()->fk());
-		}
-		return $mapping;
 	}
 
 	public function join($query, $from_alias, $to_alias, $type = 'LEFT') {

@@ -99,19 +99,20 @@ class OGL_Relationship {
 		throw new Kohana_Exception("Impossible to guess field mapping from entity '".$this->from."' to entity'".$this->to."'");
 	}
 
-	// TODO faut vérifier toutes les pk des entités associatives aussi !!!
 	protected function default_multiple() {
-		// Find target fields :
-		$trg_fields = array();
-		foreach($this->mapping[$this->to] as $src_entity => $arr)
-			$trg_fields = array_merge($trg_fields, array_keys($arr));
+		foreach($this->mapping as $trg_entity => $arr1) {
+			// Get trg fields :
+			$trg_fields = array();
+			foreach($arr1 as $src_entity => $arr2)
+				$trg_fields = array_merge($trg_fields, array_keys($arr2));
 
-		// Compare target fields with target entity pk :
-		$to_pk = $this->to()->pk();
-		if (count($to_pk) === count($trg_fields) && count(array_diff($trg_fields, $to_pk)) === 0)
-			return false;	// trg fields = trg entity pk => single
-		else
-			return true;	// trg fields = trg entity pk => multiple
+			// Make sure they match pk of trg entity :
+			$pk = OGL::entity($trg_entity)->pk();
+			if (count($pk) !== count($trg_fields) || count(array_diff($trg_fields, $pk)) !== 0)
+				return true;
+		}
+
+		return false;
 	}
 
 	protected function default_property() {

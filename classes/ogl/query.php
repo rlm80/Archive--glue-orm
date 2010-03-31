@@ -26,7 +26,7 @@ class OGL_Query {
 
 	// Constructor, creates a load command :
 	public function __construct($entity_name, &$set) {
-		$entity = OGL_Entity::get($entity_name);
+		$entity = OGL_Entity::get(Inflector::singular($entity_name));
 		$set = $this->create_set($entity);
 		$this->root = new OGL_Command_Load($entity, $set);
 		$this->active_command = $this->root;

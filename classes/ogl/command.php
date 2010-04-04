@@ -132,17 +132,23 @@ abstract class OGL_Command {
 	}
 
 	protected function is_relative_root($command) {
+		// Cardinality > 1 ?
+		$multiple = (
+			$command->type() === OGL_Relationship::MANY_TO_MANY ||
+			$command->type() === OGL_Relationship::ONE_TO_MANY
+		);
+
 		// Limit or offset required in command ? No choice, command must be a root.
 		if (isset($command->limit) || isset($command->offset))
 			return true;
 
 		// Limit or offset required in current command and relative command with multiple relationship ? No choice, command must be a root.
-		if ((isset($this->limit) || isset($this->offset)) && $command->relationship->multiple())
+		if ((isset($this->limit) || isset($this->offset)) && $multiple)
 			return true;
 
 		// Otherwise let the user decide :
 		switch ($command->root) {
-			case OGL_Command_With::AUTO :	$is_root = $command->relationship->multiple(); break;
+			case OGL_Command_With::AUTO :	$is_root = $multiple; break;
 			case OGL_Command_With::ROOT :	$is_root = true;	break;
 			case OGL_Command_With::SLAVE :	$is_root = false;	break;
 			default : throw new Kohana_Exception("Invalid value for root property in a command.");

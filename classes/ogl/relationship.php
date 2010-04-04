@@ -1,6 +1,12 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 class OGL_Relationship {
+	// Constants :
+	const MANY_TO_MANY	= 1;
+	const MANY_TO_ONE	= 2;
+	const ONE_TO_MANY	= 3;
+	const ONE_TO_ONE	= 4;
+
 	// Relationships cache :
 	static protected $relationships = array();
 
@@ -10,10 +16,10 @@ class OGL_Relationship {
 
 	// Properties that may be set in children classes :
 	protected $to;
-	protected $property;
-	protected $reverse;
-	protected $multiple;
 	protected $mapping;
+	protected $type;
+	protected $reverse;
+	protected $property;	
 
 	protected function __construct($from, $name) {
 		// Set properties :
@@ -22,7 +28,6 @@ class OGL_Relationship {
 
 		// Fill in any missing properties with default values based on $from and $name :
 		if ( ! isset($this->to))		$this->to		= $this->default_to();
-		if ( ! isset($this->reverse))	$this->reverse	= $this->default_reverse();
 		if ( ! isset($this->mapping))	$this->mapping	= $this->default_mapping();
 
 		// Turn mapping into something easier to work with :
@@ -40,7 +45,8 @@ class OGL_Relationship {
 		$this->mapping = $new;
 
 		// Keep filling in missing properties with default values :
-		if ( ! isset($this->multiple))	$this->multiple	= $this->default_multiple();
+		if ( ! isset($this->type))		$this->type		= $this->default_type();
+		if ( ! isset($this->reverse))	$this->reverse	= $this->default_reverse();
 		if ( ! isset($this->property))	$this->property	= $this->default_property();
 	}
 
@@ -48,14 +54,10 @@ class OGL_Relationship {
 	public function reverse()	{	return OGL_Relationship::get($this->to, $this->reverse); }
 	public function to()		{	return OGL_Entity::get($this->to);		}
 	public function from()		{	return OGL_Entity::get($this->from);	}
-	public function multiple()	{	return $this->multiple;					}
+	public function type()		{	return $this->type;						}
 
 	protected function default_to() {
 		return Inflector::singular($this->name);
-	}
-
-	protected function default_reverse() {
-		return $this->from;
 	}
 
 	protected function default_mapping() {
@@ -99,20 +101,51 @@ class OGL_Relationship {
 		throw new Kohana_Exception("Impossible to guess field mapping from entity '".$this->from."' to entity'".$this->to."'");
 	}
 
-	protected function default_multiple() {
+	protected function default_type() {
+		// Guess src and trg cardinality from pk :
+		$src_multiple = false;
+		$trg_multiple = false;
 		foreach($this->mapping as $trg_entity => $arr1) {
-			// Get trg fields :
-			$trg_fields = array();
-			foreach($arr1 as $src_entity => $arr2)
-				$trg_fields = array_merge($trg_fields, array_keys($arr2));
-
-			// Make sure they match pk of trg entity :
-			$pk = OGL::entity($trg_entity)->pk();
-			if (count($pk) !== count($trg_fields) || count(array_diff($trg_fields, $pk)) !== 0)
-				return true;
+			foreach($arr1 as $src_entity => $arr2) {
+				// Check trg cardinality :
+				if ( ! $trg_multiple) {
+					$fields	= array_keys($arr2);
+					$pk		= OGL::entity($trg_entity)->pk();
+					if (count($pk) !== count($fields) || count(array_diff($fields, $pk)) !== 0)
+						$trg_multiple = true;
+				}
+			
+				// Check src cardinality :
+				if ( ! $src_multiple) {
+					$fields	= array_values($arr2);
+					$pk		= OGL::entity($src_entity)->pk();
+					if (count($pk) !== count($fields) || count(array_diff($fields, $pk)) !== 0)
+						$src_multiple = true;
+				}
+			}
 		}
 
-		return false;
+		// Compute relationship type :
+		if ($src_multiple) {
+			if ($trg_multiple)
+				$type = self::MANY_TO_MANY;
+			else
+				$type = self::MANY_TO_ONE;
+		}
+		else {
+			if ($trg_multiple)
+				$type = self::ONE_TO_MANY;
+			else
+				$type = self::ONE_TO_ONE;
+		}
+
+		return $type;
+	}
+
+	protected function default_reverse() {
+		if ($this->type === self::MANY_TO_MANY || $this->type === self::MANY_TO_ONE)
+			return Inflector::plural($this->from);
+		return $this->from;
 	}
 
 	protected function default_property() {
@@ -151,11 +184,12 @@ class OGL_Relationship {
 
 	public function link($src, $trg) {
 		if (isset($src)) {
+			$multiple = ($this->type === self::MANY_TO_MANY || $this->type === self::ONE_TO_MANY);
 			$property = $this->property;
-			if ($this->multiple && ! isset($src->$property))
+			if ($multiple && ! isset($src->$property))
 				$src->$property = array();
 			if (isset($trg)) {
-				if ($this->multiple) {
+				if ($multiple) {
 					$p =& $src->$property;
 					$p[spl_object_hash($trg)] = $trg;
 				}

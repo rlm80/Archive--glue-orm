@@ -16,6 +16,10 @@ class OGL {
 	public static function update($entity_name, $objects) {
 		OGL::entity($entity_name)->update($objects);
 	}
+	
+	public static function create($entity_name, $array) {
+		return OGL::entity($entity_name)->create($array);
+	}
 
 	public static function param($name) {
 		return new OGL_Param_Set($name);

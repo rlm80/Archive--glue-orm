@@ -408,6 +408,9 @@ class OGL_Entity {
 	}
 
 	public function insert($objects) {
+		// OGL_Set given ? Get array of objects :
+		if ($objects instanceof OGL_Set) $objects = $objects->as_array();
+	
 		// Object given ? Wrap it in an array :
 		if ( ! is_array($objects)) $objects = array($objects);
 
@@ -452,6 +455,9 @@ class OGL_Entity {
 	}
 
 	function update($objects, $fields = null) {
+		// OGL_Set given ? Get array of objects :
+		if ($objects instanceof OGL_Set) $objects = $objects->as_array();
+
 		// Object given ? Wrap it in an array :
 		if ( ! is_array($objects)) $objects = array($objects);
 

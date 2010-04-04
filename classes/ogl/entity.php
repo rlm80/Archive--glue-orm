@@ -24,8 +24,8 @@ class OGL_Entity {
 
 	// Internal details :
 	private $partial;
-	private $introspect;
 	private $sort;
+	private $pattern;
 
 	protected function __construct($name) {
 		// Set properties :
@@ -306,21 +306,18 @@ class OGL_Entity {
 	}
 
 	protected function object_create($array) {
-		static $pattern;
-
 		// Create pattern object :
-		if ( ! isset($pattern)) {
+		if ( ! isset($this->pattern)) {
 			$class = $this->model;
-			$pattern = new $class;
+			$this->pattern = new $class;
 		}
 
 		// Create object :
-		$object = clone $pattern;
+		$object = clone $this->pattern;
 
 		// Set object properties :
 		foreach($array as $field => $val) {
-			$type = $this->types[$field];
-			if ($type !== 'string') settype($val, $type);
+			settype($val, $this->types[$field]);
 			$object->{$this->properties[$field]} = $val;
 		}
 
@@ -509,6 +506,11 @@ class OGL_Entity {
 				$query->execute($this->db);
 			}
 		}
+	}
+
+	// Shortcut for object_create.
+	final public function create($array) {
+		return $this->object_create($array);
 	}
 
 	// Return relationship $name of this entity.

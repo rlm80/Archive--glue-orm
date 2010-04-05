@@ -461,7 +461,7 @@ class OGL_Entity {
 		// No objects ? Do nothing :
 		if (count($objects) === 0) return;
 
-		// No fields given ? Default = all fields except pk :
+		// No fields given ? Default = all fields :
 		if ( ! isset($fields))
 			$fields = $this->fields_all();
 

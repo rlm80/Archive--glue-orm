@@ -30,6 +30,19 @@ class OGL_Set implements Iterator, Countable, ArrayAccess {
 	public function delete() {
 		$this->entity->delete($this->objects);
 	}
+
+	public function update() {
+		$args = func_get_args();
+		if ( ! isset($args[0]))
+			$fields = array();
+		else {
+			if ( ! is_array($args[0]))
+				$fields = $args;
+			else
+				$fields = $args[0];
+		}
+		$this->entity->update($this->objects, $fields);
+	}
 	
 	protected function do_sort() {
 		if (isset($this->sort))

@@ -17,8 +17,8 @@ class OGL {
 		OGL::entity($entity_name)->insert($objects);
 	}
 
-	public static function update($entity_name, $objects) {
-		OGL::entity($entity_name)->update($objects);
+	public static function update($entity_name, $objects, $fields = null) {
+		OGL::entity($entity_name)->update($objects, $fields);
 	}
 
 	public static function param($name) {

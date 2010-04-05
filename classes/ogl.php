@@ -1,6 +1,10 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 class OGL {
+	public static function create($entity_name, $array) {
+		return OGL::entity($entity_name)->create($array);
+	}
+
 	public static function select($entity_name, &$set) {
 		return new OGL_Query_Select($entity_name, $set);
 	}
@@ -16,10 +20,6 @@ class OGL {
 	public static function update($entity_name, $objects) {
 		OGL::entity($entity_name)->update($objects);
 	}
-	
-	public static function create($entity_name, $array) {
-		return OGL::entity($entity_name)->create($array);
-	}
 
 	public static function param($name) {
 		return new OGL_Param_Set($name);
@@ -33,7 +33,7 @@ class OGL {
 		return OGL_Entity::get($entity_name);
 	}
 
-	public static function show_columns($db, $table) {
+	public static function show_columns($table, $db = 'default') {
 		static $cache = array();
 		if ( ! isset($cache[$db][$table]))
 			$cache[$db][$table] = Database::instance($db)->list_columns($table);

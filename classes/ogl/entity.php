@@ -158,7 +158,7 @@ class OGL_Entity {
 	protected function introspect() {
 		if ( ! isset($this->introspect)) {
 			foreach($this->tables as $table)
-				$this->introspect[$table] = OGL::show_columns($this->db, $table);
+				$this->introspect[$table] = OGL::show_columns($table, $this->db);
 		}
 		return $this->introspect;
 	}

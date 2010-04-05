@@ -2,7 +2,7 @@
 
 class OGL {
 	public static function create($entity_name, $array) {
-		return OGL::entity($entity_name)->create($array);
+		return OGL::entity($entity_name)->object_create($array);
 	}
 
 	public static function select($entity_name, &$set) {
@@ -27,6 +27,12 @@ class OGL {
 
 	public static function bind(&$var) {
 		return new OGL_Param_Bound($var);
+	}
+
+	public static function set($entity_name, $objects = array()) {
+		$set = new OGL_Set('', OGL::entity($entity_name));
+		$set->set_objects($objects);
+		return $set;
 	}
 
 	public static function entity($entity_name) {

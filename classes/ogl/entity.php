@@ -305,7 +305,7 @@ class OGL_Entity {
 		return array_values($distinct);
 	}
 
-	protected function object_create($array) {
+	public function object_create($array) {
 		// Create pattern object :
 		if ( ! isset($this->pattern)) {
 			$class = $this->model;
@@ -344,14 +344,14 @@ class OGL_Entity {
 		$clause = preg_replace('/\s+/', ' ', $clause);
 		$clause = explode(',', $clause);
 		foreach($clause as $c) {
-			$parts	= explode(' ', $c);
+			$parts	= explode(' ', trim($c));
 			$sort	= $this->properties[$parts[0]];
 			$order	= ((! isset($parts[1])) || strtolower(substr($parts[1], 0, 1)) === 'a') ? +1 : -1;
 			$this->sort[$sort] = $order;
 		}
 
 		// Sort objects :
-		uasort($objects, array($this, 'object_multi_cmp'));
+		usort($objects, array($this, 'object_multi_cmp'));
 	}
 
 	// Compares two objects according to current sort criteria.
@@ -506,11 +506,6 @@ class OGL_Entity {
 				$query->execute($this->db);
 			}
 		}
-	}
-
-	// Shortcut for object_create.
-	final public function create($array) {
-		return $this->object_create($array);
 	}
 
 	// Return relationship $name of this entity.

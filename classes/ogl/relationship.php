@@ -204,13 +204,13 @@ class OGL_Relationship {
 		if( ! isset(self::$relationships[$entity_name]))
 			self::$relationships[$entity_name] = array();
 		if( ! isset(self::$relationships[$entity_name][$name]))
-			self::$relationships[$entity_name][$name] = self::create($entity_name, $name);
+			self::$relationships[$entity_name][$name] = self::build($entity_name, $name);
 		return self::$relationships[$entity_name][$name];
 	}
 
 	// Chooses the right relationship class to use, based on the name of the entity,
 	// the name and the available classes.
-	static protected function create($entity_name, $name) {
+	static protected function build($entity_name, $name) {
 		$class = 'OGL_Relationship_'.ucfirst($entity_name).'_'.ucfirst($name);
 		if (class_exists($class))
 			$relationship = new $class($entity_name, $name);

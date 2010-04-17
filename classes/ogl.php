@@ -2,16 +2,16 @@
 
 class OGL {
 	public static function create($entity_name, $array) {
-		return OGL::entity($entity_name)->object_create($array);
+		return OGL::entity($entity_name)->create($array);
 	}
 
-	public static function select($entity_name, &$set) {
-		return new OGL_Query_Select($entity_name, $set);
+	public static function select($entity_name, $array) {
+		return OGL::entity($entity_name)->select($array);
 	}
 
-	public static function delete($entity_name, &$set) {
-		return new OGL_Query_Delete($entity_name, $set);
-	}
+	public static function delete($entity_name, $array) {
+		return OGL::entity($entity_name)->delete($array);
+	}		
 
 	public static function insert($entity_name, $objects) {
 		OGL::entity($entity_name)->insert($objects);
@@ -19,6 +19,14 @@ class OGL {
 
 	public static function update($entity_name, $objects, $fields = null) {
 		OGL::entity($entity_name)->update($objects, $fields);
+	}
+
+	public static function qselect($entity_name, &$set) {
+		return new OGL_Query_Select($entity_name, $set);
+	}
+
+	public static function qdelete($entity_name, &$set) {
+		return new OGL_Query_Delete($entity_name, $set);
 	}
 
 	public static function param($name) {

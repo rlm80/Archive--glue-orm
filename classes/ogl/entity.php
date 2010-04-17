@@ -289,7 +289,7 @@ class OGL_Entity {
 		foreach($diff as $pk => $index) {
 			$vals	= array_intersect_key($rows[$index], $mapping);
 			$array	= array_combine($mapping, $vals);
-			$this->map[$pk] = $this->object_create($array);
+			$this->map[$pk] = $this->create($array);
 		}
 
 		// Build distinct objects list :
@@ -305,7 +305,7 @@ class OGL_Entity {
 		return array_values($distinct);
 	}
 
-	public function object_create($array) {
+	public function create($array) {
 		// Create pattern object :
 		if ( ! isset($this->pattern)) {
 			$class = $this->model;
@@ -508,6 +508,40 @@ class OGL_Entity {
 		}
 	}
 
+	public function select() {
+		// Init OGL query :
+		$q = OGL::qselect($this->name, $result);
+
+		// Build where conditions :
+		$conditions	= array();
+		$args		= func_get_args();
+		if ( ! is_array($args[0])) {
+			// Single column Pk value passed :
+			if (count($this->pk) > 1)
+				throw new Kohana_Exception("Only one value passed for a multiple columns pk !");
+			$conditions[$this->pk[0]] = $args[0];
+		}
+		else {
+			foreach($args[0] as $field => $value)
+				$conditions[$field] = $value;
+		}
+
+		// Add conditions :
+		foreach ($conditions as $field => $value)
+			$q->where($field, '=', $value);
+
+		// Execute query :
+		$q->execute();
+
+		// Return object, or set of objects :
+		if (count(array_diff($this->pk, array_keys($conditions))) === 0) {
+			// Return single object, or null :
+			return isset($result[0]) ? $result[0] : null;
+		}
+		else
+			return $result;
+	}
+
 	// Return relationship $name of this entity.
 	public function relationship($name) {
 		return OGL_Relationship::get($this->name, $name);
@@ -522,13 +556,13 @@ class OGL_Entity {
 	// Lazy loads an entity object, stores it in cache, and returns it :
 	static public function get($name) {
 		if( ! isset(self::$entities[$name]))
-			self::$entities[$name] = self::create($name);
+			self::$entities[$name] = self::build($name);
 		return self::$entities[$name];
 	}
 
 	// Chooses the right entity class to use, based on the name of the entity and
 	// the available classes.
-	static protected function create($name) {
+	static protected function build($name) {
 		$class = 'OGL_Entity_'.ucfirst($name);
 		if (class_exists($class))
 			$entity = new $class($name);

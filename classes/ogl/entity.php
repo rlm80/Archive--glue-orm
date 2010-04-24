@@ -370,10 +370,7 @@ class OGL_Entity {
 		return 0;
     }
 
-	public function delete($objects) {
-		// Object given ? Wrap it in an array :
-		if ( ! is_array($objects)) $objects = array($objects);
-
+	public function object_delete($objects) {
 		// No objects ? Do nothing :
 		if (count($objects) === 0) return;
 
@@ -402,6 +399,37 @@ class OGL_Entity {
 				}
 			}
 		} 
+	}
+
+	public function delete($arg = null) {
+		// No param given :
+		if ( ! isset($arg)) {
+			$this->select()->delete();
+			return;
+		}
+
+		// Object given :
+		if (is_object($arg)) {
+			if ($arg instanceof OGL_Set)
+				$arg->delete();
+			else
+				$this->object_delete(array($arg));
+			return;
+		}
+
+		// Array given :
+		if (is_array($arg)) {
+			if (count($arg) !== 0) {
+				if (isset($arg[0]) && is_object($arg[0]))
+					$this->object_delete($arg);
+				else
+					$this->select($arg)->delete();
+			}
+			return;
+		}
+		
+		// Scalar given :
+		$this->object_delete(array($this->select($arg)));
 	}
 
 	public function insert($objects) {
@@ -455,7 +483,7 @@ class OGL_Entity {
 		// OGL_Set given ? Get array of objects :
 		if ($objects instanceof OGL_Set) $objects = $objects->as_array();
 
-		// Object given ? Wrap it in an array :
+		// Single object given ? Wrap it in an array :
 		if ( ! is_array($objects)) $objects = array($objects);
 
 		// No objects ? Do nothing :
@@ -464,6 +492,9 @@ class OGL_Entity {
 		// No fields given ? Default = all fields :
 		if ( ! isset($fields))
 			$fields = $this->fields_all();
+
+		// Single field given ? Wrap it in an array :
+		if ( ! is_array($fields)) $fields = array($fields);
 
 		// Remove pk :
 		$fields = array_diff($fields, $this->pk);
@@ -508,38 +539,41 @@ class OGL_Entity {
 		}
 	}
 
-	public function select() {
+	public function select($conditions = array(), $sort = null) {
 		// Init OGL query :
 		$q = OGL::qselect($this->name, $result);
 
-		// Build where conditions :
-		$conditions	= array();
-		$args		= func_get_args();
-		if ( ! is_array($args[0])) {
-			// Single column Pk value passed :
+		// Must return a set or a single object ?
+		$return_set = is_array($conditions);
+
+		// Single column Pk value passed ? Warp it in an array :
+		if ( ! is_array($conditions)) {
 			if (count($this->pk) > 1)
-				throw new Kohana_Exception("Only one value passed for a multiple columns pk !");
-			$conditions[$this->pk[0]] = $args[0];
-		}
-		else {
-			foreach($args[0] as $field => $value)
-				$conditions[$field] = $value;
+				throw new Kohana_Exception("Only one value passed for multiple columns pk !");
+			$conditions = array($this->pk[0] => $conditions);
 		}
 
 		// Add conditions :
-		foreach ($conditions as $field => $value)
-			$q->where($field, '=', $value);
+		foreach ($conditions as $field => $value) {
+			if (is_array($value))
+				$q->where($field, 'IN', $value);
+			else
+				$q->where($field, '=', $value);
+		}
+
+		// Add sort :
+		if (isset($sort))
+			$q->sort($sort);
 
 		// Execute query :
 		$q->execute();
 
 		// Return object, or set of objects :
-		if (count(array_diff($this->pk, array_keys($conditions))) === 0) {
-			// Return single object, or null :
-			return isset($result[0]) ? $result[0] : null;
-		}
-		else
+		if ($return_set)
 			return $result;
+		else
+			return isset($result[0]) ? $result[0] : null;
+			
 	}
 
 	// Return relationship $name of this entity.

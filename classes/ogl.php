@@ -5,12 +5,12 @@ class OGL {
 		return OGL::entity($entity_name)->create($array);
 	}
 
-	public static function select($entity_name, $array) {
-		return OGL::entity($entity_name)->select($array);
+	public static function select($entity_name, $conditions = array(), $sort = null) {
+		return OGL::entity($entity_name)->select($conditions, $sort);
 	}
 
-	public static function delete($entity_name, $array) {
-		return OGL::entity($entity_name)->delete($array);
+	public static function delete($entity_name, $conditions = null) {
+		return OGL::entity($entity_name)->delete($conditions);
 	}		
 
 	public static function insert($entity_name, $objects) {

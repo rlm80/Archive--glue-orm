@@ -28,7 +28,7 @@ class OGL_Set implements Iterator, Countable, ArrayAccess {
 	}
 
 	public function delete() {
-		$this->entity->delete($this->objects);
+		$this->entity->object_delete($this->objects);
 	}
 
 	public function update() {

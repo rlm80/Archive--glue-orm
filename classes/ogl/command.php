@@ -29,7 +29,7 @@ abstract class OGL_Command {
 
 	// Constructor :
 	public function  __construct($trg_set) {
-		$this->trg_set	= $trg_set;
+		$this->trg_set = $trg_set;
 		$this->trg_set->root_command = $this;
 	}
 
@@ -133,9 +133,10 @@ abstract class OGL_Command {
 
 	protected function is_relative_root($command) {
 		// Cardinality > 1 ?
+		$relationship_type = $command->relationship->type();
 		$multiple = (
-			$command->type() === OGL_Relationship::MANY_TO_MANY ||
-			$command->type() === OGL_Relationship::ONE_TO_MANY
+			$relationship_type === OGL_Relationship::MANY_TO_MANY ||
+			$relationship_type === OGL_Relationship::ONE_TO_MANY
 		);
 
 		// Limit or offset required in command ? No choice, command must be a root.

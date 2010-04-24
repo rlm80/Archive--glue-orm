@@ -33,7 +33,7 @@ class OGL_Query {
 	}
 
 	// Creates a with command :
-	public function with($src_set, $relationship, &$trg_set) {
+	public function with($src_set, $relationship, &$trg_set = null) {
 		// Check src_set existence among sets of current query :
 		if ( ! in_array($src_set, $this->sets))
 			throw new Kohana_Exception("Unknown set given as source of with command.");

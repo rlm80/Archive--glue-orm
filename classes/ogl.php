@@ -6,7 +6,7 @@ class OGL {
 	}
 
 	public static function select($entity_name, $conditions = array(), $sort = null, $limit = null, $offset = null) {
-		return OGL::entity($entity_name)->select($conditions, $sort, $limit, $offet);
+		return OGL::entity($entity_name)->select($conditions, $sort, $limit, $offset);
 	}
 
 	public static function delete($entity_name, $conditions = null) {

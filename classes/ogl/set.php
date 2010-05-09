@@ -34,7 +34,7 @@ class OGL_Set implements Iterator, Countable, ArrayAccess {
 	public function update() {
 		$args = func_get_args();
 		if ( ! isset($args[0]))
-			$fields = array();
+			$fields = $this->entity->fields_all();
 		else {
 			if ( ! is_array($args[0]))
 				$fields = $args;

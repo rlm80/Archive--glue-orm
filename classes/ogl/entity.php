@@ -539,7 +539,7 @@ class OGL_Entity {
 		}
 	}
 
-	public function select($conditions = array(), $sort = null, $limit = null, $offset = null) {
+	public function select($conditions = array(), $order_by = null, $limit = null, $offset = null) {
 		// Init OGL query :
 		$q = OGL::qselect($this->name, $result);
 
@@ -562,9 +562,9 @@ class OGL_Entity {
 		}
 
 		// Add sort, limit, offset :
-		if (isset($sort))   $q->sort($sort);
-		if (isset($limit))  $q->limit($limit);
-		if (isset($offset)) $q->offset($offset);
+		if (isset($order_by))   $q->order_by($order_by);
+		if (isset($limit))		$q->limit($limit);
+		if (isset($offset))		$q->offset($offset);
 
 		// Execute query :
 		$q->execute();

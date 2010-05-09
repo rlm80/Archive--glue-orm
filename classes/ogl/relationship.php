@@ -147,7 +147,7 @@ class OGL_Relationship {
 	}
 
 	protected function default_property() {
-		if ($this->type === self::MANY_TO_MANY || $this->type === self::MANY_TO_ONE)
+		if ($this->type === self::MANY_TO_MANY || $this->type === self::ONE_TO_MANY)
 			return Inflector::plural($this->name);
 		return $this->name;
 	}

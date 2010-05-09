@@ -57,7 +57,7 @@ class OGL_Relationship {
 	public function type()		{	return $this->type;						}
 
 	protected function default_to() {
-		return Inflector::singular($this->name);
+		return $this->name;
 	}
 
 	protected function default_mapping() {
@@ -143,12 +143,12 @@ class OGL_Relationship {
 	}
 
 	protected function default_reverse() {
-		if ($this->type === self::MANY_TO_MANY || $this->type === self::MANY_TO_ONE)
-			return Inflector::plural($this->from);
 		return $this->from;
 	}
 
 	protected function default_property() {
+		if ($this->type === self::MANY_TO_MANY || $this->type === self::MANY_TO_ONE)
+			return Inflector::plural($this->name);
 		return $this->name;
 	}
 

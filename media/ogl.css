@@ -1,0 +1,35 @@
+table.ogl_entity {
+	background-color: #F4F9FE;
+	text-align: left;
+	border-collapse: collapse;
+	width: 100%;
+	font-family: "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
+	font-size: 80%;
+}
+
+table.ogl_entity tr {
+	display: none;
+}
+
+table.ogl_entity td, th {
+	border: 1px solid rgb(210,210,255);
+	padding: 0 3px 1px 3px;
+}
+
+table.ogl_entity td {
+	text-align: left;
+	background-color: white;
+	color: #678197;
+}
+
+table.ogl_entity th {
+	text-align: center;
+	color: #66A3D3;
+}
+
+table.ogl_entity th.ogl_entity_top {
+	background-color: rgb(225,225,255);
+	font-size: 125%;
+	color: black;
+	text-align: left;
+}

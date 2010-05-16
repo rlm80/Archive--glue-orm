@@ -64,7 +64,7 @@ class OGL_Entity {
 		// Loop on tables, look up columns by database introspection and populate fields array :
 		$data = $this->introspect();
 		foreach($this->tables as $table) {
-			foreach($data[$table] as $col => $data) {
+			foreach($data[$table] as $col => $coldata) {
 				if ( ! in_array($col, $fields))
 					$fields[] = $col;
 			}
@@ -587,6 +587,22 @@ class OGL_Entity {
 	public function pk()	{ return $this->pk;		}
 	public function fk()	{ return $this->fk;		}
 	public function db()	{ return $this->db;		}
+
+	// Debug :
+	public function debug() {
+		return View::factory('ogl_debug_entity')
+			->set('name',			$this->name)
+			->set('fields',			$this->fields)
+			->set('columns',		$this->columns)
+			->set('properties',		$this->properties)
+			->set('types',			$this->types)
+			->set('db',				$this->db)
+			->set('pk',				$this->pk)
+			->set('fk',				$this->fk)
+			->set('autoincrement',	$this->autoincrement)
+			->set('model',			$this->model)
+			->render();
+	}
 
 	// Lazy loads an entity object, stores it in cache, and returns it :
 	static public function get($name) {

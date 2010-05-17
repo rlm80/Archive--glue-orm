@@ -1,35 +1,24 @@
-<table class="ogl_entity">
-	<tr style="display: table-row" onclick="
-				elems = $(this).siblings();
-				exp = $(this).find('.ogl_entity_expand');
-				if (exp.text() === '+') {
-					elems.show();
-					exp.text('-');
-				}
-				else {
-					elems.hide();
-					exp.text('+');
-				}
-	">
-		<th class="ogl_entity_top" colspan="7">
-			<span class="ogl_entity_expand">+</span>
+<table class="ogl_entity context">
+	<tr class="trigger">
+		<th colspan="7" class="top">
+			<span><?php echo (isset($closed) && $closed === true) ? '+' : '-' ?></span>
 			<?php echo ucfirst($name) ?>
 		</th>
 	</tr>
-	<tr><th colspan="7">Fields properties</th></tr>
-	<tr>
+	<tr class="superfluous"><th colspan="7">Fields</th></tr>
+	<tr class="superfluous">
 		<th>Fields</th>
-		<th>Columns</th>
+		<th>Table::columns</th>
 		<th>Property</th>
-		<th>Type</th>
+		<th>PHP Type</th>
 		<th>Primary key</th>
 		<th>Autoincrement</th>
 		<th>Foreign key</th>
 	</tr>
 	<?php
 		foreach($fields as $field) {
-			echo '<tr>';
-				echo '<th>' . $field . '</th>';
+			echo '<tr class="superfluous">';
+				echo '<td>' . $field . '</td>';
 				echo '<td>';
 					$arr = array();
 					foreach($columns[$field] as $table => $column)
@@ -44,12 +33,12 @@
 			echo '</tr>';
 		}
 	?>
-	<tr><th colspan="7">Other properties</th></tr>
-	<tr class="ogl_entity_bottom">
+	<tr class="superfluous"><th colspan="7">&nbsp;</th></tr>
+	<tr class="superfluous" class="bottom">
 		<th>Database</th>
 		<td colspan="6"><?php echo $db ?></td>
 	</tr>
-	<tr>
+	<tr class="superfluous">
 		<th>Model class</th>
 		<td colspan="6"><?php echo $model ?></td>
 	</tr>

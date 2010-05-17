@@ -590,7 +590,7 @@ class OGL_Entity {
 
 	// Debug :
 	public function debug() {
-		return View::factory('ogl_debug_entity')
+		return View::factory('ogl_entity')
 			->set('name',			$this->name)
 			->set('fields',			$this->fields)
 			->set('columns',		$this->columns)
@@ -600,8 +600,7 @@ class OGL_Entity {
 			->set('pk',				$this->pk)
 			->set('fk',				$this->fk)
 			->set('autoincrement',	$this->autoincrement)
-			->set('model',			$this->model)
-			->render();
+			->set('model',			$this->model);
 	}
 
 	// Lazy loads an entity object, stores it in cache, and returns it :

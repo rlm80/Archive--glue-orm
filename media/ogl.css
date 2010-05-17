@@ -7,10 +7,6 @@ table.ogl_entity {
 	font-size: 80%;
 }
 
-table.ogl_entity tr {
-	display: none;
-}
-
 table.ogl_entity td, th {
 	border: 1px solid rgb(210,210,255);
 	padding: 0 3px 1px 3px;
@@ -27,7 +23,7 @@ table.ogl_entity th {
 	color: #66A3D3;
 }
 
-table.ogl_entity th.ogl_entity_top {
+table.ogl_entity th.top {
 	background-color: rgb(225,225,255);
 	font-size: 125%;
 	color: black;

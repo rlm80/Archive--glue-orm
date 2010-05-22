@@ -6,6 +6,12 @@ class Controller_OGL extends Controller {
 									->set('content', OGL::entity($entity)->debug());
 	}
 
+	public function action_relationship($entity, $relationship) {
+		$this->request->response = View::factory('ogl_template')
+									->set('title', ucfirst($entity) . '->' . $relationship . ' relationship')
+									->set('content', OGL::relationship($entity, $relationship)->debug());
+	}
+
 	public function action_media($file) {
 		$ext	= pathinfo($file, PATHINFO_EXTENSION);
 		$file	= substr($file, 0, -(strlen($ext) + 1));

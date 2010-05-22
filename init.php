@@ -6,20 +6,20 @@
  * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  */
 
-Route::set('ogl_entity', 'ogl/entity/<entity>/')
+Route::set('ogl_entity', 'ogl/entity/<entity>')
 	->defaults(array(
-		'controller' => 'ogl',
+		'controller' => 'OGL',
 		'action'     => 'entity',
 	));
 
-Route::set('ogl_relationship', 'ogl/relationship/<relationship>/')
+Route::set('ogl_relationship', 'ogl/relationship/<entity>/<relationship>')
 	->defaults(array(
-		'controller' => 'ogl',
-		'action'     => 'entity',
+		'controller' => 'OGL',
+		'action'     => 'relationship',
 	));
 
 Route::set('ogl_media', 'ogl/media/<file>', array('file' => '.+'))
 	->defaults(array(
-		'controller' => 'ogl',
+		'controller' => 'OGL',
 		'action'     => 'media',
 	));

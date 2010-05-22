@@ -579,7 +579,7 @@ class OGL_Entity {
 
 	// Return relationship $name of this entity.
 	public function relationship($name) {
-		return OGL_Relationship::get($this->name, $name);
+		return OGL::relationship($this->name, $name);
 	}
 
 	// Getters :

@@ -47,6 +47,10 @@ class OGL {
 		return OGL_Entity::get($entity_name);
 	}
 
+	public static function relationship($entity_name, $relationship_name) {
+		return OGL_Relationship::get($entity_name, $relationship_name);
+	}
+
 	public static function show_columns($table, $db = 'default') {
 		static $cache = array();
 		if ( ! isset($cache[$db][$table]))

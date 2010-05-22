@@ -1,4 +1,4 @@
-<table class="ogl_entity context">
+<table class="ogl_table context">
 	<tr class="trigger">
 		<th colspan="7" class="top">
 			<span><?php echo (isset($closed) && $closed === true) ? '+' : '-' ?></span>

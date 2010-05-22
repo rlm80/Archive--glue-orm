@@ -1,4 +1,4 @@
-table.ogl_entity {
+table.ogl_table {
 	background-color: #F4F9FE;
 	text-align: left;
 	border-collapse: collapse;
@@ -7,23 +7,23 @@ table.ogl_entity {
 	font-size: 80%;
 }
 
-table.ogl_entity td, th {
+table.ogl_table td, th {
 	border: 1px solid rgb(210,210,255);
 	padding: 0 3px 1px 3px;
 }
 
-table.ogl_entity td {
+table.ogl_table td {
 	text-align: left;
 	background-color: white;
 	color: #678197;
 }
 
-table.ogl_entity th {
+table.ogl_table th {
 	text-align: center;
 	color: #66A3D3;
 }
 
-table.ogl_entity th.top {
+table.ogl_table th.top {
 	background-color: rgb(225,225,255);
 	font-size: 125%;
 	color: black;

@@ -13,6 +13,7 @@ class OGL_Relationship {
 	// Properties that may NOT be set in children classes :
 	protected $from;
 	protected $name;
+	protected $joins;
 
 	// Properties that may be set in children classes :
 	protected $to;
@@ -30,19 +31,21 @@ class OGL_Relationship {
 		if ( ! isset($this->to))		$this->to		= $this->default_to();
 		if ( ! isset($this->mapping))	$this->mapping	= $this->default_mapping();
 
-		// Turn mapping into something easier to work with :
+		// Add missing entity prefixes :
 		$new = array();
 		foreach($this->mapping as $src => $trg) {
-			// Add missing entity prefixes :
 			if (strpos($src, '.') === FALSE) $src = $this->from . '.' . $src;
 			if (strpos($trg, '.') === FALSE) $trg = $this->to   . '.' . $trg;
-
-			// Add data to new mapping array :
-			list($trg_entity, $trg_field) = explode('.', $trg);
-			list($src_entity, $src_field) = explode('.', $src);
-			$new[$trg_entity][$src_entity][$trg_field] = $src_field;
+			$new[$src] = $trg;
 		}
 		$this->mapping = $new;
+
+		// Turn mapping into something easier to work with :
+		foreach($this->mapping as $src => $trg) {
+			list($trg_entity, $trg_field) = explode('.', $trg);
+			list($src_entity, $src_field) = explode('.', $src);
+			$this->joins[$trg_entity][$src_entity][$trg_field] = $src_field;
+		}
 
 		// Keep filling in missing properties with default values :
 		if ( ! isset($this->type))		$this->type		= $this->default_type();
@@ -105,7 +108,7 @@ class OGL_Relationship {
 		// Guess src and trg cardinality from pk :
 		$src_multiple = false;
 		$trg_multiple = false;
-		foreach($this->mapping as $trg_entity => $arr1) {
+		foreach($this->joins as $trg_entity => $arr1) {
 			foreach($arr1 as $src_entity => $arr2) {
 				// Check trg cardinality :
 				if ( ! $trg_multiple) {
@@ -156,7 +159,7 @@ class OGL_Relationship {
 		$prefix = $from_alias.'__'.$to_alias.'__';
 
 		// Loop on target entities :
-		foreach($this->mapping as $trg_entity_name => $data1) {
+		foreach($this->joins as $trg_entity_name => $data1) {
 			// Get entity object and build alias :
 			$trg_entity = OGL_Entity::get($trg_entity_name);
 			$trg_alias	= ($trg_entity_name === $this->to) ? $to_alias : $prefix.$trg_entity_name;
@@ -197,6 +200,18 @@ class OGL_Relationship {
 					$src->$property = $trg;
 			}
 		}
+	}
+
+	// Debug :
+	public function debug() {
+		return View::factory('ogl_relationship')
+			->set('name',			$this->name)
+			->set('from',			$this->from)
+			->set('to',				$this->to)
+			->set('type',			$this->type)
+			->set('mapping',		$this->mapping)
+			->set('property',		$this->property)
+			->set('reverse',		$this->reverse);
 	}
 
 	// Lazy loads a relationship object, stores it in cache, and returns it :

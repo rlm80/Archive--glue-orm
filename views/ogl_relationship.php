@@ -2,7 +2,7 @@
 	<tr class="trigger">
 		<th colspan="2" class="top">
 			<span><?php echo (isset($closed) && $closed === true) ? '+' : '-' ?></span>
-			<?php echo ucfirst($from) . ' -> ' . $name ?>
+			<?php echo ucfirst($from) . ' -&gt; ' . $name ?>
 		</th>
 	</tr>
 	<tr class="superfluous">
@@ -37,6 +37,6 @@
 	</tr>	
 	<tr class="superfluous">
 		<th>Reverse</th>
-		<td><a href="<?php echo url::site(Route::get('ogl_relationship')->uri(array('entity' => $to, 'relationship' => $reverse))) ?>"><?php echo ucfirst($to) . ' -> ' . $reverse ?></td>
+		<td><a href="<?php echo url::site(Route::get('ogl_relationship')->uri(array('entity' => $to, 'relationship' => $reverse))) ?>"><?php echo ucfirst($to) . ' -&gt; ' . $reverse ?></td>
 	</tr>
 </table>

@@ -62,6 +62,12 @@ class OGL_Set implements Iterator, Countable, ArrayAccess {
 		return $this->objects;
 	}
 
+	public function debug() {
+		return View::factory('ogl_set')
+			->set('name', $this->name)
+			->set('entity', $this->entity->name());
+	}
+
 	// Iterator, Countable :
 	public function rewind()	{reset($this->objects);				}
     public function current()	{return current($this->objects);	}

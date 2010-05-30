@@ -62,6 +62,11 @@ class OGL_Query {
 		$this->root->execute($this->get_params());
 	}
 
+	// Init debugging cascade :
+	public function debug() {
+		return $this->root->debug();
+	}
+
 	// Set the value of a parameter in the query.
 	public function param($name, $value) {
 		if ( ! isset($this->params[$name])) throw new Kohana_Exception("Undefined parameter '".$name."'");

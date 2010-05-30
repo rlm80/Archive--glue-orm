@@ -1,5 +1,14 @@
 <?php
 class Controller_OGL extends Controller {
+	public function action_sandbox() {
+		$query = isset($_GET['query']) ? $_GET['query'] : null;
+		$this->request->response = View::factory('ogl_template')
+									->set('title', 'Sandbox')
+									->set('content',
+										View::factory('ogl_sandbox')->set('query', $query)
+									);
+	}
+	
 	public function action_entity($entity) {
 		$this->request->response = View::factory('ogl_template')
 									->set('title', ucfirst($entity) . ' entity')

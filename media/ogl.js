@@ -1,5 +1,5 @@
 $(document).ready(function(){
-	// Add click handlers to all entities, now and ever entering the DOM :
+	// Add click handlers to all triggers, now and ever entering the DOM :
 	$('.trigger').live('click', function() {
 		if ($(this).find('span').text() === '+')
 			expand($(this).closest('.context'));
@@ -11,15 +11,24 @@ $(document).ready(function(){
 });
 
 function expand(context) {
-	context.find('.trigger span').text('-');
-	context.find('.superfluous').show();
+	context.find('.trigger span').filter(function () {
+		return $(this).closest('.context')[0] === context[0];
+	}).text('-');
+	context.find('.superfluous').filter(function () {
+		return $(this).closest('.context')[0] === context[0];
+	}).show();
 }
 
 function collapse(context) {
-	context.find('.trigger span').text('+');
-	context.find('.superfluous').hide();
+	context.find('.trigger span').filter(function () {
+		return $(this).closest('.context')[0] === context[0];
+	}).text('+');
+	context.find('.superfluous').filter(function () {
+		return $(this).closest('.context')[0] === context[0];
+	}).hide();
 }
 
+// Call this every time the DOM is modified.
 function refresh() {
 	$('.trigger').each(function() {
 		if ($(this).find('span').text() === '+')

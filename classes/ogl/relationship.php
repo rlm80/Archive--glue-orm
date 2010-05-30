@@ -58,6 +58,7 @@ class OGL_Relationship {
 	public function to()		{	return OGL_Entity::get($this->to);		}
 	public function from()		{	return OGL_Entity::get($this->from);	}
 	public function type()		{	return $this->type;						}
+	public function name()		{	return $this->name;						}
 
 	protected function default_to() {
 		return $this->name;

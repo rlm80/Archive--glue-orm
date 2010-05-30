@@ -2,9 +2,11 @@ table.ogl_table {
 	background-color: #F4F9FE;
 	text-align: left;
 	border-collapse: collapse;
-	width: 100%;
 	font-family: "Trebuchet MS", Verdana, Arial, Helvetica, sans-serif;
-	font-size: 80%;
+	font-size: 13px;
+	width: 100%;
+	clear: both;
+	margin: 10px 0;
 }
 
 table.ogl_table td, th {
@@ -25,7 +27,7 @@ table.ogl_table th {
 
 table.ogl_table th.top {
 	background-color: rgb(225,225,255);
-	font-size: 125%;
 	color: black;
 	text-align: left;
+	cursor: pointer;
 }

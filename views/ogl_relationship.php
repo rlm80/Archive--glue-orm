@@ -7,7 +7,13 @@
 	</tr>
 	<tr class="superfluous">
 		<th>Target entity</th>
-		<td><?php echo ucfirst($to) ?></td>
+		<td><?php echo '<a href="'
+				. url::site(Route::get('ogl_entity')->uri(array('entity' => $to)))
+				. '">'
+				. ucfirst($to)
+				. '</a>';
+			?>
+		</td>
 	</tr>
 	<tr class="superfluous">
 		<th>Type</th>

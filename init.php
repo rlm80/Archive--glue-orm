@@ -6,6 +6,12 @@
  * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  */
 
+Route::set('ogl_sandbox', 'ogl/sandbox')
+	->defaults(array(
+		'controller' => 'OGL',
+		'action'     => 'sandbox',
+	));
+
 Route::set('ogl_entity', 'ogl/entity/<entity>')
 	->defaults(array(
 		'controller' => 'OGL',

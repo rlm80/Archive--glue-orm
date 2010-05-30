@@ -128,4 +128,25 @@ class OGL_Command_With extends OGL_Command {
 		else
 			return false;
 	}
+
+	public function debug() {
+		// Get debug view from parent :
+		$view = parent::debug();
+
+		// Add title :
+		$title = 'From set ' . $this->src_set->name . ', load set(s) ';
+		foreach($this->get_chain() as $command)
+			$sets[] = $command->trg_set->name;
+		$title .= implode(', ', $sets);
+		$view->set('title', $title);
+
+		return $view;
+	}
+
+	protected function debug_self() {
+		return parent::debug_self()
+			->set('src_set', $this->src_set->debug())
+			->set('src_entity', $this->src_set->entity()->name())
+			->set('relationship', $this->relationship->name());
+	}
 }

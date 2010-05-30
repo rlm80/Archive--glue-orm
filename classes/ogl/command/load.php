@@ -27,6 +27,20 @@ class OGL_Command_Load extends OGL_Command {
 		foreach($this->where as $w)
 			$trg_entity->query_where($query, $trg_alias, $w['field'], $w['op'], $w['expr']);
 	}
+
+	public function debug() {
+		// Get debug view from parent :
+		$view = parent::debug();
+
+		// Add title :
+		$title = 'Load set(s) ';
+		foreach($this->get_chain() as $command)
+			$sets[] = $command->trg_set->name;
+		$title .= implode(', ', $sets);
+		$view->set('title', $title);
+
+		return $view;
+	}
 	
 	protected function load_relationships($result) {}
 }

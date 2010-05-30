@@ -42,6 +42,31 @@ abstract class OGL_Command {
 			$root->execute($parameters);
 	}
 
+	public function debug() {
+		// Prepare view with SQL :
+		$view = View::factory('ogl_command_root');
+		$query = $this->query_get();
+		$view->set('sql', $query);
+
+		// Display all commands executed in SQL :
+		$views = array();
+		foreach($this->get_chain() as $command)
+			$views[] = $command->debug_self();
+		$view->set('commands', $views);
+
+		// Cascade debug to next root commands :
+		$views = array();
+		foreach($this->get_roots() as $root)
+			$views[] = $root->debug();
+		$view->set('roots', $views);
+
+		return $view;
+	}
+
+	protected function debug_self() {
+		return View::factory('ogl_command')->set('trg_set', $this->trg_set->debug());
+	}
+
 	protected function execute_self($parameters) {
 		// Execute query :
 		$result = $this->query_exec($parameters);

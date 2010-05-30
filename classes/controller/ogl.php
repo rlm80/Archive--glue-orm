@@ -1,24 +1,36 @@
 <?php
 class Controller_OGL extends Controller {
 	public function action_sandbox() {
-		$query = isset($_GET['query']) ? $_GET['query'] : null;
-		$this->request->response = View::factory('ogl_template')
-									->set('title', 'Sandbox')
-									->set('content',
-										View::factory('ogl_sandbox')->set('query', $query)
-									);
+		if (Kohana::config('ogl')->debug) {
+			$query = isset($_GET['query']) ? $_GET['query'] : null;
+			$this->request->response = View::factory('ogl_template')
+				->set('title', 'Sandbox')
+				->set('content',
+					View::factory('ogl_sandbox')->set('query', $query)
+				);
+		}
+		else
+			$this->request->status = 404;
 	}
 	
 	public function action_entity($entity) {
-		$this->request->response = View::factory('ogl_template')
-									->set('title', ucfirst($entity) . ' entity')
-									->set('content', OGL::entity($entity)->debug());
+		if (Kohana::config('ogl')->debug) {
+			$this->request->response = View::factory('ogl_template')
+				->set('title', ucfirst($entity) . ' entity')
+				->set('content', OGL::entity($entity)->debug());
+		}
+		else
+			$this->request->status = 404;
 	}
 
 	public function action_relationship($entity, $relationship) {
-		$this->request->response = View::factory('ogl_template')
-									->set('title', ucfirst($entity) . '->' . $relationship . ' relationship')
-									->set('content', OGL::relationship($entity, $relationship)->debug());
+		if (Kohana::config('ogl')->debug) {
+			$this->request->response = View::factory('ogl_template')
+				->set('title', ucfirst($entity) . '->' . $relationship . ' relationship')
+				->set('content', OGL::relationship($entity, $relationship)->debug());
+		}
+		else
+			$this->request->status = 404;
 	}
 
 	public function action_media($file) {

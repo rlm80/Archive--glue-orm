@@ -1,11 +1,5 @@
 <?php
 
-/**
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- * !!!!!!!!!! IN PRODUCTION COMMENT THESE ROUTES !!!!!!!!!!!!
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- */
-
 Route::set('ogl_sandbox', 'ogl/sandbox')
 	->defaults(array(
 		'controller' => 'OGL',

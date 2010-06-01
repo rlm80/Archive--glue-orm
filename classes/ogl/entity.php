@@ -506,17 +506,16 @@ class OGL_Entity {
 		$tables = array();
 		foreach($fields as $f)
 			foreach ($this->columns[$f] as $table => $column)
-				$tables[$table] = 1;
-		$tables = array_keys($tables);
+				$tables[$table][$f] = $column;
 
 		// Update tables :
-		foreach($tables as $table) {
+		foreach($tables as $table => $data) {
 			// Build query :
 			$query = DB::update($table);
 			foreach($this->pk as $f)
 				$query->where($this->columns[$f][$table], '=', DB::expr(':__'.$f));
-			foreach($fields as $f)
-				$query->value($this->columns[$f][$table], DB::expr(':__'.$f));
+			foreach($data as $f => $column)
+				$query->value($column, DB::expr(':__'.$f));
 			 $query = DB::query(Database::UPDATE, $query->compile(Database::instance($this->db)));
 
 			// Loop on objects and update table :

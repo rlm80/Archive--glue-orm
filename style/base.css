@@ -1,0 +1,212 @@
+html, body {
+	margin: 0;
+	padding: 0;
+	font-family: Georgia,
+             "New Century Schoolbook",
+             "Nimbus Roman No9 L",
+             serif;
+}
+
+a, a:link, a:visited, a:hover {
+	color: black;
+	text-decoration: none;
+	border-bottom : 1px dashed rgb(207, 9, 9);
+	display: inline-block;
+	height: 1.4em;
+}
+
+p {
+	margin-top: 0;
+}
+
+h2 {
+	padding: 4px 30px 5px 0;
+	margin: 10px 0 10px 0;
+	font-size: 17px;
+	letter-spacing: 4px;
+	text-align: right;
+	font-weight: normal;
+	line-height: normal;
+	border-bottom : 1px solid rgb(207, 9, 9);
+	background-image: url("images/jap.png");
+	background-repeat: no-repeat;
+	background-position: 100% 6px;
+}
+
+div#content_wrapper {
+	background-image: url("images/bg.gif");
+	background-repeat: repeat-x;
+	background-position: 0 0;
+}
+
+div#content, div#header {
+	position: relative;
+	padding: 0;
+	margin: 0 auto;
+	width: 900px;
+}
+
+div#header {
+	height: 115px;
+}
+
+div#content {
+	overflow: auto;
+	padding-top : 30px;
+	font-size: 13px;
+	text-align: justify;
+	line-height: 1.5em;
+}
+
+div#col1 {
+	float: left;
+	width: 15%;
+	min-height: 200px;
+}
+
+div#col2 {
+	float: right;
+	width: 85%;
+	min-height: 200px;
+	padding: 0 0 20px 0;
+}
+
+
+ul#menu {
+	margin: 0;
+	padding: 13px 10px 0 0;
+	text-align: right;
+	
+}
+
+ul#menu li {
+	display: inline;
+	position: relative;
+	margin: 0;
+	padding: 0;
+}
+
+ul#menu a, ul#menu a:link, ul#menu a:visited, ul#menu a:hover {
+	font-size: 18px;
+	letter-spacing: 6px;
+	text-transform: uppercase;
+	text-indent: 3px;
+	margin: 0 5px;
+	height: 1.3em;
+}
+
+span.note {
+	z-index: -1;
+	position: absolute;
+	text-align: left;
+	display: block;
+	width: 200px;
+	left: 10px;
+	bottom: -21px;
+	font-size: 10px;
+	letter-spacing: 0.1em;
+	word-spacing: normal;
+}
+
+span.amp {
+  font-family: Baskerville, Palatino, "Book Antiqua", serif;
+  font-style: italic;
+  font-size: 22px;
+  color: rgb(207, 9, 9);
+}
+
+p#description {
+	position: absolute;
+	right: 0;
+	bottom: 10px;
+	margin: 0;
+	padding: 0;
+	font-size: 16px;
+	color: rgb(150, 150, 150);
+	letter-spacing: 2px;
+	/*text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.2);*/
+}
+
+p#brand {
+	margin: 0;
+	padding: 0;
+	width: 292px;
+	height: 175px;
+	position: absolute;
+	left: -40px;
+	top: 6px;
+	background-image: url("images/logo.png");
+	background-repeat: no-repeat;
+	background-position: 0 0;
+}
+
+p#brand span {
+	display: none;
+}
+
+a#fork {
+	margin: 0;
+	padding: 0;
+	position: absolute;
+	left: 10px;
+	top: 5px;
+	height: 17px;
+	line-height: 17px;
+	font-family: arial;
+	font-size: 11px;
+	text-indent: 15px;
+	color: black;
+	text-decoration: none;
+	border-bottom : 1px dashed rgb(207, 9, 9);
+	display: block;
+	background-image: url("images/fork.png");
+	background-repeat: no-repeat;
+	background-position: 0 1px;
+}
+
+div.deco {
+	min-height: 150px;
+	padding: 0 0 0 160px;
+	background-repeat: no-repeat;
+	background-position: 0 1px;
+}
+
+div.deco.deco_glue {
+	background-image: url("images/orm.png");
+}
+
+div.deco.deco_features {
+	background-image: url("images/features.png");
+}
+
+div.deco.deco_install {
+	background-image: url("images/install.png");
+}
+
+div.deco.deco_docs {
+	background-image: url("images/docs.png");
+}
+
+div.deco.deco_license {
+	background-image: url("images/license.png");
+}
+
+ul.list_indent {
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+}
+
+ul.list_indent li {
+	padding: 2px 0;
+}
+
+p.copyright {
+	font-size: 12px;
+	color: rgb(150,150,150);
+	text-align: center;
+	border-top: 1px solid rgb(150,150,150);
+	clear: both;
+	padding: 6px 0;
+	margin: 0 50px;
+}

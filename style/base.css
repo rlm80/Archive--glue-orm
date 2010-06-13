@@ -60,13 +60,13 @@ div#content {
 
 div#col1 {
 	float: left;
-	width: 15%;
+	width: 20%;
 	min-height: 200px;
 }
 
 div#col2 {
 	float: right;
-	width: 85%;
+	width: 80%;
 	min-height: 200px;
 	padding: 0 0 20px 0;
 }
@@ -209,4 +209,22 @@ p.copyright {
 	clear: both;
 	padding: 6px 0;
 	margin: 0 50px;
+}
+
+ul#nav {
+	list-style-type: none;
+	margin: 0;
+	padding: 50px 0 0 0;
+	font-size: 12px;
+}
+
+ul#nav ul {
+	list-style-type: none;
+	margin: 0;
+	padding: 0 0 0 20px;
+}
+
+ul#nav li {
+	margin: 0;
+	padding: 0;
 }

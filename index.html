@@ -2,8 +2,8 @@
 layout: base
 title: Glue - Datamapper based ORM library for the Kohana PHP framework v3
 ---
-<div id="col1"></div>
-<div id="col2">
+<div id="col1" style="width: 15%"></div>
+<div id="col2" style="width: 85%">
 	<h2>What's Glue ?</h2>
 	<div class="deco deco_glue">
 		<p>Glue is an <a href="http://en.wikipedia.org/wiki/Object-relational_mapping">Object Relational Mapping</a> library for PHP. It is currently distributed as a module for the <a href="http://kohanaframework.org/">Kohana PHP framework</a>. Glue is based on <a href="http://www.martinfowler.com/eaaCatalog/dataMapper.html">Data Mapper</a>, which differs from the more popular pattern that is <a href="http://martinfowler.com/eaaCatalog/activeRecord.html">Active Record</a>. This means model classes don't have to extend a special base class and objects called mappers are used to load, validate and save model objects.</p>
@@ -12,8 +12,7 @@ title: Glue - Datamapper based ORM library for the Kohana PHP framework v3
 	<h2>Notable Features</h2>
 	<div class="deco deco_features">
 		<ul class="list_indent">
-			<li><strong>ORM-free model classes</strong> : model classes are yours entirely. Glue will never get in the way of what you want to do there.</li>
-			<li><strong>Easy use of straight SQL</strong> : Glue is nothing more than a helper to load and save object graphs. If you prefer to use straight SQL in some places, simply don't use Glue there.</li>
+			<li><strong>ORM-free model classes</strong> : model classes are yours entirely. Glue will never get in the way of what you want to do there. It is nothing more than a helper to load and save object graphs.</li>
 			<li><strong>Minimal number of database queries</strong> : specifically, the number of database queries doesn't skyrocket when loading N model objects and for each of them a collection of many-to-many or one-to-many related objects.</li>
 			<li><strong>No configuration</strong> : you don't have to define mappers, model classes or relationships to start playing with this. Default ones are instanciated if you don't provide yours and database introspection is used to guess entity field names and types.</li>
 			<li><strong>Single model class, multiple tables mapping</strong> : a model class can be mapped to several tables joined together by primary key, which is useful for object-relational mapping of inheritance.</li>

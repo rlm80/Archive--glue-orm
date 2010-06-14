@@ -1,0 +1,17 @@
+<h2>Entities and relationships</h2>
+
+<p>This tutorial walks you through the process of writing the ORM code for an imaginary blog application. It illustrates the main features of the library.</p>
+
+<p>The blog application consists of users that are allowed to write posts to be published on a website. The posts can be associated with any number of pre-existing categories. Users have profiles with some personal information.<p>
+
+<img src="/glue-orm/images/tutorial_schema.png" />
+
+<p>This gives us the following entities :</p>
+
+<ul>
+	<li><strong>User</strong> : id (pk), login, password</li>
+	<li><strong>Profile</strong> : id (pk), email</li>
+	<li><strong>Post</strong> : id (pk), content, user_id (fk of user)</li>
+	<li><strong>Category</strong> : id (pk), name</li>
+	<li><strong>Category2post</strong> (associative entity) : category_id (pk, fk of category), post_id (pk, fk of post)</li>
+</ul>

@@ -1,1 +1,106 @@
 <h2>Loading object graphs</h2>
+
+<p>Queries allow you to efficiently load an object graph that may involve as many entities and relationships as you need.</p>
+
+<p>Everything you can do with glue::select (that is, loading objects from a single entity) you can also do with queries.</p>
+
+<p>Say we want to display all the posts of user 1, ordered by id, limited to 3 items. We might do that with the glue::select function, like this :</p>
+
+<pre><code>$set = glue::select('post', array('user_id' => 1), 'id ASC', 3);
+foreach($set as $post) ...;
+</code></pre>
+
+<p>...but we could also do it with a query, using the glue::qselect function :</p>
+
+<pre><code>glue::qselect('post', $set)->where('user_id', '=', 1)->order_by('id ASC')->limit(3)->execute();
+foreach($set as $post) ...;
+</code></pre>
+
+<p>In the above query, "qselect" is a command, while "where", "order_by" and "fields" are command modifiers. A command defines a new set of objects while a command modifier changes the behavior of the preceding command. The first parameter of the qselect function is an entity identifier and the second parameter is a variable that gets filled with objects when the query is executed.</p>
+
+<p>Queries can be composed of more than one command. Say we want to list the first ten of our users, ordered by login. When the profile has an email that start with 'a', we want to load it as well :</p>
+
+<pre><code>glue::qselect('user', $u)->order_by('login ASC')->limit(10)
+  ->with($u, 'profile', $p)->where('email', 'LIKE', 'ja%')
+  ->execute();
+
+foreach($u as $user) {
+  echo 'login = ' . $user->login . "<br>\n";
+  if (isset($user->profile))
+    echo 'email = ' . $user->profile->email . "<br>\n";
+  echo '<hr>';
+}
+</code></pre>
+
+<p>In the above query, "with" is command that tells Glue that for each user in the set $u, it must load the related objects according to the "profile" relationship, build a new set with all loaded profiles, and put that set into the variable $p.</p>
+
+<p>You can chain the with commands in any way you like to produce very large object graphs if you need to. For example this would load our whole database :</p>
+
+<pre><code>glue::qselect('post',       $po)
+  ->with($po, 'user',       $ur)
+  ->with($ur, 'profile',    $pr)
+  ->with($po, 'category',   $ct)
+  ->execute();
+</code></pre>
+
+<p>...which would result in the following object graph :</p>
+
+<img src="http://img532.imageshack.us/img532/1006/drawl.png" />
+
+<p>If you wish to display the information as a list of posts, you would enter into the graph by the $po set of posts, like this :</p>
+
+<pre><code>foreach($po as $post) {
+  $author     = $post->user;
+  $profile    = $author->profile;
+  $categories = $post->categories;
+  echo 'author : '    . $author->login             . "<br>\n";
+  echo 'email : '     . $profile->email            . "<br>\n";
+  echo 'content : '   . $post->content             . "<br>\n";
+  echo 'categories: ';
+  foreach($categories as $category)
+	 echo $category->name . ', ';
+  echo '<br><hr>';
+}
+</code></pre>
+
+<p>If you'd rather list the post by categories, you would enter into the graph by the $ct set of categories instead, like this :</p>
+
+<pre><code>foreach($ct as $category) {
+  echo 'category: ' . $category->name . "<br>\n";
+  foreach($category->posts as $post) {
+    $author     = $post->user;
+    $profile    = $author->profile;
+    echo 'author : '    . $author->login             . "<br>\n";
+    echo 'email : '     . $profile->email            . "<br>\n";
+    echo 'content : '   . $post->content             . "<br>\n";
+    echo '<hr>';
+  }
+  echo '<hr>';
+}
+</code></pre>
+
+<p>Commands in queries are actually structured as a tree, with sets of objects being nodes and commands being branches. This query :</p>
+
+<pre><code>glue::qselect('post',        $po)
+  ->with($po, 'user',       $ur)
+  ->with($ur, 'profile',    $pr)
+  ->with($po, 'category',   $ct)
+  ->execute();
+</code></pre>
+
+<p>...can be represented as this commands tree :</p>
+
+<pre>__posts__$po
+         |
+         |__user__$ur
+         |         |
+         |         |__profiles__$pr
+         |
+         |__categories__$ct
+</pre>
+
+<p>The tree can be as large as you need it to be and Glue will always execute it in the best possible way. That "best" way is the result of a compromise : minimizing the number of SQL queries, but not letting data redundancy in the result sets grow so much that it becomes a memory hog.</p>
+
+<p>If you've enabled debugging, you can point your browser to the page /Glue/sandbox/ and you'll be presented with a form that lets you type a query. If you hit the debug button, a table appears, summarizing how the query will be executed :</p>
+
+TODO : add table code here

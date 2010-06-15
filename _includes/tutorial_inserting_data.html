@@ -1,1 +1,80 @@
 <h2>Inserting data</h2>
+
+<p>We'll begin by inserting some data in our tables.</p>
+
+<p>First we need to create some model objects :</p>
+
+<pre><code>$user1 = new stdClass;
+$user1->login = 'jane';
+$user1->password = 'qsdf';
+
+$user2 = new stdClass;
+$user2->login = 'john';
+$user2->password = 'azer';
+</code></pre>
+
+<p>However if we directly call the constructors that way, we'll have to change the code later when we're not satisfied anymore with stdClass and we want to use our own model classes. So, to make our code immune to model class changes, we may use `glue::create` instead, like this :</p>
+
+<pre><code>$jane = glue::create('user', array('login' => 'jane', 'password' => 'qsdf'));
+$john = glue::create('user', array('login' => 'john',  'password' => 'azer'));
+</code></pre>
+
+<p>Next we need to tell Glue to insert these freshly created model objects in the database :</p>
+
+<pre><code>glue::insert('user', $jane);
+glue::insert('user', $john);
+</code></pre>
+
+<p>Or even better, to save one database query :</p>
+
+<pre><code>glue::insert('user', array($jane, $john));
+</code></pre>
+
+<p>Notice the 'user' string passed as first parameter in every Glue call above ? This is because we always have to tell which entity we're talking about when Glue has no way to guess it. In this case, since it knows we're talking about the user entity, a mapper for that entity will be invoked. That mappers knows user data belongs in the 'users' table and, by database introspection, that the users table has an auto-incrementing 'id' primary key.</p>
+
+<p>So if you do this...</p>
+
+<pre><code>glue::insert('user', array($jane, $john));
+echo $jane->id;
+echo $john->id;
+</code></pre>
+
+<p>...you'll see that the 'id' property is now set with the value it has in the database !</p>
+
+<p>And since we now have the ids of our users, we can now insert their profiles :</p>
+
+<pre><code>$profile1 = glue::create('profile', array('id' => $jane->id, 'email' => "jane@gmail.com", ));
+$profile2 = glue::create('profile', array('id' => $john->id, 'email' => "john@gmail.com", ));
+glue::insert('profile', array($profile1 , $profile2));
+</code></pre>
+
+<p>...and their posts :</p>
+
+<pre><code>$post1 = glue::create('post', array('content' => "jane's post 1", 'user_id' => $jane->id));
+$post2 = glue::create('post', array('content' => "jane's post 2", 'user_id' => $jane->id));
+$post3 = glue::create('post', array('content' => "john's post 1", 'user_id' => $john->id));
+$post4 = glue::create('post', array('content' => "john's post 2", 'user_id' => $john->id));
+glue::insert('post', array($post1, $post2, $post3, $post4));
+</code></pre>
+
+<p>Following the same process we create categories :</p>
+
+<pre><code>$biology = glue::create('category', array('name' => "biology"));
+$geology = glue::create('category', array('name' => "geology"));
+$history = glue::create('category', array('name' => "history"));
+glue::insert('category', array($biology, $geology, $history));
+</code></pre>
+
+<p>...and we associate posts with categories by creating objects of the category2post entity and by inserting them :</p>
+
+<pre><code>$cps = array(
+        glue::create('category2post', array('post_id' => $post1->id, 'category_id' => $biology->id)),
+        glue::create('category2post', array('post_id' => $post1->id, 'category_id' => $geology->id)),
+        glue::create('category2post', array('post_id' => $post2->id, 'category_id' => $biology->id)),
+		glue::create('category2post', array('post_id' => $post3->id, 'category_id' => $biology->id)),
+        glue::create('category2post', array('post_id' => $post3->id, 'category_id' => $geology->id)),
+        glue::create('category2post', array('post_id' => $post3->id, 'category_id' => $history->id)),
+        glue::create('category2post', array('post_id' => $post4->id, 'category_id' => $history->id))
+	);
+glue::insert('category2post', $cps);
+</code></pre>

@@ -1,1 +1,23 @@
 <h2>Loading data</h2>
+
+<p>The method explained here is useful to load objects from a single entity with very little code. To load a whole object graph involving more than one entity, use the slightly more verbose Glue queries instead.</p>
+
+<p>This would load post number 3 by primary key :</p>
+
+<pre><code>$post = glue::select('post', 3);
+</code></pre>
+
+<p>...if there is such a post, it will be returned, otherwise it will return null.</p>
+
+<p>You may also pass an array of conditions :</p>
+
+<pre><code>$posts = glue::select('post', array('id' => array(2, 3, 4))); // means "where id IN (2, 3, 4)"
+$posts = glue::select('post', array('user_id' => 1, 'content' => 'test')); // means "where user_id = 1 AND content = 'test'"
+</code></pre>
+
+<p>...in this case the function will return a set of objects, which may be empty if no entity instances match the criteria in the database.</p>
+
+<p>All function calls above also support additional parameters to specify sort criteria, limit and offset :</p>
+
+<pre><code>$post = glue::select('post', array('content' => 'test'), 'id ASC', 3, 2);
+</code></pre>

@@ -6,14 +6,12 @@
 
 <p>You may get the mapper object for the 'post' entity like this :</p>
 
-<pre><code>
-$mapper = OGL::entity('post');
+<pre><code>$mapper = OGL::entity('post');
 </code></pre>
 
 <p>If you var_dump it, you'll see how OGL initialized it by database introspection :</p>
 
-<pre><code>
-protected $name   => 'post'                             // Entity name
+<pre><code>protected $name   => 'post'                             // Entity name
 protected $db     => 'default'                          // Database it is stored into
 protected $model  => 'stdClass'                         // Model class
 protected $tables => array ('posts')                    // Tables the entity is stored into

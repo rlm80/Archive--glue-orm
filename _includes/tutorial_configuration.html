@@ -1,1 +1,14 @@
 <h2>Configuration</h2>
+
+<p>None, because the following conventions have been respected :</p>
+
+<ul>
+	<li>table names = pluralized entity names,</li>
+ 	<li>foreign keys = primary keys prefixed with entity name followed by '`_`' (entity user : pk = 'id' => fk = 'user_id'),</li>
+ 	<li>associative entity name = &lt;name of 1st entity&gt;2&lt;name of 2nd entity&gt; (or &lt;name of 2nd entity&gt;2&lt;name of 1st entity&gt; : whichever is first by alphabetical order comes first),</li>
+ 	<li>tables are stored in 'default' database,</li>
+ 	<li>entity field names = model property names= database column names,</li>
+ 	<li>...and for now we're happy with model objects being simple stdClass instances.</li>
+</ul>
+
+<p>So if you've created the above tables, you can start playing right away with the rest of the tutorial !</p>

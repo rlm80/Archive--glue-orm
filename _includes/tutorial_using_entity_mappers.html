@@ -1,1 +1,25 @@
 <h2>Using entity mappers</h2>
+
+<p>If you have a lot of things to do with some entity, you might find it more convenient to get the mapper for that entity and to directly call it rather than using Glue's static functions as gateways.</p>
+
+<p>So instead of this...</p>
+
+<pre><code>$post = glue::create('post', array('content' => "some content", 'user_id' => $user->id));
+glue::insert('post', $post);
+glue::update('post', $post);
+glue::delete('post', $post);
+$post = glue::select('post', 3);
+</code></pre>
+
+<p>...you might do that :</p>
+
+<pre><code>$mapper = glue::entity('post');
+
+$post = $mapper->create(array('content' => "some content", 'user_id' => $user->id));
+$mapper->insert($post);
+$mapper->update($post);
+$mapper->delete($post);
+$post = $mapper->select(3);
+</code></pre>
+
+<p>...so you don't have to pass the 'post' parameter each time you call a function.</p>

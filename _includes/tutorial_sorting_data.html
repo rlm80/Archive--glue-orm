@@ -1,1 +1,50 @@
 <h2>Sorting data</h2>
+
+<p>Most Glue functions return sets of objects, that is, special containers that are aware of which entity their content belongs to. This allows operations performed on sets to be tailored to that particular entity. Although most of the time you won't have to create sets yourself, this can be done like this (notice how we tell Glue what entity the set is about with the first parameter) :</p>
+
+<pre><code>
+$set = glue::set('post', array($post1, $post2, $post3));
+</code></pre>
+
+<p>Sets can be accessed like PHP arrays :</p>
+
+<pre><code>
+// Iterator :
+foreach($set as $post)
+  echo $post->content;
+
+// Access by index :
+echo $set[0]->content;
+echo $set[1]->content;
+echo $set[2]->content;
+</code></pre>
+
+<p>Sets can be sorted using SQL-like sort criteria, like this :</p>
+
+<pre><code>
+$set->sort("user_id ASC, content DESC");
+</code></pre>
+
+<p>...note that identifiers appearing in this string ("user_id" and "content") are actually entity fields identifiers, and these may differ from object properties if you configured them so. Glue will need to invoke an entity mapper for the 'post' entity to resolve entity fields identifiers into object properties. You see why telling Glue what entity the set is about was important when we created it.</p>
+
+<p>Sets can be turned into numerically indexed (according to current sort criteria) PHP arrays like this :</p>
+
+<pre><code>
+$array = $set->as_array();
+</code></pre>
+
+<p>And finally sets content can be deleted and updated. Again, Glue will need to invoke an entity mapper for the 'post' entity to perform these operations since it needs to know what tables and columns the entity is stored into :</p>
+
+<pre><code>
+$set->update();                 // updates the database for all fields of all objects in the set
+$set->update(array('content')); // updates only the 'content' field of posts
+$set->delete();                 // deletes all database representations of the objects in the set
+</code></pre>
+
+<p>...which is the same as passing the content of the set to the update and delete Glue functions (see below) :</p>
+
+<pre><code>
+glue::update('post', $set->as_array());
+glue::update('post', $set->as_array(), array('content'));
+glue::delete('post', $set->as_array());
+</code></pre>

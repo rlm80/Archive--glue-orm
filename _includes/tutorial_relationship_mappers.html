@@ -8,14 +8,12 @@
 
 <p>You may get the mapper object for the 'category' relationship of the 'post' entity like this :</p>
 
-<pre><code>
-$mapper = glue::entity('post')->relationship('category');
+<pre><code>$mapper = glue::entity('post')->relationship('category');
 </code></pre>
 
 <p>If you var_dump it, you'll see how Glue initialized it by database introspection :</p>
 
-<pre><code>
-protected $name     => 'category'      // Name of this relationship
+<pre><code>protected $name     => 'category'      // Name of this relationship
 protected $from     => 'post'          // Name of the source entity
 protected $to       => 'category'      // Name of the target entity
 protected $type     => MANY_TO_MANY    // Type of this relationship

@@ -1,1 +1,30 @@
 <h2>Deleting data</h2>
+
+<p>Censoring the content of John's post is not enough after all, we want him to feel the full extent of our wrath and so we decide to delete his post entirely.</p>
+
+<p>Assuming we already have a model object available for that post, we could do it like this :</p>
+
+<pre><code>glue::delete('post', $post);
+</code></pre>
+
+<p>Or, if we had more than one post to delete :</p>
+
+<pre><code>glue::delete('post', array($post1, $post2));
+</code></pre>
+
+<p>If we wished to delete some posts but we don't have the model objects at hand, we may still delete them by passing the primary key to the delete function :</p>
+
+<pre><code>$post = glue::delete('post', 3);
+</code></pre>
+
+<p>...the function will return the deleted post (with only the primary key loaded), or null if no such post was found./p>
+
+<p>An array of conditions can also be used :</p>
+
+<pre><code>$posts = glue::delete('post', array('id' => array(2, 3, 4))); // means "where id IN (2, 3, 4)"
+$posts = glue::delete('post', array('user_id' => 2, 'content' => 'test')); // means "where user_id = 2 AND content = 'test'"
+</code></pre>
+
+<p>...in this case the function will return the set of deleted objects, which may be empty if no entity instances match the criteria in the database.</p>
+
+<p>This method is NOT intended for mass deletion of data, since the objects will be loaded first before being deleted. Always use raw SQL for mass deletion, which you may put in a custom function in the corresponding entity mapper.</p>

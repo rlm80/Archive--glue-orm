@@ -69,7 +69,7 @@ div#content, div#header {
 }
 
 div#header {
-	height: 125px;
+	height: 120px;
 }
 
 div#content {
@@ -95,7 +95,7 @@ div#col2 {
 
 ul#menu {
 	margin: 0;
-	padding: 13px 10px 20px 0;
+	padding: 13px 15px 20px 0;
 	text-align: right;
 	overflow: hidden;
 }
@@ -160,7 +160,7 @@ p#brand {
 	height: 175px;
 	position: absolute;
 	left: -60px;
-	top: 13px;
+	top: 10px;
 	background-image: url("images/logo.png");
 	background-repeat: no-repeat;
 	background-position: 0 0;

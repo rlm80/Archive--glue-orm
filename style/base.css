@@ -69,7 +69,7 @@ div#content, div#header {
 }
 
 div#header {
-	height: 120px;
+	height: 118px;
 }
 
 div#content {
@@ -160,7 +160,7 @@ p#brand {
 	height: 175px;
 	position: absolute;
 	left: -60px;
-	top: 10px;
+	top: 9px;
 	background-image: url("images/logo.png");
 	background-repeat: no-repeat;
 	background-position: 0 0;

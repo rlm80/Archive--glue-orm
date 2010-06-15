@@ -31,14 +31,19 @@ pre {
 	background-color: black; /*rgb(240,240,240);*/
 	color: white;
 	padding: 5px;
-	font-family:"consolas","lucida console","courrier new",courrier,monospace;
-	font-size:12px;
+	font-family: "consolas","lucida console","courrier new",courrier,monospace;
+	font-size: 12px;
 	font-weight: bold;
 	line-height: 1.4em;
 	overflow: auto;
 	background-image: url("images/code.png");
 	background-repeat: no-repeat;
 	background-position: 100% 0;
+	white-space: pre-wrap;       /* css-3 */
+	white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+	white-space: -pre-wrap;      /* Opera 4-6 */
+	white-space: -o-pre-wrap;    /* Opera 7 */
+	word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
 
 h2 {

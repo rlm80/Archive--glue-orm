@@ -1,0 +1,53 @@
+<h2>Multiple tables model classes</h2>
+
+<p>Usually model objects are mapped to one row in one table. As complexity increases however, so does the need of breaking free from that rule and map a model object to rows in several tables. But useful though it might be, we tend to avoid this solution because it is a pain to code. Glue tries to bring these multiple-tables strategies back into the realm of feasibility.</p></p>
+
+<p>Let's say that for some reason we wish to keep representing user information as one row in the users table and one row in the profiles table in the database, but we'd like to merge these rows as a single user object in the OO layer. Mapping one model class with two tables is not something that Glue provides out of the box, we need to configure it by defining our own mapper for the entity user.</p>
+
+<p>So far the mapper for the entity user that has been used was the default one, initialized by database introspection. You can see its properties by pointing your browser to the page .../Glue/entity/user/ :</p>
+
+TODO : add table code here
+
+<p>You can see in the first column that the entity has three fields, id, login and password, and in the second column you see that all of them are stored in the users table.</p>
+
+<p>Now we need to tell Glue that the user entity is actually stored not simply in the 'users' table (as the convention for entity storage would imply), but in two tables : users and profiles. This can be done by defining our own mapper class for the user entity and by overriding the $table variable :</p>
+
+<pre><code>
+class Glue_Entity_User extends Glue_Entity {
+  protected $tables = array('users', 'profiles');
+}
+</code></pre>
+
+<p>...thanks to the naming convention for mapper classes, it will be picked up automatically when we refer to the user entity in Glue calls.</p>
+
+<p>Let's see how the mapper properties are now initialized by pointing the browser to the page .../Glue/entity/user/ again :</p>
+
+TODO : add table code here
+
+<p>The user entity is now composed of as many fields as there are distinct column names in the users and profiles tables. Columns having the same name in both tables have been grouped together to form a single field, meaning that they are considered to hold equal values. Such columns form the resulting primary key, and are the ones on which the join will be performed to retrieve user data.</p>
+
+<p>Absolutely nothing is different in the way you may use entities stored in multiple tables and entities stored in single tables. The inner workings of an entity are totally transparent externally. Specifically, relationships and queries involving such entities work exactly the same as usual and perform just as well. Inserting, deleting and updating an object will just impact several rows instead of one :</p>
+
+<pre><code>
+// Creating :
+frank = glue::create('user', array('login' => 'Frank', 'password' => '1234', 'email' => 'frank@frank.fr'));
+
+// Inserting ($frank now has an id) :
+glue::insert('user', $frank);
+echo $frank->id;
+
+// Updating :
+$frank->email = 'new_email@frank.fr';
+glue::update('user', $frank );
+
+// Selecting :
+$set = glue::select('user', array('login' => 'Frank'));
+$frank = $set[0];
+
+// Deleting :
+glue::delete('user', $frank);
+</code></pre>
+
+<p>The only requirement for using such entities is that the underlying RDBMS must support nested joins in selects, which is the case for MySQL, PostgreSQL and SQLite. You can use the debugger to see what kind of query is generated (a nested join now takes the place of what was simply the users table before) :</p>
+
+TODO : add table code here

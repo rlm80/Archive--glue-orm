@@ -1,0 +1,30 @@
+<h2>Relationship mappers</h2>
+
+<p>You'll never have to deal with relationship mappers directly but Glue makes use of them behind the scene so it's better to have a basic understanding of what they are used for before reading any further.</p>
+
+<p>A relationship mapper is an object that (conceptually) describes a way for Glue to fetch instances of some target entity B from the database given an instance of some source entity A. For example, the way to fetch the categories of a given post.</p>
+
+<p>Although it is possible to define your own mapper classes if you need something special, in this tutorial we'll let Glue instantiate the default relationship mapper class. For this to work, we need to follow the naming convention regarding relationships : relationships are expected to have the same name as the related entity.</p>
+
+<p>You may get the mapper object for the 'category' relationship of the 'post' entity like this :</p>
+
+<pre><code>$mapper = glue::entity('post')->relationship('category');
+</code></pre>
+
+<p>If you var_dump it, you'll see how Glue initialized it by database introspection :</p>
+
+<pre><code>protected $name     => 'category'      // Name of this relationship
+protected $from     => 'post'          // Name of the source entity
+protected $to       => 'category'      // Name of the target entity
+protected $type     => MANY_TO_MANY    // Type of this relationship
+protected $reverse  => 'post'          // Name of the reverse relationship
+protected $property => 'categories'    // Property that will hold related objects
+protected $mapping  => array(          // Joins to be used to get target entity instances
+    'post.id'                   => 'category2post.post_id',
+    'category2post.category_id' => 'category.id' 
+  )
+</code></pre>
+
+<p>If you've enabled debugging, you can also point your browser to the page /Glue/relationship/post/category/ and you'll be presented with a table summarizing all the information above :</p>
+
+TODO : add table code here

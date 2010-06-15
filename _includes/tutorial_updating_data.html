@@ -1,0 +1,19 @@
+<h2>Updating data</h2>
+
+<p>Say we're not happy with John's second post and we want to replace its content with "-censored-". Assuming we already have a model object available for that post, we would update it like this :</p>
+
+<pre><code>$post->content = '-censored-';
+glue::update('post', $post);
+</code></pre>
+
+<p>...if we had more than one post to update we could also pass an array instead of a single object :</p>
+
+<pre><code>$post1->content = '-censored-';
+$post2->content = '-censored-';
+glue::update('post', array($post1, $post2));
+</code></pre>
+
+<p>The above code snippet would cause all fields to be updated in the database. If we only wish to update some fields, they can be provided as a third argument :</p>
+
+<pre><code>glue::update('post', $post, array('content'));
+</code></pre>

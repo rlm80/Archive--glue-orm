@@ -1,0 +1,12 @@
+<h2>Deleting object graphs</h2>
+
+<p>In their structure, delete queries are very much like select queries. They actually are select queries : the object graph is loaded (although only the primary keys), and after that all sets of objects are deleted. So just like glue::delete, this is NOT meant for mass deletion of data ! It's just a convenient way to delete a small graph of objects, for mass-deletion use raw SQL.</p>
+
+<p>For example, if you wish to delete John, his profile and all of his posts you may do :</p>
+
+<pre><code>glue::qdelete('user', $u)->where('login','=','John')
+  ->with($u, 'profile')
+  ->with($u, 'post', $p)
+  ->with($p, 'category2post')
+  ->execute();
+</code></pre>

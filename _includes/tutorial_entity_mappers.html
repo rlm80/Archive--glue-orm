@@ -1,0 +1,43 @@
+<h2>Entity mappers</h2>
+
+<p>Although you won't have to deal with entity mappers directly, OGL makes use of them everywhere behind the scene. So before you dive deeper into this tutorial, it's better to have a basic understanding of what they are used for.</p>
+
+<p>Entity mappers are objects that describe how entity instances are represented in the model and persisted into the database. Although it is possible to define your own mapper classes if you need something out of conventions, in this tutorial we'll let OGL instantiate the default mapper class.</p>
+
+<p>You may get the mapper object for the 'post' entity like this :</p>
+
+<pre><code>$mapper = OGL::entity('post');
+</code></pre>
+
+<p>If you var_dump it, you'll see how OGL initialized it by database introspection :</p>
+
+<pre><code>protected $name   => 'post'                             // Entity name
+protected $db     => 'default'                          // Database it is stored into
+protected $model  => 'stdClass'                         // Model class
+protected $tables => array ('posts')                    // Tables the entity is stored into
+protected $fields => array ('id', 'content', 'user_id') // Fields identifiers
+protected $properties => array (                        // Mapping fields => object properties 
+    'id'      => 'id',
+    'content' => 'content',
+    'user_id' => 'user_id'
+  )
+protected $columns => array (                           // Mapping fields => databases tables/columns
+    'id'      => array ('posts' => 'id'),
+    'content' => array ('posts' => 'content'),
+    'user_id' => array ('posts' => 'user_id')
+  )
+protected $types => array (                             // Mapping fields php types
+    'id'      => 'int',
+    'content' => 'string',
+    'user_id' => 'int'
+  )
+protected $pk => array ('id')                           // Fields in the primary key
+protected $fk => array (                                // Mapping fields in the pk => fk identifiers
+    'id' => 'post_id'
+  )
+protected $autoincrement => boolean true                // Whether or not pk is auto-incrementing
+</code></pre>
+
+<p>If you've enabled debugging, you can also point your browser to the page /ogl/entity/post/ and you'll be presented with a pretty table summarizing all the information above :</p>
+
+TODO : add table code here

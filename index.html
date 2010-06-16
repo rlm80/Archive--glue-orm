@@ -6,7 +6,8 @@ title: Glue - Datamapper based ORM library for the Kohana PHP framework v3
 <div id="col2" style="width: 85%">
 	<h2>What's Glue ?</h2>
 	<div class="deco deco_glue">
-		<p>Glue is an <a class="external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">Object Relational Mapping</a> library for PHP. It is currently distributed as a module for the <a class="external" href="http://kohanaframework.org/">Kohana PHP framework</a>. Glue is based on <a class="external" href="http://www.martinfowler.com/eaaCatalog/dataMapper.html">Data Mapper</a>, which differs from the more popular pattern that is <a class="external" href="http://martinfowler.com/eaaCatalog/activeRecord.html">Active Record</a>. This means model classes don't have to extend a special base class and objects called mappers are used to load, validate and save model objects.</p>
+		<p>Glue is an <a class="external" href="http://en.wikipedia.org/wiki/Object-relational_mapping">Object Relational Mapping</a> library for the PHP language. It is currently distributed as a module for the <a class="external" href="http://kohanaframework.org/">Kohana PHP framework v3</a>. Glue is based on the <a class="external" href="http://www.martinfowler.com/eaaCatalog/dataMapper.html">Data Mapper</a>pattern, which differs from the more popular pattern that is <a class="external" href="http://martinfowler.com/eaaCatalog/activeRecord.html">Active Record</a>. This means model classes don't have to extend a special base class and objects called mappers are used to load and save model objects.</p>
+		<a class="more" href="/glue-orm/about.html">more</a>
 	</div>
 
 	<h2>Notable Features</h2>
@@ -17,25 +18,29 @@ title: Glue - Datamapper based ORM library for the Kohana PHP framework v3
 			<li><strong>No configuration</strong> : you don't have to define mappers, model classes or relationships to start playing with this. Default ones are instanciated if you don't provide yours and database introspection is used to guess entity field names and types.</li>
 			<li><strong>Single model class, multiple tables mapping</strong> : a model class can be mapped to several tables joined together by primary key, which is useful for object-relational mapping of inheritance.</li>
 		</ul>
+		<a class="more" href="/glue-orm/features.html">more</a>		
 	</div>
 
 	<h2>Installation</h2>
 	<div class="deco deco_install">
 		<p>Same as any Kohana module. Copy the Glue directory into your modules folder and add this line to bootstrap.php in your application folder :</p>
 <pre>Kohana::modules(array(
-		...
-		'database' => MODPATH.'database', // Required
-		'glue' => MODPATH.'glue',
-	));</pre>
+    ...
+    'database' => MODPATH.'database', // Required
+    'glue' => MODPATH.'glue',
+  ));</pre>
+		<a class="more" href="/glue-orm/installation.html">more</a>	
 	</div>
 
 	<h2>Documentation</h2>
 	<div class="deco deco_docs">
-		<p>There is a <a href="tutorial.html">tutorial</a> and some more philosophical <a href="documentation.html">documentation</a>. I strongly recommend reading the tutorial first before diving into the documentation. It is more user friendly and has a better chance of staying up-to-date with the code.</p>
+		<p>There is a <a href="/glue-orm/tutorial/entities_and_relationships.html">tutorial</a> and some more philosophical <a href="/glue-orm/documentation.html">documentation</a>.</p>
+		<a class="more" href="/glue-orm/docs.html">more</a>
 	</div>
 
 	<h2>License</h2>
 	<div class="deco deco_license">
-		<p>Glue is released under the <a href="http://en.wikipedia.org/wiki/MIT_License">MIT license</a>.</p>
+		<p>Glue is released under the <a class="external" href="http://en.wikipedia.org/wiki/MIT_License">MIT license</a>.</p>
+		<a class="more" href="/glue-orm/license.html">more</a>
 	</div>
 </div>

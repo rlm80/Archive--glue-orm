@@ -68,13 +68,13 @@ glue::insert('category', array($biology, $geology, $history));
 <p>...and we associate posts with categories by creating objects of the category2post entity and by inserting them :</p>
 
 <pre><code>$cps = array(
-        glue::create('category2post', array('post_id' => $post1->id, 'category_id' => $biology->id)),
-        glue::create('category2post', array('post_id' => $post1->id, 'category_id' => $geology->id)),
-        glue::create('category2post', array('post_id' => $post2->id, 'category_id' => $biology->id)),
-		glue::create('category2post', array('post_id' => $post3->id, 'category_id' => $biology->id)),
-        glue::create('category2post', array('post_id' => $post3->id, 'category_id' => $geology->id)),
-        glue::create('category2post', array('post_id' => $post3->id, 'category_id' => $history->id)),
-        glue::create('category2post', array('post_id' => $post4->id, 'category_id' => $history->id))
-	);
+    glue::create('category2post', array('post_id' => $post1->id, 'category_id' => $biology->id)),
+    glue::create('category2post', array('post_id' => $post1->id, 'category_id' => $geology->id)),
+    glue::create('category2post', array('post_id' => $post2->id, 'category_id' => $biology->id)),
+    glue::create('category2post', array('post_id' => $post3->id, 'category_id' => $biology->id)),
+    glue::create('category2post', array('post_id' => $post3->id, 'category_id' => $geology->id)),
+    glue::create('category2post', array('post_id' => $post3->id, 'category_id' => $history->id)),
+    glue::create('category2post', array('post_id' => $post4->id, 'category_id' => $history->id))
+  );
 glue::insert('category2post', $cps);
 </code></pre>

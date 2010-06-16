@@ -8,7 +8,7 @@ html, body {
 }
 
 a, a:link, a:visited, a:hover {
-	color: #0645AD;
+	/*color: #0645AD;*/
 	text-decoration: none;
 }
 
@@ -250,9 +250,11 @@ p.copyright {
 
 ul#nav {
 	list-style-type: none;
-	margin: 0;
-	padding: 70px 0 30px 0;
-	font-size: 12px;
+	border-left:1px solid rgb(207, 9, 9);
+	font-size:12px;
+	list-style-type:none;
+	margin:70px 0 0;
+	padding:0 0 0 5px;
 }
 
 ul#nav ul {
@@ -264,9 +266,21 @@ ul#nav ul {
 ul#nav li {
 	margin: 0;
 	padding: 0;
+	line-height: 1.6em;
 }
 
-ul#nav a {
-	color: rgb(207, 9, 9);
+ul#nav a, ul#nav a:link, ul#nav a:visited {
+	color: black;
+	display: inline-block;
+	line-height: 1.45em;
+	text-decoration: none;
+	padding-left: 7px;
+	background-image: url("images/triangle.png");
+	background-repeat: no-repeat;
+	background-position: 0 50%;	
+}
+
+ul#nav a:hover {
+	border-bottom: 1px dashed red;
 }
 

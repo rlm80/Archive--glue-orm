@@ -206,6 +206,8 @@ div.deco {
 	padding: 0 0 0 160px;
 	background-repeat: no-repeat;
 	background-position: 0 1px;
+	position: relative;
+	overflow: auto;
 }
 
 div.deco.deco_glue {
@@ -226,6 +228,23 @@ div.deco.deco_docs {
 
 div.deco.deco_license {
 	background-image: url("images/license.png");
+}
+
+a.more {
+	/*position: absolute;
+	right: 5px;
+	bottom: 5px;*/
+	float: right;
+	color: black;
+	height: 1.45em;
+	line-height: 1.45em;
+	text-decoration: none;
+	padding-left: 7px;
+	background-image: url("images/triangle.png");
+	background-repeat: no-repeat;
+	background-position: 0 50%;		
+	border-bottom: 1px dashed red;
+	margin: 10px;
 }
 
 ul.list_indent {

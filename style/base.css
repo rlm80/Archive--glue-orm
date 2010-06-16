@@ -8,7 +8,7 @@ html, body {
 }
 
 a, a:link, a:visited, a:hover {
-	/*color: #0645AD;*/
+	color: rgb(207, 9, 9);
 	text-decoration: none;
 }
 
@@ -17,7 +17,7 @@ a:hover {
 }
 
 a.external {
-	background-image: url("images/external_link_iris.png");
+	background-image: url("images/external_link.png");
 	background-repeat: no-repeat;
 	background-position: 100% 50%;
 	padding-right: 14px;

@@ -10,7 +10,6 @@ h1, h2, h3, h4 {
 
 a, a:link, a:visited, a:hover {
 	color: rgb(207, 9, 9);
-	font-style: italic;
 	text-decoration: none;
 }
 
@@ -305,6 +304,6 @@ ul#nav a, ul#nav a:link, ul#nav a:visited {
 ul#nav a:hover {
 	/*text-decoration: underline;	*/
 	text-decoration: none;
-	border-bottom: 1px dashed rgb(207, 9, 9);
+	border-bottom: 1px solid rgb(207, 9, 9);
 }
 

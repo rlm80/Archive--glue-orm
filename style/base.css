@@ -1,14 +1,16 @@
 html, body {
 	margin: 0;
 	padding: 0;
-	font-family: Georgia,
-             "New Century Schoolbook",
-             "Nimbus Roman No9 L",
-             serif;
+	font-family: Verdana, Geneva, sans-serif;
+}
+
+h1, h2, h3, h4 {
+	font-family: Georgia, "New Century Schoolbook", "Nimbus Roman No9 L", serif;
 }
 
 a, a:link, a:visited, a:hover {
 	color: rgb(207, 9, 9);
+	font-style: italic;
 	text-decoration: none;
 }
 
@@ -40,7 +42,6 @@ pre {
 	font-size: 12px;
 	font-weight: bold;
 	line-height: 1.4em;
-	overflow: auto;
 	background-image: url("images/code.png");
 	background-repeat: no-repeat;
 	background-position: 100% 0;
@@ -80,6 +81,7 @@ div#content, div#header {
 
 div#header {
 	height: 118px;
+	font-family: Georgia, "New Century Schoolbook", "Nimbus Roman No9 L", serif;
 }
 
 div#content {
@@ -99,6 +101,7 @@ div#col2 {
 	float: right;
 	width: 80%;
 	min-height: 200px;
+	text-align: justify;	
 	padding: 0 0 20px 0;
 }
 
@@ -122,13 +125,13 @@ ul#menu a, ul#menu a:link, ul#menu a:visited, ul#menu a:hover {
 	text-decoration: none;
 	border-bottom : 1px dashed rgb(207, 9, 9);
 	display: inline-block;
-	height: 1.4em;
 	font-size: 18px;
 	letter-spacing: 6px;
 	text-transform: uppercase;
 	text-indent: 3px;
 	margin: 0 5px;
 	height: 1.3em;
+	font-style: normal;
 }
 
 span.note {
@@ -191,6 +194,7 @@ a#fork {
 	line-height: 17px;
 	font-family: arial;
 	font-size: 11px;
+	font-style: normal;
 	text-indent: 15px;
 	color: black;
 	text-decoration: none;
@@ -231,19 +235,14 @@ div.deco.deco_license {
 }
 
 a.more {
-	/*position: absolute;
-	right: 5px;
-	bottom: 5px;*/
 	float: right;
-	color: black;
-	height: 1.45em;
-	line-height: 1.45em;
+	color: rgb(207, 9, 9);
 	text-decoration: none;
+	font-style: normal;
 	padding-left: 7px;
 	background-image: url("images/triangle.png");
 	background-repeat: no-repeat;
 	background-position: 0 50%;		
-	border-bottom: 1px dashed red;
 	margin: 10px;
 }
 
@@ -269,17 +268,20 @@ p.copyright {
 
 ul#nav {
 	list-style-type: none;
-	border-left:1px solid rgb(207, 9, 9);
-	font-size:12px;
-	list-style-type:none;
-	margin:70px 0 0;
-	padding:0 0 0 5px;
+	border-right: 1px dashed rgb(207, 9, 9);
+	font-size: 12px;
+	font-weight: bold;
+	list-style-type: none;
+	margin: 70px 15px 0 0;
+	padding: 0 10px 0 0;
+	font-family: arial, sans-serif;
 }
 
 ul#nav ul {
 	list-style-type: none;
 	margin: 0;
 	padding: 0 0 0 20px;
+	font-weight: normal;
 }
 
 ul#nav li {
@@ -290,16 +292,19 @@ ul#nav li {
 
 ul#nav a, ul#nav a:link, ul#nav a:visited {
 	color: black;
-	display: inline-block;
 	line-height: 1.45em;
 	text-decoration: none;
 	padding-left: 7px;
 	background-image: url("images/triangle.png");
 	background-repeat: no-repeat;
 	background-position: 0 50%;	
+	font-style: normal;
+	display: inline-block;
 }
 
 ul#nav a:hover {
-	border-bottom: 1px dashed red;
+	/*text-decoration: underline;	*/
+	text-decoration: none;
+	border-bottom: 1px dashed rgb(207, 9, 9);
 }
 

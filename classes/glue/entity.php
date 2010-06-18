@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-class OGL_Entity {
+class Glue_Entity {
 	// Entity cache :
 	static protected $entities = array();
 	
@@ -49,7 +49,7 @@ class OGL_Entity {
 	}
 
 	protected function default_model() {
-		$model = 'OGL_Model_'.ucfirst($this->name);
+		$model = 'Glue_Model_'.ucfirst($this->name);
 		return class_exists($model) ? $model : 'stdClass'; // no upper case !
 	}
 
@@ -158,7 +158,7 @@ class OGL_Entity {
 	protected function introspect() {
 		if ( ! isset($this->introspect)) {
 			foreach($this->tables as $table)
-				$this->introspect[$table] = OGL::show_columns($table, $this->db);
+				$this->introspect[$table] = glue::show_columns($table, $this->db);
 		}
 		return $this->introspect;
 	}
@@ -410,7 +410,7 @@ class OGL_Entity {
 
 		// Object given :
 		if (is_object($arg)) {
-			if ($arg instanceof OGL_Set)
+			if ($arg instanceof Glue_Set)
 				$arg->delete();
 			else
 				$this->object_delete(array($arg));
@@ -433,8 +433,8 @@ class OGL_Entity {
 	}
 
 	public function insert($objects) {
-		// OGL_Set given ? Get array of objects :
-		if ($objects instanceof OGL_Set) $objects = $objects->as_array();
+		// Glue_Set given ? Get array of objects :
+		if ($objects instanceof Glue_Set) $objects = $objects->as_array();
 	
 		// Object given ? Wrap it in an array :
 		if ( ! is_array($objects)) $objects = array($objects);
@@ -480,8 +480,8 @@ class OGL_Entity {
 	}
 
 	function update($objects, $fields = null) {
-		// OGL_Set given ? Get array of objects :
-		if ($objects instanceof OGL_Set) $objects = $objects->as_array();
+		// Glue_Set given ? Get array of objects :
+		if ($objects instanceof Glue_Set) $objects = $objects->as_array();
 
 		// Single object given ? Wrap it in an array :
 		if ( ! is_array($objects)) $objects = array($objects);
@@ -539,8 +539,8 @@ class OGL_Entity {
 	}
 
 	public function select($conditions = array(), $order_by = null, $limit = null, $offset = null) {
-		// Init OGL query :
-		$q = OGL::qselect($this->name, $result);
+		// Init Glue query :
+		$q = glue::qselect($this->name, $result);
 
 		// Must return a set or a single object ?
 		$return_set = is_array($conditions);
@@ -578,7 +578,7 @@ class OGL_Entity {
 
 	// Return relationship $name of this entity.
 	public function relationship($name) {
-		return OGL::relationship($this->name, $name);
+		return glue::relationship($this->name, $name);
 	}
 
 	// Getters :
@@ -589,7 +589,7 @@ class OGL_Entity {
 
 	// Debug :
 	public function debug() {
-		return View::factory('ogl_entity')
+		return View::factory('glue_entity')
 			->set('name',			$this->name)
 			->set('fields',			$this->fields)
 			->set('columns',		$this->columns)
@@ -612,7 +612,7 @@ class OGL_Entity {
 	// Chooses the right entity class to use, based on the name of the entity and
 	// the available classes.
 	static protected function build($name) {
-		$class = 'OGL_Entity_'.ucfirst($name);
+		$class = 'Glue_Entity_'.ucfirst($name);
 		if (class_exists($class))
 			$entity = new $class($name);
 		else

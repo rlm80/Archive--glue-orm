@@ -1,15 +1,15 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 /*
- * A common feature of all OGL queries is the need for defining and retrieving sets
+ * A common feature of all Glue queries is the need for defining and retrieving sets
  * of entity instances. For example the query :
- * ogl::load('users u')->with('u.postS p')->execute()
+ * glue::load('users u')->with('u.postS p')->execute()
  * defines two sets :
  * - 'u' : set of users,
  * - 'p' : set of all posts related to users in u by the relationship 'postS'.
  */
 
-class OGL_Set implements Iterator, Countable, ArrayAccess {
+class Glue_Set implements Iterator, Countable, ArrayAccess {
 	public $name;
 	public $entity;
 	protected $sort;
@@ -63,7 +63,7 @@ class OGL_Set implements Iterator, Countable, ArrayAccess {
 	}
 
 	public function debug() {
-		return View::factory('ogl_set')
+		return View::factory('glue_set')
 			->set('name', $this->name)
 			->set('entity', $this->entity->name());
 	}

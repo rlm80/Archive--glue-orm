@@ -1,4 +1,4 @@
-<table class="ogl_table context">
+<table class="glue_table context">
 	<tr class="trigger">
 		<th colspan="2" class="top">
 			<span><?php echo (isset($closed) && $closed === true) ? '+' : '-' ?></span>
@@ -8,7 +8,7 @@
 	<tr class="superfluous">
 		<th>Target entity</th>
 		<td><?php echo '<a href="'
-				. url::site(Route::get('ogl_entity')->uri(array('entity' => $to)))
+				. url::site(Route::get('glue_entity')->uri(array('entity' => $to)))
 				. '">'
 				. ucfirst($to)
 				. '</a>';
@@ -20,10 +20,10 @@
 		<td>
 		<?php
 			switch ($type) {
-				case OGL_Relationship::MANY_TO_MANY;	echo "many-to-many";	break;
-				case OGL_Relationship::ONE_TO_ONE;		echo "one-to-one";		break;
-				case OGL_Relationship::MANY_TO_ONE;		echo "many-to-one";		break;
-				case OGL_Relationship::ONE_TO_MANY;		echo "one-to-many";		break;
+				case Glue_Relationship::MANY_TO_MANY;	echo "many-to-many";	break;
+				case Glue_Relationship::ONE_TO_ONE;		echo "one-to-one";		break;
+				case Glue_Relationship::MANY_TO_ONE;		echo "many-to-one";		break;
+				case Glue_Relationship::ONE_TO_MANY;		echo "one-to-many";		break;
 			}
 		?></td>
 	</tr>
@@ -37,6 +37,6 @@
 	</tr>	
 	<tr class="superfluous">
 		<th>Reverse</th>
-		<td><a href="<?php echo url::site(Route::get('ogl_relationship')->uri(array('entity' => $to, 'relationship' => $reverse))) ?>"><?php echo ucfirst($to) . ' -&gt; ' . $reverse ?></td>
+		<td><a href="<?php echo url::site(Route::get('glue_relationship')->uri(array('entity' => $to, 'relationship' => $reverse))) ?>"><?php echo ucfirst($to) . ' -&gt; ' . $reverse ?></td>
 	</tr>
 </table>

@@ -1,25 +1,25 @@
 <?php
 
-Route::set('ogl_sandbox', 'ogl/sandbox')
+Route::set('glue_sandbox', 'glue/sandbox')
 	->defaults(array(
-		'controller' => 'OGL',
+		'controller' => 'Glue',
 		'action'     => 'sandbox',
 	));
 
-Route::set('ogl_entity', 'ogl/entity/<entity>')
+Route::set('glue_entity', 'glue/entity/<entity>')
 	->defaults(array(
-		'controller' => 'OGL',
+		'controller' => 'Glue',
 		'action'     => 'entity',
 	));
 
-Route::set('ogl_relationship', 'ogl/relationship/<entity>/<relationship>')
+Route::set('glue_relationship', 'glue/relationship/<entity>/<relationship>')
 	->defaults(array(
-		'controller' => 'OGL',
+		'controller' => 'Glue',
 		'action'     => 'relationship',
 	));
 
-Route::set('ogl_media', 'ogl/media/<file>', array('file' => '.+'))
+Route::set('glue_media', 'glue/media/<file>', array('file' => '.+'))
 	->defaults(array(
-		'controller' => 'OGL',
+		'controller' => 'Glue',
 		'action'     => 'media',
 	));

@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-class OGL_Command_With extends OGL_Command {
+class Glue_Command_With extends Glue_Command {
 	// Constants :
 	const ROOT	= 1;
 	const SLAVE	= 2;

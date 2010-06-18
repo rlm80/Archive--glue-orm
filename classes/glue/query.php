@@ -1,13 +1,13 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 /*
- * Since several OGL queries may be constructed at the same time, it doesn't work
+ * Since several Glue queries may be constructed at the same time, it doesn't work
  * to have the data related to those queries represented as static variables, or
- * properties of the OGL instance because the queries may "cross-polinate". We
+ * properties of the Glue instance because the queries may "cross-polinate". We
  * need query objects to encapsulates all the execution environnement of each query.
  */
 
-class OGL_Query {	
+class Glue_Query {	
 	// Set cache :
 	protected $sets = array();
 
@@ -26,9 +26,9 @@ class OGL_Query {
 
 	// Constructor, creates a load command :
 	public function __construct($entity_name, &$set) {
-		$entity = OGL_Entity::get($entity_name);
+		$entity = Glue_Entity::get($entity_name);
 		$set = $this->create_set($entity);
-		$this->root = new OGL_Command_Load($entity, $set);
+		$this->root = new Glue_Command_Load($entity, $set);
 		$this->active_command = $this->root;
 	}
 
@@ -41,7 +41,7 @@ class OGL_Query {
 		// Create trg_set and command :
 		$relationship	= $src_set->entity->relationship($relationship);
 		$trg_set		= $this->create_set($relationship->to());
-		$command		= new OGL_Command_With($relationship, $src_set, $trg_set);
+		$command		= new Glue_Command_With($relationship, $src_set, $trg_set);
 		$this->active_command	= $command;
 
 		// Return query for chainability :
@@ -52,7 +52,7 @@ class OGL_Query {
 	protected $set_number = 0;
 	protected function create_set($entity) {
 		$name = $entity->name() . ($this->set_number ++);
-		$set = new OGL_Set($name, $entity);
+		$set = new Glue_Set($name, $entity);
 		$this->sets[] = $set;
 		return $set;
 	}
@@ -77,7 +77,7 @@ class OGL_Query {
 	// Registers a parameter and returns its symbolic representation in the query :
 	protected function register_param($param) {
 		$param->symbol = ':param' . ($this->param_id ++);
-		if ($param instanceof OGL_Param_Set)
+		if ($param instanceof Glue_Param_Set)
 			$this->params[$param->name] = $param;
 		else
 			$this->bound_params[] = $param;
@@ -95,7 +95,7 @@ class OGL_Query {
 	// Forward calls to active command :
 	public function where($field, $op, $expr) {
 		// If $expr is a parameter, replace it with its symbolic representation in the query :
-		if ($expr instanceof OGL_Param) {
+		if ($expr instanceof Glue_Param) {
 			$symbol	= $this->register_param($expr);
 			$expr	= DB::expr($symbol);
 		}

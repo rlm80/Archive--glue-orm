@@ -3,10 +3,10 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-		<title>OGL - <?php echo $title ?></title>
-		<?php echo html::style(Route::get('ogl_media')->uri(array('file' => 'ogl.css'))) ?>
+		<title>Glue - <?php echo $title ?></title>
+		<?php echo html::style(Route::get('glue_media')->uri(array('file' => 'glue.css'))) ?>
 		<?php echo html::script('http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js') ?>
-		<?php echo html::script(Route::get('ogl_media')->uri(array('file' => 'ogl.js'))) ?>
+		<?php echo html::script(Route::get('glue_media')->uri(array('file' => 'glue.js'))) ?>
 	</head>
 	<body>
 		<?php echo $content ?>

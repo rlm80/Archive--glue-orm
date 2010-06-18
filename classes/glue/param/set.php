@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-class OGL_Param_Set extends OGL_Param {
+class Glue_Param_Set extends Glue_Param {
 	public $name;
 	public $value;
 

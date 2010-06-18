@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-class OGL_Relationship {
+class Glue_Relationship {
 	// Constants :
 	const MANY_TO_MANY	= 1;
 	const MANY_TO_ONE	= 2;
@@ -54,9 +54,9 @@ class OGL_Relationship {
 	}
 
 	// Getters :
-	public function reverse()	{	return OGL_Relationship::get($this->to, $this->reverse); }
-	public function to()		{	return OGL_Entity::get($this->to);		}
-	public function from()		{	return OGL_Entity::get($this->from);	}
+	public function reverse()	{	return Glue_Relationship::get($this->to, $this->reverse); }
+	public function to()		{	return Glue_Entity::get($this->to);		}
+	public function from()		{	return Glue_Entity::get($this->from);	}
 	public function type()		{	return $this->type;						}
 	public function name()		{	return $this->name;						}
 
@@ -84,7 +84,7 @@ class OGL_Relationship {
 		// Associative entity ? => many to many
 		try {
 			$pivot		= ($this->from < $this->to) ? $this->from.'2'.$this->to : $this->to.'2'.$this->from;
-			$pivot		= OGL::entity($pivot); // Will raise exception if no such entity.
+			$pivot		= glue::entity($pivot); // Will raise exception if no such entity.
 			$from_fk	= $from->fk();
 			$to_fk		= $to->fk();
 			$errors		= $pivot->fields_validate(array_merge(array_values($from_fk), array_values($to_fk)));
@@ -114,7 +114,7 @@ class OGL_Relationship {
 				// Check trg cardinality :
 				if ( ! $trg_multiple) {
 					$fields	= array_keys($arr2);
-					$pk		= OGL::entity($trg_entity)->pk();
+					$pk		= glue::entity($trg_entity)->pk();
 					if (count($pk) !== count($fields) || count(array_diff($fields, $pk)) !== 0)
 						$trg_multiple = true;
 				}
@@ -122,7 +122,7 @@ class OGL_Relationship {
 				// Check src cardinality :
 				if ( ! $src_multiple) {
 					$fields	= array_values($arr2);
-					$pk		= OGL::entity($src_entity)->pk();
+					$pk		= glue::entity($src_entity)->pk();
 					if (count($pk) !== count($fields) || count(array_diff($fields, $pk)) !== 0)
 						$src_multiple = true;
 				}
@@ -162,14 +162,14 @@ class OGL_Relationship {
 		// Loop on target entities :
 		foreach($this->joins as $trg_entity_name => $data1) {
 			// Get entity object and build alias :
-			$trg_entity = OGL_Entity::get($trg_entity_name);
+			$trg_entity = Glue_Entity::get($trg_entity_name);
 			$trg_alias	= ($trg_entity_name === $this->to) ? $to_alias : $prefix.$trg_entity_name;
 
 			// Loop on source entities :
 			$conds = array();
 			foreach($data1 as $src_entity_name => $data2) {
 				// Get entity object and build alias :
-				$src_entity = OGL_Entity::get($src_entity_name);
+				$src_entity = Glue_Entity::get($src_entity_name);
 				$src_alias	= ($src_entity_name === $this->from) ? $from_alias : $prefix.$src_entity_name;
 
 				// Loop on source entity fields :
@@ -205,7 +205,7 @@ class OGL_Relationship {
 
 	// Debug :
 	public function debug() {
-		return View::factory('ogl_relationship')
+		return View::factory('glue_relationship')
 			->set('name',			$this->name)
 			->set('from',			$this->from)
 			->set('to',				$this->to)
@@ -227,7 +227,7 @@ class OGL_Relationship {
 	// Chooses the right relationship class to use, based on the name of the entity,
 	// the name and the available classes.
 	static protected function build($entity_name, $name) {
-		$class = 'OGL_Relationship_'.ucfirst($entity_name).'_'.ucfirst($name);
+		$class = 'Glue_Relationship_'.ucfirst($entity_name).'_'.ucfirst($name);
 		if (class_exists($class))
 			$relationship = new $class($entity_name, $name);
 		else

@@ -9,7 +9,7 @@
  * (unique) command with target set A.
  */
 
-abstract class OGL_Command {
+abstract class Glue_Command {
 	// Query builder calls :
 	protected $order_by = array();
 	protected $where = array();
@@ -44,7 +44,7 @@ abstract class OGL_Command {
 
 	public function debug() {
 		// Prepare view with SQL :
-		$view = View::factory('ogl_command_root');
+		$view = View::factory('glue_command_root');
 		$query = $this->query_get();
 		$view->set('sql', $query);
 
@@ -64,7 +64,7 @@ abstract class OGL_Command {
 	}
 
 	protected function debug_self() {
-		return View::factory('ogl_command')->set('trg_set', $this->trg_set->debug());
+		return View::factory('glue_command')->set('trg_set', $this->trg_set->debug());
 	}
 
 	protected function execute_self($parameters) {
@@ -160,8 +160,8 @@ abstract class OGL_Command {
 		// Cardinality > 1 ?
 		$relationship_type = $command->relationship->type();
 		$multiple = (
-			$relationship_type === OGL_Relationship::MANY_TO_MANY ||
-			$relationship_type === OGL_Relationship::ONE_TO_MANY
+			$relationship_type === Glue_Relationship::MANY_TO_MANY ||
+			$relationship_type === Glue_Relationship::ONE_TO_MANY
 		);
 
 		// Limit or offset required in command ? No choice, command must be a root.
@@ -174,9 +174,9 @@ abstract class OGL_Command {
 
 		// Otherwise let the user decide :
 		switch ($command->root) {
-			case OGL_Command_With::AUTO :	$is_root = $multiple; break;
-			case OGL_Command_With::ROOT :	$is_root = true;	break;
-			case OGL_Command_With::SLAVE :	$is_root = false;	break;
+			case Glue_Command_With::AUTO :	$is_root = $multiple; break;
+			case Glue_Command_With::ROOT :	$is_root = true;	break;
+			case Glue_Command_With::SLAVE :	$is_root = false;	break;
 			default : throw new Kohana_Exception("Invalid value for root property in a command.");
 		}
 		return $is_root;

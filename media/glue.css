@@ -1,4 +1,4 @@
-table.ogl_table {
+table.glue_table {
 	background-color: #F4F9FE;
 	text-align: left;
 	border-collapse: collapse;
@@ -9,23 +9,23 @@ table.ogl_table {
 	margin: 10px 0;
 }
 
-table.ogl_table td, th {
+table.glue_table td, th {
 	border: 1px solid rgb(210,210,255);
 	padding: 0 3px 1px 3px;
 }
 
-table.ogl_table td {
+table.glue_table td {
 	text-align: left;
 	background-color: white;
 	color: #678197;
 }
 
-table.ogl_table th {
+table.glue_table th {
 	text-align: center;
 	color: #66A3D3;
 }
 
-table.ogl_table th.top {
+table.glue_table th.top {
 	background-color: rgb(225,225,255);
 	color: black;
 	text-align: left;

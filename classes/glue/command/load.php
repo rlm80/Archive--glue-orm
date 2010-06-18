@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-class OGL_Command_Load extends OGL_Command {
+class Glue_Command_Load extends Glue_Command {
 	protected $entity;
 
 	public function  __construct($entity, $trg_set) {

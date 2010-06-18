@@ -1,6 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
-class OGL_Query_Select extends OGL_Query{
+class Glue_Query_Select extends Glue_Query{
 	public function __construct($entity_name, &$set) {
 		parent::__construct($entity_name, $set);
 	}

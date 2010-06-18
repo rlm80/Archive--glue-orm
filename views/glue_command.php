@@ -4,7 +4,7 @@
 		<?php
 			echo isset($relationship) ?
 				'<a href="'
-				. url::site(Route::get('ogl_relationship')->uri(array('entity' => $src_entity, 'relationship' => $relationship)))
+				. url::site(Route::get('glue_relationship')->uri(array('entity' => $src_entity, 'relationship' => $relationship)))
 				. '">' . ucfirst($src_entity) . ' -&gt; ' . $relationship . '</a>' : '-'
 		?>
 	</td>

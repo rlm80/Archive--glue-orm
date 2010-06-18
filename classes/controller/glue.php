@@ -1,12 +1,12 @@
 <?php
-class Controller_OGL extends Controller {
+class Controller_Glue extends Controller {
 	public function action_sandbox() {
-		if (Kohana::config('ogl')->debug) {
+		if (Kohana::config('glue')->debug) {
 			$query = isset($_GET['query']) ? $_GET['query'] : null;
-			$this->request->response = View::factory('ogl_template')
+			$this->request->response = View::factory('glue_template')
 				->set('title', 'Sandbox')
 				->set('content',
-					View::factory('ogl_sandbox')->set('query', $query)
+					View::factory('glue_sandbox')->set('query', $query)
 				);
 		}
 		else
@@ -14,20 +14,20 @@ class Controller_OGL extends Controller {
 	}
 	
 	public function action_entity($entity) {
-		if (Kohana::config('ogl')->debug) {
-			$this->request->response = View::factory('ogl_template')
+		if (Kohana::config('glue')->debug) {
+			$this->request->response = View::factory('glue_template')
 				->set('title', ucfirst($entity) . ' entity')
-				->set('content', OGL::entity($entity)->debug());
+				->set('content', glue::entity($entity)->debug());
 		}
 		else
 			$this->request->status = 404;
 	}
 
 	public function action_relationship($entity, $relationship) {
-		if (Kohana::config('ogl')->debug) {
-			$this->request->response = View::factory('ogl_template')
+		if (Kohana::config('glue')->debug) {
+			$this->request->response = View::factory('glue_template')
 				->set('title', ucfirst($entity) . '->' . $relationship . ' relationship')
-				->set('content', OGL::relationship($entity, $relationship)->debug());
+				->set('content', glue::relationship($entity, $relationship)->debug());
 		}
 		else
 			$this->request->status = 404;

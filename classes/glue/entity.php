@@ -254,26 +254,6 @@ class Glue_Entity {
 		return $this->fields;
 	}
 
-	public function object_lazy_load($object, $var) {
-		// Init query :
-		$query = glue::qselect($this->name, $set);
-		foreach($this->object_pk($object) as $f => $val)
-			$query->where($f, '=', $val);
-
-		// Add lazy loading bit :
-		if (in_array($var, $this->fields)) {
-			// $var is a property :
-			$query->fields($var);
-		}
-		else {
-			// $var is a relationship :
-			$query->with($set, inflector::singular($var));
-		}
-
-		// Execute query :
-		$query->execute();
-	}
-
 	public function object_load(&$rows, $prefix = '') {
 		// No rows ? Do nothing :
 		if (count($rows) === 0) return array();
@@ -334,10 +314,7 @@ class Glue_Entity {
 	public function create($array) {
 		// Create pattern object :
 		if ( ! isset($this->pattern)) {
-			// Define proxy class :
-			$class = $this->proxy_load_class();
-			
-			// Build pattern object :
+			$class = $this->proxy_class_name();
 			$this->pattern = new $class;
 			$this->pattern->glue_init($this);
 		}
@@ -603,15 +580,39 @@ class Glue_Entity {
 	}
 
 	// Load proxy class :
-	protected function proxy_load_class() {
-		$class = 'Glue_Proxy_' . ucfirst($this->name);
+	protected function proxy_class_name() {
+		return 'Glue_Proxy_' . ucfirst($this->name);
+	}
+
+	// Load proxy class :
+	public function proxy_load_class() {
 		eval(
 			View::factory($this->proxy_view)
-				->set('proxy_class',	$class)
+				->set('proxy_class',	$this->proxy_class_name())
 				->set('model_class',	$this->model)
+				->set('entity_name',	$this->name)
 				->set('mapper',			$this)
 		);
-		return $class;
+	}
+
+	public function proxy_lazy_load($object, $var) {
+		// Init query :
+		$query = glue::qselect($this->name, $set);
+		foreach($this->object_pk($object) as $f => $val)
+			$query->where($f, '=', $val);
+
+		// Add lazy loading bit :
+		if (in_array($var, $this->fields)) {
+			// $var is a property :
+			$query->fields($var);
+		}
+		else {
+			// $var is a relationship :
+			$query->with($set, inflector::singular($var));
+		}
+
+		// Execute query :
+		$query->execute();
 	}
 
 	// Getters :
@@ -637,6 +638,7 @@ class Glue_Entity {
 
 	// Lazy loads an entity object, stores it in cache, and returns it :
 	static public function get($name) {
+		$name = strtolower($name);
 		if( ! isset(self::$entities[$name]))
 			self::$entities[$name] = self::build($name);
 		return self::$entities[$name];

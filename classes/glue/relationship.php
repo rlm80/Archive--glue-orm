@@ -217,6 +217,8 @@ class Glue_Relationship {
 
 	// Lazy loads a relationship object, stores it in cache, and returns it :
 	static public function get($entity_name, $name) {
+		$entity_name	= strtolower($entity_name);
+		$name			= strtolower($name);
 		if( ! isset(self::$relationships[$entity_name]))
 			self::$relationships[$entity_name] = array();
 		if( ! isset(self::$relationships[$entity_name][$name]))

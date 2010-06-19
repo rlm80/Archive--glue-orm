@@ -57,4 +57,9 @@ class Glue {
 			$cache[$db][$table] = Database::instance($db)->list_columns($table);
 		return $cache[$db][$table];
 	}
+
+	public static function auto_load($class) {
+		if(preg_match("/^Glue_Proxy_(.*)$/", $class, $matches) > 0)
+			glue::entity($matches[1])->proxy_load_class();
+	}
 }

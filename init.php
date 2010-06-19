@@ -1,5 +1,6 @@
 <?php
 
+// Set up routes :
 Route::set('glue_sandbox', 'glue/sandbox')
 	->defaults(array(
 		'controller' => 'Glue',
@@ -23,5 +24,3 @@ Route::set('glue_media', 'glue/media/<file>', array('file' => '.+'))
 		'controller' => 'Glue',
 		'action'     => 'media',
 	));
-	
-	// test new branch ?

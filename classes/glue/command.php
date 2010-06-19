@@ -198,7 +198,7 @@ abstract class Glue_Command {
 	}
 
 	public function fields() {
-		// If fields recieved as a list of strings, turn it to an array :
+		// If fields recieved as a list of strings, turn it into an array :
 		$args = func_get_args();
 		$fields = is_array($args[0]) ? $args[0] : $args;
 

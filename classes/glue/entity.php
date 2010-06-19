@@ -21,6 +21,7 @@ class Glue_Entity {
 	protected $autoincrement;
 	protected $pk;
 	protected $fk;
+	protected $proxy_view;
 
 	// Internal details :
 	private $partial;
@@ -42,6 +43,7 @@ class Glue_Entity {
 		if ( ! isset($this->pk))			$this->pk			 = $this->default_pk();
 		if ( ! isset($this->fk))			$this->fk			 = $this->default_fk();
 		if ( ! isset($this->autoincrement))	$this->autoincrement = $this->default_autoincrement();
+		if ( ! isset($this->proxy_view))	$this->proxy_view	 = $this->default_proxy_view();
 	}
 
 	protected function default_db() {
@@ -155,6 +157,10 @@ class Glue_Entity {
 		return $auto;
 	}
 
+	protected function default_proxy_view() {
+		return 'glue_proxy';
+	}
+
 	protected function introspect() {
 		if ( ! isset($this->introspect)) {
 			foreach($this->tables as $table)
@@ -248,6 +254,26 @@ class Glue_Entity {
 		return $this->fields;
 	}
 
+	public function object_lazy_load($object, $var) {
+		// Init query :
+		$query = glue::qselect($this->name, $set);
+		foreach($this->object_pk($object) as $f => $val)
+			$query->where($f, '=', $val);
+
+		// Add lazy loading bit :
+		if (in_array($var, $this->fields)) {
+			// $var is a property :
+			$query->fields($var);
+		}
+		else {
+			// $var is a relationship :
+			$query->with($set, inflector::singular($var));
+		}
+
+		// Execute query :
+		$query->execute();
+	}
+
 	public function object_load(&$rows, $prefix = '') {
 		// No rows ? Do nothing :
 		if (count($rows) === 0) return array();
@@ -308,8 +334,12 @@ class Glue_Entity {
 	public function create($array) {
 		// Create pattern object :
 		if ( ! isset($this->pattern)) {
-			$class = $this->model;
+			// Define proxy class :
+			$class = $this->proxy_load_class();
+			
+			// Build pattern object :
 			$this->pattern = new $class;
+			$this->pattern->glue_init($this);
 		}
 
 		// Create object :
@@ -324,14 +354,8 @@ class Glue_Entity {
 		return $object;
 	}
 
-	// For single column pk, returns the pk value.
-	// For multiple columns pk, returns an associative array with pk field names and values.
+	// Returns an associative array with pk field names and values.
 	public function object_pk($object) {
-		// Single column pk :
-		if ( ! isset($this->pk[1]))
-			return $object->{$this->properties[$this->pk[0]]};
-
-		// Multiple columns pk :
 		foreach($this->pk as $f)
 			$pk[$f] = $object->{$this->properties[$f]};
 		return $pk;
@@ -382,7 +406,7 @@ class Glue_Entity {
 			$query = DB::delete($table);
 			if ( ! isset($this->pk[1])) {	// single pk
 				$pkcol = $this->columns[$this->pk[0]][$table];
-				$query->where($pkcol, 'IN', $pkvals);
+				$query->where($pkcol, 'IN', array_values($pkvals));
 				$query->execute($this->db);
 			}
 			else {							// multiple pk
@@ -522,11 +546,8 @@ class Glue_Entity {
 			foreach($objects as $obj) {
 				// Set pk values :
 				$pk = $this->object_pk($obj);
-				if (isset($this->pk[1]))
-					foreach($pk as $f => $val)
-						$query->param(':__'.$f, $val);
-				else
-					$query->param(':__'.$this->pk[0], $pk);
+				foreach($pk as $f => $val)
+					$query->param(':__'.$f, $val);
 
 				// Set fields values :
 				foreach($fields as $f)
@@ -579,6 +600,18 @@ class Glue_Entity {
 	// Return relationship $name of this entity.
 	public function relationship($name) {
 		return glue::relationship($this->name, $name);
+	}
+
+	// Load proxy class :
+	protected function proxy_load_class() {
+		$class = 'Glue_Proxy_' . ucfirst($this->name);
+		eval(
+			View::factory($this->proxy_view)
+				->set('proxy_class',	$class)
+				->set('model_class',	$this->model)
+				->set('mapper',			$this)
+		);
+		return $class;
 	}
 
 	// Getters :

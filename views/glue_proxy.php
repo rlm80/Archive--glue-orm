@@ -11,7 +11,7 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	static protected $glue_fields		= <?php var_export($fields)		?>; // Fields
 	static protected $glue_properties	= <?php var_export($properties)	?>; // Fields => properties mapping
 	static protected $glue_lazy_props	= <?php var_export($lazy_props)	?>; // Properties to be lazy loaded (null means all of them)
-	static protected $glue_pk			= <?php var_export($pk)			?>; // PK fields
+	static protected $glue_pk			= <?php	var_export(array_combine($pk, $pk)) ?>; // PK fields => PK fields mapping
 	
 	// Entity mapper :
 	public function glue_entity() { return glue::entity(self::$glue_entity_name); }
@@ -19,13 +19,7 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	// Glue external access to internal properties :
 	public function glue_set($field, $value) { $this->{self::$glue_properties[$field]} = $value; }
 	public function glue_get($field)		 { return $this->{self::$glue_properties[$field]};	 }
-
-	// Associative array with pk field names and values :
-	public function glue_pk() {
-		foreach($this->glue_pk as $f)
-			$pk[$f] = $this->glue_get($f);
-		return $pk;
-	}
+	public function glue_pk()				 { return array_map(array($this, 'glue_get'), self::$glue_pk); }
 
 	// Active Record like functions :
 	public function delete() { return $this->glue_entity()->delete($this); }

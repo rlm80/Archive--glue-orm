@@ -344,10 +344,9 @@ class Glue_Entity {
 	}
 
 	// Returns an associative array with pk field names and values.
+	// (useful to get the PK of an array of objects with array_map)
 	public function object_pk($object) {
-		foreach($this->pk as $f)
-			$pk[$f] = $object->{$this->properties[$f]};
-		return $pk;
+		return $object->glue_pk();
 	}
 
 	// Sorts an array of objects according to sort criteria.
@@ -395,7 +394,7 @@ class Glue_Entity {
 			$query = DB::delete($table);
 			if ( ! isset($this->pk[1])) {	// single pk
 				$pkcol = $this->columns[$this->pk[0]][$table];
-				$query->where($pkcol, 'IN', array_values($pkvals));
+				$query->where($pkcol, 'IN', array_map('array_pop', $pkvals));
 				$query->execute($this->db);
 			}
 			else {							// multiple pk
@@ -534,8 +533,7 @@ class Glue_Entity {
 			// Loop on objects and update table :
 			foreach($objects as $obj) {
 				// Set pk values :
-				$pk = $this->object_pk($obj);
-				foreach($pk as $f => $val)
+				foreach($obj->glue_pk() as $f => $val)
 					$query->param(':__'.$f, $val);
 
 				// Set fields values :

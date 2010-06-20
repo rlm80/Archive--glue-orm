@@ -21,7 +21,7 @@ class Glue_Entity {
 	protected $autoincrement;
 	protected $pk;
 	protected $fk;
-	protected $lazy_properties;
+	protected $lazy_props;
 	protected $proxy_view;
 
 	// Internal details :

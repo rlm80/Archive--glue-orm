@@ -9,7 +9,7 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	
 	// Useful knowledge from the mapper copied here for convenience :
 	static protected $glue_fields		= <?php var_export($fields)		?>; // Fields
-	static protected $glue_properties	= <?php var_export($properties)	?>; // Field => properties mapping
+	static protected $glue_properties	= <?php var_export($properties)	?>; // Fields => properties mapping
 	static protected $glue_lazy_props	= <?php var_export($lazy_props)	?>; // Properties to be lazy loaded (null means all of them)
 	static protected $glue_pk			= <?php var_export($pk)			?>; // PK fields
 	

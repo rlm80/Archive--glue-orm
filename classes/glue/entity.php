@@ -331,22 +331,40 @@ class Glue_Entity {
 	}
 	
 	protected function get_pattern() {
-		if ( ! isset($this->pattern))
+		if ( ! isset($this->pattern)) {
+			// Create pattern object :
 			$this->pattern = $this->create_pattern();
+			
+			// List of variables to be unset :
+			if ( ! isset($this->lazy_props))
+				$vars = $this->pattern->glue_vars();
+			else
+				$vars = $this->lazy_props;
+
+			// Unset variables :
+			foreach($vars as $var)
+				if ($this->pattern->glue_isset($var) && $this->pattern->glue_is_null($var))
+					$this->pattern->glue_unset($var);
+		}
 		return $this->pattern;
 	}
 	
 	protected function create_pattern() {
 		$class = $this->proxy_class_name();
 		$pattern = new $class;
-		$pattern->glue_unset();
 		return $pattern;
 	}
 
 	// Returns an associative array with pk field names and values.
-	// (useful to get the PK of an array of objects with array_map)
-	public function object_pk($object) {
-		return $object->glue_pk();
+	public function object_pk($objects) {
+		if (is_array($objects)) {
+			foreach($this->pk as $f)
+				$vals[$f] = array_map(array());
+		}
+		else {
+
+		}
+		//return $object->glue_pk();
 	}
 
 	// Sorts an array of objects according to sort criteria.
@@ -589,7 +607,7 @@ class Glue_Entity {
 		return glue::relationship($this->name, $name);
 	}
 
-	// Load proxy class :
+	// Proxy class name :
 	protected function proxy_class_name() {
 		return 'Glue_Proxy_' . ucfirst($this->name);
 	}
@@ -602,10 +620,35 @@ class Glue_Entity {
 				->set('model_class',	$this->model)
 				->set('entity_name',	$this->name)
 				->set('properties',		$this->properties)
-				->set('lazy_props',		$this->lazy_props)
-				->set('pk',				$this->pk)
-				->set('fields',			$this->fields)
 		);
+//		echo View::factory($this->proxy_view)
+//				->set('proxy_class',	$this->proxy_class_name())
+//				->set('model_class',	$this->model)
+//				->set('entity_name',	$this->name)
+//				->set('properties',		$this->properties);
+//		die;
+	}
+
+	public function proxy_is_lazy($var) {
+		if ( ! isset($this->lazy_props) || in_array($var, $this->lazy_props))
+			return true;
+		return false;
+	}
+
+	public function proxy_lazy_load($object, $var) {
+		// Build query :
+		$query = glue::qselect($this->name, $set);
+		foreach($this->object_pk($object) as $f => $val)
+			$query->where($f, '=', $val);
+
+		// Add lazy loading bit :
+		if (in_array($var, $this->fields))	// $var is a property
+			$query->fields($var);
+		else								// $var is a relationship
+			$query->with($set, inflector::singular($var));
+
+		// Execute query :
+		$query->execute();
 	}
 
 	// Getters :

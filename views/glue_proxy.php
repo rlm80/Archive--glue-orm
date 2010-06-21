@@ -1,64 +1,61 @@
 /*
-	This view is used as a template for proxy classes. Proxy classes extend model classes
-	to decorate them with all that Glue needs, and to add typical Active Record
-	features to model objects.
+	This view is used as a template for proxy classes. Proxy classes extend model
+	classes	to add typical Active Record features to model objects and to install
+	setters/getters that Glue can use to access protected properties of model classes.
+
+	It's best to keep proxy classes as lightweight as possible and keep the bulk
+	of the code in the mappers because :
+	- proxy classes cannot be extended by the user,
+	- proxy classes code is eval'd, making it hard to debug and hidden from opcode cache engines,
+	- the more we put here the closer we get to Active Record and the very same problems we wanted to avoid with this project.
 */
+
 class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
-	// Entity name :
-	static protected $glue_entity_name	= <?php var_export($entity_name) ?>; // Entity name
-	
-	// Useful knowledge from the mapper copied here for convenience :
-	static protected $glue_fields		= <?php var_export($fields)		?>; // Fields
-	static protected $glue_properties	= <?php var_export($properties)	?>; // Fields => properties mapping
-	static protected $glue_lazy_props	= <?php var_export($lazy_props)	?>; // Properties to be lazy loaded (null means all of them)
-	static protected $glue_pk			= <?php	var_export(array_combine($pk, $pk)) ?>; // PK fields => PK fields mapping
+	static protected $glue_entity_name	= <?php var_export($entity_name) ?>;	// Entity name
+	static protected $glue_properties	= <?php var_export($properties)	?>;		// Fields => properties mapping
 	
 	// Entity mapper :
 	public function glue_entity() { return glue::entity(self::$glue_entity_name); }
-
-	// Glue external access to internal properties :
-	public function glue_set($field, $value) { $this->{self::$glue_properties[$field]} = $value; }
-	public function glue_get($field)		 { return $this->{self::$glue_properties[$field]};	 }
-	public function glue_pk()				 { return array_map(array($this, 'glue_get'), self::$glue_pk); }
-
+	
 	// Active Record like functions :
 	public function delete() { return $this->glue_entity()->delete($this); }
 	public function insert() { return $this->glue_entity()->insert($this); }
 	public function update() { return $this->glue_entity()->update($this); }
 
-	// Unset lazy loaded variables so that __get is called on first access :
-	public function glue_unset() {
-		// List of variables to be unset :
-		if ( ! isset(self::$glue_lazy_props))
-			$vars = array_keys(get_object_vars($this));
-		else
-			$vars = self::$glue_lazy_props;
+	// Instance variable inspection functions :
+	public function glue_vars()				 { return array_keys(get_object_vars($this));			}
+	public function glue_isset($var)		 { return isset($this->$var);							}
+	public function glue_isnull($var)		 { return is_null($this->$var);							}
+	public function glue_unset($var)		 { unset($this->$var);									}
 
-		// Unset variables :
-		foreach($vars as $var)
-			if (isset($this->$var) && is_null($this->$var))
-				unset($this->$var);
+	// Mass field setter :
+	public static function glue_set($field, $objects, $values) {
+		$var = self::$glue_properties[$field];
+		if (is_array($objects)) {
+			for($i = count($objects) - 1; $i >= 0; $i --)
+				$objects[$i]->$var = $values[$i];
+		}
+		else
+			$objects->$var = $values;
+	}
+
+	// Mass field getter :
+	public static function glue_get($field, $objects) {
+		$var = self::$glue_properties[$field];
+		if (is_array($objects)) {
+			foreach($objects as $obj)
+				$values[] = $obj->$var;
+		}
+		else
+			$values = $objects->$var;
+		return $values;
 	}
 
 	// Lazy loading of properties and relationships :
 	public function __get($var) {
-		if ( ! isset(self::$glue_lazy_props) || in_array($var, self::$glue_lazy_props)) {
-			// Build query :
-			$query = glue::qselect(self::$glue_entity_name, $set);
-			foreach($this->glue_pk() as $f => $val)
-				$query->where($f, '=', $val);
-
-			// Add lazy loading bit :
-			if (in_array($var, $this->glue_fields)) // $var is a property
-				$query->fields($var);
-			else									// $var is a relationship
-				$query->with($set, inflector::singular($var));
-
-			// Execute query :
-			$query->execute();
-
-			// Return $var :
-			return $this->$var;
+		if ($this->glue_entity()->proxy_is_lazy($var)) {
+			$this->glue_entity()->proxy_lazy_load($this, $var);
+			return $object->$var;
 		}
 		return parent::__get($var);
 	}

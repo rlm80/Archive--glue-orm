@@ -335,7 +335,8 @@ class Glue_Entity {
 			// Create pattern object :
 			$this->pattern = $this->create_pattern();
 			
-			// List of variables to be unset :
+			// Unset lazy-loadable properties :
+			// ...
 			if ( ! isset($this->lazy_props))
 				$vars = $this->pattern->glue_vars();
 			else
@@ -618,8 +619,9 @@ class Glue_Entity {
 			View::factory($this->proxy_view)
 				->set('proxy_class',	$this->proxy_class_name())
 				->set('model_class',	$this->model)
-				->set('entity_name',	$this->name)
+				->set('entity',			$this->name)
 				->set('properties',		$this->properties)
+				->set('lazy_props',		$this->lazy_props)
 		);
 //		echo View::factory($this->proxy_view)
 //				->set('proxy_class',	$this->proxy_class_name())
@@ -649,6 +651,18 @@ class Glue_Entity {
 
 		// Execute query :
 		$query->execute();
+	}
+
+	public function proxy_unset($objects) {
+		return call_user_func(array($this->proxy_class_name(), 'glue_unset'), $objects);
+	}
+
+	public function proxy_set($objects, $fields, $values) {
+		return call_user_func(array($this->proxy_class_name(), 'glue_set'), $objects, $fields, $values);
+	}
+
+	public function proxy_get($objects, $fields) {
+		return call_user_func(array($this->proxy_class_name(), 'glue_get'), $objects, $fields);
 	}
 
 	// Getters :

@@ -270,8 +270,6 @@ class Glue_Entity {
 		foreach($rows[0] as $col => $val) {
 			if (substr($col, 0, $len_prefix) === $prefix) {
 				$field = substr($col, $len_prefix);
-				if ( ! in_array($field, $this->fields))
-					throw new Kohana_Exception("The following field doesn't belong to entity '".$this->name."' : '".$field."'");
 				$mapping[$col] = $field;
 			}
 		}

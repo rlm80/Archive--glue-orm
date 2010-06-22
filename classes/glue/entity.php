@@ -622,6 +622,7 @@ class Glue_Entity {
 				->set('entity',			$this->name)
 				->set('properties',		$this->properties)
 				->set('lazy_props',		$this->lazy_props)
+				->set('types',			$this->lazy_props)
 		);
 //		echo View::factory($this->proxy_view)
 //				->set('proxy_class',	$this->proxy_class_name())

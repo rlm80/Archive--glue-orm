@@ -1,5 +1,5 @@
 /*
-	This view is used as a template for proxy classes.
+	This view is used as a template to generate proxy classes code.
 
 	It's best to keep proxy classes as lightweight as possible and keep the bulk
 	of the code in the mappers because
@@ -19,20 +19,21 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	// Static properties :
 	static public $glue_entity		= <?php var_export($entity)		?>;	// Entity name
 	static public $glue_properties	= <?php var_export($properties)	?>;	// Fields => properties mapping
+	static public $glue_types		= <?php var_export($types)		?>;	// Fields => property types mapping
 	static public $glue_lazy_props	= <?php var_export($lazy_props)	?>;	// Lazy-loadable properties
-	
+
 	// Entity mapper :
 	static public function glue_entity() { return glue::entity(self::$glue_entity); }
 
 	// Mass field setter :
-	public static function glue_set($objects, $fields, $values) {
+	static public function glue_set($objects, $fields, $values) {
 		// Turn parameters into arrays if they are not already :
 		if ( ! is_array($objects))	$objects	= array($objects);
 		if ( ! is_array($fields))	$fields		= array($fields);
 		if ( ! is_array($values))	$values		= array($values);
 
 		// Get properties :
-		foreach($fields as $f) $props[] = self::$glue_properties[$f];
+		foreach($fields as $f) $props[self::$glue_properties[$f]] = self::$glue_types[$f];
 
 		// Set values :
 		reset($objects);
@@ -41,13 +42,13 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 			$vals = next($values);
 			reset($props);
 			reset($vals);
-			while ($prop = next($props))
-				$obj->$prop = next($vals);
+			while (list($prop, $type)) = each($props))
+				$obj->$prop = settype(next($vals), $type);
 		}
 	}
 
 	// Mass field getter :
-	public static function glue_get($objects, $fields) {
+	static public function glue_get($objects, $fields) {
 		// Turn parameters into arrays if they are not already :
 		if ( ! is_array($objects))	$objects	= array($objects);
 		if ( ! is_array($fields))	$fields		= array($fields);
@@ -66,7 +67,7 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	}
 
 	// Mass lazy-loadable properties unsetter :
-	public static function glue_unset($objects) {
+	static public function glue_unset($objects) {
 		// Turn parameters into arrays if they are not already :
 		if ( ! is_array($objects)) $objects = array($objects);
 			

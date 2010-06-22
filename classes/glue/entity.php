@@ -331,28 +331,15 @@ class Glue_Entity {
 	}
 	
 	protected function get_pattern() {
-		if ( ! isset($this->pattern)) {
-			// Create pattern object :
+		if ( ! isset($this->pattern))
 			$this->pattern = $this->create_pattern();
-			
-			// Unset lazy-loadable properties :
-			// ...
-			if ( ! isset($this->lazy_props))
-				$vars = $this->pattern->glue_vars();
-			else
-				$vars = $this->lazy_props;
-
-			// Unset variables :
-			foreach($vars as $var)
-				if ($this->pattern->glue_isset($var) && $this->pattern->glue_is_null($var))
-					$this->pattern->glue_unset($var);
-		}
 		return $this->pattern;
 	}
 	
 	protected function create_pattern() {
 		$class = $this->proxy_class_name();
 		$pattern = new $class;
+		$this->proxy_unset($pattern);
 		return $pattern;
 	}
 

@@ -1,4 +1,9 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
+/**
+ * @package    Glue
+ * @author     Régis Lemaigre
+ * @license    MIT
+ */
 
 /*
  * Since several Glue queries may be constructed at the same time, it doesn't work

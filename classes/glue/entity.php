@@ -21,8 +21,6 @@ class Glue_Entity {
 	protected $autoincrement;
 	protected $pk;
 	protected $fk;
-	protected $lazy_props;
-	protected $proxy_view;
 
 	// Internal details :
 	private $partial;
@@ -44,8 +42,6 @@ class Glue_Entity {
 		if ( ! isset($this->pk))			$this->pk			 = $this->default_pk();
 		if ( ! isset($this->fk))			$this->fk			 = $this->default_fk();
 		if ( ! isset($this->autoincrement))	$this->autoincrement = $this->default_autoincrement();
-		if ( ! isset($this->proxy_view))	$this->proxy_view	 = $this->default_proxy_view();
-		if ( ! isset($this->lazy_props))	$this->lazy_props	 = $this->default_lazy_props();
 	}
 
 	protected function default_db() {
@@ -157,14 +153,6 @@ class Glue_Entity {
 		}
 
 		return $auto;
-	}
-
-	protected function default_proxy_view() {
-		return 'glue_proxy';
-	}
-
-	protected function default_lazy_props() {
-		return null; // Null means lazy load everything.
 	}
 
 	protected function introspect() {
@@ -282,12 +270,9 @@ class Glue_Entity {
 		foreach($rows as $row) {
 			$no_obj = true;
 			foreach($pkcols as $i => $col) {
-				if (isset($row[$col]) && $row[$col] !== null) {
-					$arr[$i] = $row[$col];
+				$arr[$i] = $row[$col];
+				if ($row[$col] !== null)
 					$no_obj = false;
-				}
-				else
-					$arr[$i] = null;
 			}
 			$pks[] = $no_obj ? 0 : json_encode($arr);
 		}
@@ -601,7 +586,7 @@ class Glue_Entity {
 	// Load proxy class :
 	public function proxy_load_class() {
 		eval(
-			View::factory($this->proxy_view)
+			View::factory('glue_proxy')
 				->set('proxy_class',	$this->proxy_class_name())
 				->set('model_class',	$this->model)
 				->set('entity',			$this->name)
@@ -617,23 +602,23 @@ class Glue_Entity {
 //		die;
 	}
 
-	public function proxy_is_lazy($var) {
-		if ( ! isset($this->lazy_props) || in_array($var, $this->lazy_props))
-			return true;
-		return false;
-	}
-
-	public function proxy_lazy_load($object, $var) {
+	public function load_field($object, $field) {
 		// Build query :
 		$query = glue::qselect($this->name, $set);
 		foreach($this->object_pk($object) as $f => $val)
 			$query->where($f, '=', $val);
+		$query->fields($field);
 
-		// Add lazy loading bit :
-		if (in_array($var, $this->fields))	// $var is a property
-			$query->fields($var);
-		else								// $var is a relationship
-			$query->with($set, inflector::singular($var));
+		// Execute query :
+		$query->execute();
+	}
+
+	public function load_relationship($object, $relationship) {
+		// Build query :
+		$query = glue::qselect($this->name, $set);
+		foreach($this->object_pk($object) as $f => $val)
+			$query->where($f, '=', $val);
+		$query->with($set, $relationship);
 
 		// Execute query :
 		$query->execute();
@@ -641,14 +626,6 @@ class Glue_Entity {
 
 	public function proxy_unset($objects) {
 		return call_user_func(array($this->proxy_class_name(), 'glue_unset'), $objects);
-	}
-
-	public function proxy_set($objects, $fields, $values) {
-		return call_user_func(array($this->proxy_class_name(), 'glue_set'), $objects, $fields, $values);
-	}
-
-	public function proxy_get($objects, $fields) {
-		return call_user_func(array($this->proxy_class_name(), 'glue_get'), $objects, $fields);
 	}
 
 	// Getters :

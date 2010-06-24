@@ -4,7 +4,7 @@
 	It's best to keep proxy classes as lightweight as possible and keep the bulk
 	of the code in the mappers because
 	- proxy classes cannot be extended by the user,
-	- proxy classes code is eval'd, making it hard to debug and hidden from opcode cache engines,
+	- one proxy class by entity needs to be compiled,
 	- the more we put here the closer we get to Active Record and the very same problems
 	  we wanted to avoid by using Data Mapper.
 
@@ -74,7 +74,10 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 
 	// Lazy loading of properties and relationships :
 	public function __get($var) {
-		$this->glue_entity()->proxy_lazy_load($this, $var);
+		if ($field = array_search(self::$glue_properties))
+			$this->glue_entity()->load_field($this, $field);
+		else
+			$this->glue_entity()->load_relationship($this, $var);
 		return $this->$var;
 	}
 }

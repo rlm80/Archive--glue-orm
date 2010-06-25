@@ -277,15 +277,23 @@ class Glue_Entity {
 			$pks[] = $no_obj ? 0 : json_encode($arr);
 		}
 
-		// Add new objects to id map :
+		// Build distinct pk => index mapping :
 		$indexes = array_flip($pks); // Distinct pk => row index mapping
-		unset($indexes[0]);					// Remove key that represents "no object".
-		$diff = array_diff_key($indexes, $this->map);
-		foreach($diff as $pk => $index) {
-			$vals	= array_intersect_key($rows[$index], $mapping);
-			$array	= array_combine($mapping, $vals);
-			$this->map[$pk] = $this->create($array);
+		unset($indexes[0]);			 // Remove key that represents "no object".
+
+		// Update fields of already existing objects :
+		$indexes_existing = array_intersect_key($indexes, $this->map);
+		foreach($mapping as $col => $field) {
+			if ( ! in_array($field, $this->pk)) {
+				foreach($indexes_existing as $pk => $index)
+					$this->map[$pk]->glue_set($field, $rows[$index][$col]);
+			}
 		}
+
+		// Create new objects :
+		$indexes_new = array_diff_key($indexes, $this->map);
+		foreach($indexes_new as $pk => $index)
+			$this->map[$pk] = $this->create($rows[$index], $mapping);
 
 		// Build distinct objects list :
 		$distinct = array_intersect_key($this->map, $indexes);
@@ -300,14 +308,18 @@ class Glue_Entity {
 		return array_values($distinct);
 	}
 
-	public function create($array) {
+	public function create($array, $mapping = null) {
 		// Create object :
 		$object = clone $this->get_pattern();
 
 		// Set object properties :
-		foreach($array as $field => $val) {
-			settype($val, $this->types[$field]);
-			$object->glue_set($field, $val);
+		if ( ! isset($mapping)) { // $array keys = field names
+			foreach($array as $field => $val)
+				$object->glue_set($field, $val);
+		}
+		else {
+			foreach($mapping as $col => $field)
+				$object->glue_set($field, $array[$col]);
 		}
 
 		return $object;

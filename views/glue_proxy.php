@@ -87,6 +87,7 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 			$this->glue_entity()->load_field($this, $field);
 		else
 			$this->glue_entity()->load_relationship($this, $var);
+			
 		return $this->$var;
 	}
 }

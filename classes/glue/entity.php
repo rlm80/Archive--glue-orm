@@ -292,13 +292,11 @@ class Glue_Entity {
 			$this->map[$pk] = $this->create($array);
 		}
 
-		// Build distinct objects list :
-		$distinct = array_intersect_key($this->map, $indexes);
-
 		// Load objects into result set :
 		$key = $prefix.'__object';
 		foreach($pks as $index => $pk) {
 			$rows[$index][$key] = ($pk === 0) ? null : $this->map[$pk];
+			$distinct[$pk] = $this->map[$pk];
 		}
 
 		// Return distinct objects :

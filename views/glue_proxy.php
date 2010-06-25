@@ -45,8 +45,8 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	// Constructor :
 	public function __construct(<?php echo $has_constructor ? $constructor_sig_parms : '' ?>) {
 		// Unset null variables so that __get is called on first access :
-		foreach(get_class_vars() as $var => $default)
-			if (is_null($default))
+		foreach(get_object_vars($this) as $var => $value)
+			if (is_null($value))
 				unset($this->$var);
 
 		<?php if ($has_constructor) { ?>
@@ -67,14 +67,23 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 		return $this->{self::$glue_properties[$field]};
 	}
 
+	// Entity mapper :
+	public function glue_entity() { return glue::entity(self::$glue_entity); }
+
 	// Active Record features :
-	public function delete() { return glue::entity(self::$glue_entity)->delete($this); }
-	public function insert() { return glue::entity(self::$glue_entity)->insert($this); }
-	public function update() { return glue::entity(self::$glue_entity)->update($this); }
+	public function delete() { return $this->glue_entity()->delete($this); }
+	public function insert() { return $this->glue_entity()->insert($this); }
+	public function update() { return $this->glue_entity()->update($this); }
 
 	// Lazy loading of properties and relationships :
 	public function __get($var) {
-		if ($field = array_search(self::$glue_properties))
+		// __get called even though $var already initialized ?
+		$obj_vars = get_object_vars($this);
+		if (isset($obj_vars[$var])
+			trigger_error("Trying to access protected property $var from outside the class <?php echo $model_class ?>.", E_ERROR);
+
+		// Lazy loading of $var :
+		if ($field = array_search($var, self::$glue_properties))
 			$this->glue_entity()->load_field($this, $field);
 		else
 			$this->glue_entity()->load_relationship($this, $var);

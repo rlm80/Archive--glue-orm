@@ -10,7 +10,7 @@ class Glue_Query_Delete extends Glue_Query {
 		return $this;
 	}
 
-	public function with($src_set, $relationship, &$trg_set) {
+	public function with($src_set, $relationship, &$trg_set = null) {
 		parent::with($src_set, $relationship, $trg_set);
 
 		// Load only pk :

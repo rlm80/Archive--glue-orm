@@ -1,4 +1,9 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
+/**
+ * @package    Glue
+ * @author     Régis Lemaigre
+ * @license    MIT
+ */
 
 /*
  * Commands are the smallest work units in a query. They are meant to load a

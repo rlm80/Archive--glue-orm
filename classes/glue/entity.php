@@ -300,8 +300,12 @@ class Glue_Entity {
 		// Load objects into result set :
 		$key = $prefix.'__object';
 		foreach($pks as $index => $pk) {
-			$rows[$index][$key] = ($pk === 0) ? null : $this->map[$pk];
-			$distinct[$pk] = $this->map[$pk];
+			if ($pk === 0)
+				$rows[$index][$key] = null;
+			else {
+				$rows[$index][$key] = $this->map[$pk];
+				$distinct[$pk] = $this->map[$pk];
+			}
 		}
 
 		// Return distinct objects :

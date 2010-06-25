@@ -298,6 +298,7 @@ class Glue_Entity {
 		}
 
 		// Load objects into result set :
+		$distinct = array();
 		$key = $prefix.'__object';
 		foreach($pks as $index => $pk) {
 			if ($pk === 0)

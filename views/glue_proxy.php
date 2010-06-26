@@ -103,9 +103,9 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 
 		// Lazy loading of $var :
 		if ($field = array_search($var, self::$glue_properties))
-			$this->glue_entity()->proxy_load_field($this, $field);
+			self::glue_entity()->proxy_load_field($this, $field);
 		else
-			$this->glue_entity()->proxy_load_relationship($this, $var);
+			self::glue_entity()->proxy_load_relationship($this, $var);
 			
 		return $this->$var;
 	}

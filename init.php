@@ -26,4 +26,4 @@ Route::set('glue_media', 'glue/media/<file>', array('file' => '.+'))
 	));
 	
 // Set up autoloading of proxy classes :
-spl_autoload_register(array('Glue', 'auto_load'), true, true); // TODO tenir compte de cache pour 3ème param
+spl_autoload_register(array('Glue', 'auto_load')); // TODO tenir compte de cache pour 3ème param

@@ -41,6 +41,7 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	static public $glue_entity		= <?php var_export($entity)		?>;	// Entity name
 	static public $glue_properties	= <?php var_export($properties)	?>;	// Fields => properties mapping
 	static public $glue_types		= <?php var_export($types)		?>;	// Fields => property types mapping
+	static public $glue_pk			= <?php var_export($pk)			?>;	// PK fields
 
 	// Constructor :
 	public function __construct(<?php echo $has_constructor ? $constructor_sig_parms : '' ?>) {
@@ -55,38 +56,56 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 		<?php } ?>
 	}
 
-	// Setter for values coming from the database :
-	public function glue_set($field, $value) {
-		$prop = self::$glue_properties[$field];
-		$this->$prop = settype($value, self::$glue_types[$field]);
-		$this->glue_db_state[$field] = $this->$prop;
+	// Set values coming from the database :
+	static public function glue_set($objects, $values, $mapping) {
+		foreach($objects as $key => $obj) {
+			if (isset($values[$key])) {
+				$vals = $values[$key];
+				$obj_vars = get_object_vars($obj);
+				foreach($mapping as $col => $field) {
+					$prop = self::$glue_properties[$field];
+					if ( ! isset($obj_vars[$prop])) {
+						$val = $vals[$col];
+						settype($val, self::$glue_types[$field]);
+						$obj->glue_db_state[$field] = $obj->$prop = $val;
+					}
+				}
+			}
+		}
 	}
 
-	// Getter :
-	public function glue_get($field) {
-		return $this->{self::$glue_properties[$field]};
+	// Get pk :
+	static public function glue_pk($objects) {
+		$pks = array();
+		foreach(self::$glue_pk as $f) {
+			$prop = self::$glue_properties[$f];
+			foreach($objects as $key => $obj) {
+				$pks[$key][$f] =  $obj->$prop;
+			}
+		}
+		return $pks;
 	}
 
 	// Entity mapper :
-	public function glue_entity() { return glue::entity(self::$glue_entity); }
+	public static function glue_entity() { return glue::entity(self::$glue_entity); }
 
 	// Active Record features :
-	public function delete() { return $this->glue_entity()->delete($this); }
-	public function insert() { return $this->glue_entity()->insert($this); }
-	public function update() { return $this->glue_entity()->update($this); }
+	public function delete() { return self::glue_entity()->delete($this); }
+	public function insert() { return self::glue_entity()->insert($this); }
+	public function update() { return self::glue_entity()->update($this); }
 
 	// Lazy loading of properties and relationships :
 	public function __get($var) {
 		// __get called even though $var already initialized ?
 		$obj_vars = get_object_vars($this);
-		if (isset($obj_vars[$var])
+		if (isset($obj_vars[$var]))
 			trigger_error("Trying to access protected property $var from outside the class <?php echo $model_class ?>.", E_ERROR);
 
 		// Lazy loading of $var :
 		if ($field = array_search($var, self::$glue_properties))
-			$this->glue_entity()->load_field($this, $field);
+			$this->glue_entity()->proxy_load_field($this, $field);
 		else
-			$this->glue_entity()->load_relationship($this, $var);
+			$this->glue_entity()->proxy_load_relationship($this, $var);
 			
 		return $this->$var;
 	}

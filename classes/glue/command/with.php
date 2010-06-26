@@ -55,7 +55,7 @@ class Glue_Command_With extends Glue_Command {
 			return array();
 
 		// Get pk values :
-		$pkvals = array_map(array($entity, 'object_pk'), $objects);
+		$pkvals = $entity->object_pk($objects);
 
 		// Exec query :
 		$result = array();

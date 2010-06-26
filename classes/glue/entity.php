@@ -281,19 +281,16 @@ class Glue_Entity {
 		$indexes = array_flip($pks); // Distinct pk => row index mapping
 		unset($indexes[0]);			 // Remove key that represents "no object".
 
-		// Update fields of already existing objects :
-		$indexes_existing = array_intersect_key($indexes, $this->map);
-		foreach($mapping as $col => $field) {
-			if ( ! in_array($field, $this->pk)) {
-				foreach($indexes_existing as $pk => $index)
-					$this->map[$pk]->glue_set($field, $rows[$index][$col]);
-			}
-		}
-
 		// Create new objects :
 		$indexes_new = array_diff_key($indexes, $this->map);
 		foreach($indexes_new as $pk => $index)
-			$this->map[$pk] = $this->create($rows[$index], $mapping);
+			$this->map[$pk] = clone $this->get_pattern();
+
+		// Update fields of objects :
+		$objects = array();
+		foreach(array_flip($indexes) as $index => $pk)
+			$objects[$index] = $this->map[$pk];
+		call_user_func(array($this->proxy_class_name(), 'glue_set'), $objects, $rows, $mapping);
 
 		// Load objects into result set :
 		$distinct = array();
@@ -337,20 +334,25 @@ class Glue_Entity {
 	protected function create_pattern() {
 		$class = $this->proxy_class_name();
 		$pattern = new $class;
-		$this->proxy_unset($pattern);
 		return $pattern;
 	}
 
 	// Returns an associative array with pk field names and values.
 	public function object_pk($objects) {
-		if (is_array($objects)) {
-			foreach($this->pk as $f)
-				$vals[$f] = array_map(array());
+		// Object given ? Turn it into an array :
+		if ( ! is_array($objects)) {
+			$objects = array($objects);
+			$return_scalar = true;
 		}
-		else {
+		else
+			$return_scalar = false;
 
-		}
-		//return $object->glue_pk();
+		// Return either scalar or array :
+		$pks = call_user_func(array($this->proxy_class_name(), 'glue_pk'), $objects);
+		if ($return_scalar)
+			return end($pks);
+		else
+			return $pks;
 	}
 
 	// Sorts an array of objects according to sort criteria.
@@ -391,7 +393,7 @@ class Glue_Entity {
 		if (count($objects) === 0) return;
 
 		// Get pk values :
-		$pkvals = array_map(array($this, 'object_pk'), $objects);
+		$pkvals = $this->object_pk($objects);
 
 		// Delete rows, table by table :
 		foreach($this->tables as $table) {
@@ -606,18 +608,20 @@ class Glue_Entity {
 				->set('model_class',	$this->model)
 				->set('entity',			$this->name)
 				->set('properties',		$this->properties)
-				->set('lazy_props',		$this->lazy_props)
-				->set('types',			$this->lazy_props)
+				->set('pk',				$this->pk)
+				->set('types',			$this->types)
 		);
-//		echo View::factory($this->proxy_view)
+//		echo View::factory('glue_proxy')
 //				->set('proxy_class',	$this->proxy_class_name())
 //				->set('model_class',	$this->model)
-//				->set('entity_name',	$this->name)
-//				->set('properties',		$this->properties);
+//				->set('entity',			$this->name)
+//				->set('properties',		$this->properties)
+//				->set('pk',				$this->pk)
+//				->set('types',			$this->types);
 //		die;
 	}
 
-	public function load_field($object, $field) {
+	public function proxy_load_field($object, $field) {
 		// Build query :
 		$query = glue::qselect($this->name, $set);
 		foreach($this->object_pk($object) as $f => $val)
@@ -628,7 +632,7 @@ class Glue_Entity {
 		$query->execute();
 	}
 
-	public function load_relationship($object, $relationship) {
+	public function proxy_load_relationship($object, $relationship) {
 		// Build query :
 		$query = glue::qselect($this->name, $set);
 		foreach($this->object_pk($object) as $f => $val)

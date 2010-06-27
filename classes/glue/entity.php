@@ -524,7 +524,7 @@ class Glue_Entity {
 			// Loop on objects and update table :
 			foreach($objects as $obj) {
 				// Set pk values :
-				foreach($obj->glue_pk() as $f => $val)
+				foreach($this->object_pk($obj) as $f => $val)
 					$query->param(':__'.$f, $val);
 
 				// Set fields values :
@@ -612,8 +612,10 @@ class Glue_Entity {
 	public function proxy_load_relationship($object, $relationship) {
 		// Build query :
 		$query = glue::qselect($this->name, $set);
-		foreach($this->object_pk($object) as $f => $val)
+		foreach($this->object_pk($object) as $f => $val) {
 			$query->where($f, '=', $val);
+			$query->fields($f);
+		}
 		$query->with($set, Inflector::singular($relationship));
 
 		// Execute query :

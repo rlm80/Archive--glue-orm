@@ -10,7 +10,7 @@ class Glue_Entity {
 	// Properties that may NOT be set in children classes (passed to constructor) :
 	protected $name;
 
-	// Properties that may be set in children classes :
+	// Properties that may be set by user in children classes :
 	protected $db;
 	protected $model;
 	protected $tables;
@@ -23,9 +23,9 @@ class Glue_Entity {
 	protected $fk;
 
 	// Internal details :
-	private $partial;
-	private $sort;
-	private $pattern;
+	protected $partial;
+	protected $sort;
+	protected $pattern;
 
 	protected function __construct($name) {
 		// Set properties :
@@ -308,19 +308,12 @@ class Glue_Entity {
 		return array_values($distinct);
 	}
 
-	public function create($array, $mapping = null) {
+	public function create($array) {
 		// Create object :
 		$object = clone $this->get_pattern();
 
 		// Set object properties :
-		if ( ! isset($mapping)) { // $array keys = field names
-			foreach($array as $field => $val)
-				$object->glue_set($field, $val);
-		}
-		else {
-			foreach($mapping as $col => $field)
-				$object->glue_set($field, $array[$col]);
-		}
+		call_user_func(array($this->proxy_class_name(), 'glue_set'), array($object), array($array), array_combine(array_keys($array), array_keys($array)));
 
 		return $object;
 	}
@@ -339,20 +332,12 @@ class Glue_Entity {
 
 	// Returns an associative array with pk field names and values.
 	public function object_pk($objects) {
-		// Object given ? Turn it into an array :
 		if ( ! is_array($objects)) {
-			$objects = array($objects);
-			$return_scalar = true;
+			$pks = call_user_func(array($this->proxy_class_name(), 'glue_pk'), array($objects));
+			return end($pks);
 		}
 		else
-			$return_scalar = false;
-
-		// Return either scalar or array :
-		$pks = call_user_func(array($this->proxy_class_name(), 'glue_pk'), $objects);
-		if ($return_scalar)
-			return end($pks);
-		else
-			return $pks;
+			return call_user_func(array($this->proxy_class_name(), 'glue_pk'), $objects);
 	}
 
 	// Sorts an array of objects according to sort criteria.
@@ -611,14 +596,6 @@ class Glue_Entity {
 				->set('pk',				$this->pk)
 				->set('types',			$this->types)
 		);
-//		echo View::factory('glue_proxy')
-//				->set('proxy_class',	$this->proxy_class_name())
-//				->set('model_class',	$this->model)
-//				->set('entity',			$this->name)
-//				->set('properties',		$this->properties)
-//				->set('pk',				$this->pk)
-//				->set('types',			$this->types);
-//		die;
 	}
 
 	public function proxy_load_field($object, $field) {
@@ -637,14 +614,10 @@ class Glue_Entity {
 		$query = glue::qselect($this->name, $set);
 		foreach($this->object_pk($object) as $f => $val)
 			$query->where($f, '=', $val);
-		$query->with($set, $relationship);
+		$query->with($set, Inflector::singular($relationship));
 
 		// Execute query :
 		$query->execute();
-	}
-
-	public function proxy_unset($objects) {
-		return call_user_func(array($this->proxy_class_name(), 'glue_unset'), $objects);
 	}
 
 	// Getters :

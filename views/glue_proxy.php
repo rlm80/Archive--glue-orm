@@ -99,7 +99,7 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 		// __get called even though $var already initialized ?
 		$obj_vars = get_object_vars($this);
 		if (isset($obj_vars[$var]))
-			trigger_error("Trying to access protected property $var from outside the class <?php echo $model_class ?>.", E_ERROR);
+			trigger_error("Cannot access protected property <?php echo $model_class ?>::".'$'."$var", E_USER_ERROR);
 
 		// Lazy loading of $var :
 		if ($field = array_search($var, self::$glue_properties))

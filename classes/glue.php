@@ -1,7 +1,7 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 /**
  * @package    Glue
- * @author     RÃ©gis Lemaigre
+ * @author     Régis Lemaigre
  * @license    MIT
  */
 
@@ -61,5 +61,10 @@ class Glue {
 		if ( ! isset($cache[$db][$table]))
 			$cache[$db][$table] = Database::instance($db)->list_columns($table);
 		return $cache[$db][$table];
+	}
+
+	public static function auto_load($class) {
+		if(preg_match("/^Glue_Proxy_(.*)$/", $class, $matches) > 0)
+			glue::entity($matches[1])->proxy_load_class();
 	}
 }

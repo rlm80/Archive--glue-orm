@@ -1,10 +1,5 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
-/**
- * @package    Glue
- * @author     Régis Lemaigre
- * @license    MIT
- */
-
+/** * @package    Glue * @author     Régis Lemaigre * @license    MIT */
 class Glue_Entity {
 	// Entity cache :
 	static protected $entities = array();
@@ -15,7 +10,7 @@ class Glue_Entity {
 	// Properties that may NOT be set in children classes (passed to constructor) :
 	protected $name;
 
-	// Properties that may be set in children classes :
+	// Properties that may be set by user in children classes :
 	protected $db;
 	protected $model;
 	protected $tables;
@@ -28,9 +23,9 @@ class Glue_Entity {
 	protected $fk;
 
 	// Internal details :
-	private $partial;
-	private $sort;
-	private $pattern;
+	protected $partial;
+	protected $sort;
+	protected $pattern;
 
 	protected function __construct($name) {
 		// Set properties :
@@ -263,8 +258,6 @@ class Glue_Entity {
 		foreach($rows[0] as $col => $val) {
 			if (substr($col, 0, $len_prefix) === $prefix) {
 				$field = substr($col, $len_prefix);
-				if ( ! in_array($field, $this->fields))
-					throw new Kohana_Exception("The following field doesn't belong to entity '".$this->name."' : '".$field."'");
 				$mapping[$col] = $field;
 			}
 		}
@@ -277,25 +270,27 @@ class Glue_Entity {
 		foreach($rows as $row) {
 			$no_obj = true;
 			foreach($pkcols as $i => $col) {
-				if (isset($row[$col]) && $row[$col] !== null) {
-					$arr[$i] = $row[$col];
+				$arr[$i] = $row[$col];
+				if ($row[$col] !== null)
 					$no_obj = false;
-				}
-				else
-					$arr[$i] = null;
 			}
 			$pks[] = $no_obj ? 0 : json_encode($arr);
 		}
 
-		// Add new objects to id map :
+		// Build distinct pk => index mapping :
 		$indexes = array_flip($pks); // Distinct pk => row index mapping
-		unset($indexes[0]);					// Remove key that represents "no object".
-		$diff = array_diff_key($indexes, $this->map);
-		foreach($diff as $pk => $index) {
-			$vals	= array_intersect_key($rows[$index], $mapping);
-			$array	= array_combine($mapping, $vals);
-			$this->map[$pk] = $this->create($array);
-		}
+		unset($indexes[0]);			 // Remove key that represents "no object".
+
+		// Create new objects :
+		$indexes_new = array_diff_key($indexes, $this->map);
+		foreach($indexes_new as $pk => $index)
+			$this->map[$pk] = clone $this->get_pattern();
+
+		// Update fields of objects :
+		$objects = array();
+		foreach(array_flip($indexes) as $index => $pk)
+			$objects[$index] = $this->map[$pk];
+		call_user_func(array($this->proxy_class_name(), 'glue_set'), $objects, $rows, $mapping);
 
 		// Load objects into result set :
 		$distinct = array();
@@ -314,35 +309,35 @@ class Glue_Entity {
 	}
 
 	public function create($array) {
-		// Create pattern object :
-		if ( ! isset($this->pattern)) {
-			$class = $this->model;
-			$this->pattern = new $class;
-		}
-
 		// Create object :
-		$object = clone $this->pattern;
+		$object = clone $this->get_pattern();
 
 		// Set object properties :
-		foreach($array as $field => $val) {
-			settype($val, $this->types[$field]);
-			$object->{$this->properties[$field]} = $val;
-		}
+		call_user_func(array($this->proxy_class_name(), 'glue_set'), array($object), array($array), array_combine(array_keys($array), array_keys($array)));
 
 		return $object;
 	}
+	
+	protected function get_pattern() {
+		if ( ! isset($this->pattern))
+			$this->pattern = $this->create_pattern();
+		return $this->pattern;
+	}
+	
+	protected function create_pattern() {
+		$class = $this->proxy_class_name();
+		$pattern = new $class;
+		return $pattern;
+	}
 
-	// For single column pk, returns the pk value.
-	// For multiple columns pk, returns an associative array with pk field names and values.
-	public function object_pk($object) {
-		// Single column pk :
-		if ( ! isset($this->pk[1]))
-			return $object->{$this->properties[$this->pk[0]]};
-
-		// Multiple columns pk :
-		foreach($this->pk as $f)
-			$pk[$f] = $object->{$this->properties[$f]};
-		return $pk;
+	// Returns an associative array with pk field names and values.
+	public function object_pk($objects) {
+		if ( ! is_array($objects)) {
+			$pks = call_user_func(array($this->proxy_class_name(), 'glue_pk'), array($objects));
+			return end($pks);
+		}
+		else
+			return call_user_func(array($this->proxy_class_name(), 'glue_pk'), $objects);
 	}
 
 	// Sorts an array of objects according to sort criteria.
@@ -383,14 +378,14 @@ class Glue_Entity {
 		if (count($objects) === 0) return;
 
 		// Get pk values :
-		$pkvals = array_map(array($this, 'object_pk'), $objects);
+		$pkvals = $this->object_pk($objects);
 
 		// Delete rows, table by table :
 		foreach($this->tables as $table) {
 			$query = DB::delete($table);
 			if ( ! isset($this->pk[1])) {	// single pk
 				$pkcol = $this->columns[$this->pk[0]][$table];
-				$query->where($pkcol, 'IN', $pkvals);
+				$query->where($pkcol, 'IN', array_map('array_pop', $pkvals));
 				$query->execute($this->db);
 			}
 			else {							// multiple pk
@@ -529,12 +524,8 @@ class Glue_Entity {
 			// Loop on objects and update table :
 			foreach($objects as $obj) {
 				// Set pk values :
-				$pk = $this->object_pk($obj);
-				if (isset($this->pk[1]))
-					foreach($pk as $f => $val)
-						$query->param(':__'.$f, $val);
-				else
-					$query->param(':__'.$this->pk[0], $pk);
+				foreach($obj->glue_pk() as $f => $val)
+					$query->param(':__'.$f, $val);
 
 				// Set fields values :
 				foreach($fields as $f)
@@ -589,6 +580,46 @@ class Glue_Entity {
 		return glue::relationship($this->name, $name);
 	}
 
+	// Proxy class name :
+	protected function proxy_class_name() {
+		return 'Glue_Proxy_' . ucfirst($this->name);
+	}
+
+	// Load proxy class :
+	public function proxy_load_class() {
+		eval(
+			View::factory('glue_proxy')
+				->set('proxy_class',	$this->proxy_class_name())
+				->set('model_class',	$this->model)
+				->set('entity',			$this->name)
+				->set('properties',		$this->properties)
+				->set('pk',				$this->pk)
+				->set('types',			$this->types)
+		);
+	}
+
+	public function proxy_load_field($object, $field) {
+		// Build query :
+		$query = glue::qselect($this->name, $set);
+		foreach($this->object_pk($object) as $f => $val)
+			$query->where($f, '=', $val);
+		$query->fields($field);
+
+		// Execute query :
+		$query->execute();
+	}
+
+	public function proxy_load_relationship($object, $relationship) {
+		// Build query :
+		$query = glue::qselect($this->name, $set);
+		foreach($this->object_pk($object) as $f => $val)
+			$query->where($f, '=', $val);
+		$query->with($set, Inflector::singular($relationship));
+
+		// Execute query :
+		$query->execute();
+	}
+
 	// Getters :
 	public function name()	{ return $this->name;	}
 	public function pk()	{ return $this->pk;		}
@@ -612,6 +643,7 @@ class Glue_Entity {
 
 	// Lazy loads an entity object, stores it in cache, and returns it :
 	static public function get($name) {
+		$name = strtolower($name);
 		if( ! isset(self::$entities[$name]))
 			self::$entities[$name] = self::build($name);
 		return self::$entities[$name];

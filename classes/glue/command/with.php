@@ -55,19 +55,15 @@ class Glue_Command_With extends Glue_Command {
 			return array();
 
 		// Get pk values :
-		$pkvals = array_map(array($entity, 'object_pk'), $objects);
+		$pkvals = $entity->object_pk($objects);
 
 		// Exec query :
 		$result = array();
 		if ($this->is_unitary()) {
 			// Use one query for each object and aggregate results :
 			foreach($pkvals as $pkval) {
-				if (count($pk) > 1) {
-					foreach($pkval as $f => $val)
-						$query->param( ':__'.$f, $val);
-				}
-				else
-					$query->param( ':__'.$pk[0], $pkval);
+				foreach($pkval as $f => $val)
+					$query->param( ':__'.$f, $val);
 				$rows = $query->execute()->as_array();
 				if (count($rows) >= 1)
 					$result = array_merge($result, $rows);
@@ -75,7 +71,7 @@ class Glue_Command_With extends Glue_Command {
 		}
 		else {
 			// Use only one query :
-			$result = $query->param(':__pks', $pkvals)->execute()->as_array();
+			$result = $query->param(':__pks', array_map('array_pop', $pkvals))->execute()->as_array();
 		}
 		
 		return $result;

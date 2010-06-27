@@ -1,5 +1,6 @@
 <?php
 
+// Set up routes :
 Route::set('glue_sandbox', 'glue/sandbox')
 	->defaults(array(
 		'controller' => 'Glue',
@@ -23,3 +24,6 @@ Route::set('glue_media', 'glue/media/<file>', array('file' => '.+'))
 		'controller' => 'Glue',
 		'action'     => 'media',
 	));
+	
+// Set up autoloading of proxy classes :
+spl_autoload_register(array('Glue', 'auto_load')); // TODO tenir compte de cache pour 3ème param

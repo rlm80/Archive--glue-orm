@@ -15,27 +15,36 @@
  */
 
 abstract class Glue_Command {
-	// Query builder calls :
+	// Target set :
+	protected $trg_set;
+
+	// Children commands :
+	protected $children = array();
+
+	// Modifiers :
 	protected $order_by = array();
 	protected $where = array();
 	protected $limit;
 	protected $offset;
-
-	// Set :
-	protected $trg_set;
+	protected $fields;
 
 	// Cache chain, roots and query :
 	protected $chain;
 	protected $roots;
 	protected $query;
 
-	// Trg fields
-	protected $fields;
-
 	// Constructor :
-	public function  __construct($trg_set) {
+	public function  __construct() {}
+
+	public function set_trg_set($trg_set) {
 		$this->trg_set = $trg_set;
-		$this->trg_set->root_command = $this;
+	}
+
+	abstract public function trg_entity();
+
+	public function add_child($command) {
+		$this->children[] = $command;
+		$command->parent = $this;
 	}
 
 	public function execute($parameters) {
@@ -86,12 +95,8 @@ abstract class Glue_Command {
 	}
 
 	protected function load_result_self(&$result) {
-		$objects = $this->trg_set->entity->object_load($result, $this->trg_set->name.':');
+		$objects = $this->trg_entity()->object_load($result, $this->trg_set->name().':');
 		$this->trg_set->set_objects($objects);
-	}
-
-	protected function get_children() {
-		return $this->trg_set->commands;
 	}
 
 	protected function get_chain() {
@@ -109,7 +114,7 @@ abstract class Glue_Command {
 	protected function find_chain($root) {
 		$chain = array($this);
 		$roots = array();
-		foreach($this->get_children() as $command) {
+		foreach($this->children as $command) {
 			if ($root->is_relative_root($command))
 				$roots[] = $command;
 			else {
@@ -138,8 +143,8 @@ abstract class Glue_Command {
 
 	protected function query_contrib($query, $is_root) {
 		// Entities and aliases :
-		$trg_entity	= $this->trg_set->entity;
-		$trg_alias	= $this->trg_set->name;
+		$trg_entity	= $this->trg_entity();
+		$trg_alias	= $this->trg_set->name();
 		
 		// trg fields :
 		if ( ! isset($this->fields))

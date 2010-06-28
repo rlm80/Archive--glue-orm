@@ -6,22 +6,32 @@ class Glue_Command_With extends Glue_Command {
 	const SLAVE	= 2;
 	const AUTO	= 3;
 
+	// Parent command :
+	protected $parent;
+
 	protected $relationship;
 	protected $src_set;
 
 	// Root or slave command ?
 	protected $root;
 
-	public function  __construct($relationship, $src_set, $trg_set) {
-		parent::__construct($trg_set);
+	public function  __construct($relationship, $src_set) {
+		parent::__construct();
 		$this->root					= self::AUTO;
 		$this->relationship			= $relationship;
 		$this->src_set				= $src_set;
-		$this->src_set->commands[]	= $this;
+	}
+
+	public function trg_entity() {
+		return $this->relationship->to();
+	}
+
+	public function src_entity() {
+		return $this->parent->trg_entity();
 	}
 
 	protected function load_result(&$result) {
-		$this->relationship->from()->object_load($result, $this->src_set->name.':');
+		$this->relationship->from()->object_load($result, $this->src_set->name().':');
 		parent::load_result($result);
 	}
 
@@ -32,8 +42,8 @@ class Glue_Command_With extends Glue_Command {
 		// Load relationships :
 		$direct		= $this->relationship;
 		$reverse	= $this->relationship->reverse();
-		$src_key = $this->src_set->name.':__object';
-		$trg_key = $this->trg_set->name.':__object';
+		$src_key = $this->src_set->name().':__object';
+		$trg_key = $this->trg_set->name().':__object';
 		foreach($result as $row) {
 			$src_obj = isset($row[$src_key]) ? $row[$src_key] : null;
 			$trg_obj = isset($row[$trg_key]) ? $row[$trg_key] : null;
@@ -45,9 +55,9 @@ class Glue_Command_With extends Glue_Command {
 	protected function query_exec($parameters)	{
 		// Get data :
 		$query		= $this->query_get()->parameters($parameters);
-		$entity		= $this->src_set->entity;
+		$entity		= $this->src_entity();
 		$pk			= $entity->pk();
-		$alias		= $this->src_set->name;
+		$alias		= $this->src_set->name();
 		$objects	= $this->src_set->as_array();
 
 		// No objects ? No result :
@@ -81,10 +91,10 @@ class Glue_Command_With extends Glue_Command {
 		parent::query_contrib($query, $is_root);
 		
 		// Entities and aliases :
-		$src_entity	= $this->src_set->entity;
-		$trg_entity = $this->trg_set->entity;
-		$src_alias	= $this->src_set->name;
-		$trg_alias	= $this->trg_set->name;
+		$src_entity	= $this->src_entity();
+		$trg_entity = $this->trg_entity();
+		$src_alias	= $this->src_set->name();
+		$trg_alias	= $this->trg_set->name();
 
 		// Root ? Must base query on src set :
 		if ($is_root) {
@@ -117,7 +127,7 @@ class Glue_Command_With extends Glue_Command {
 	}
 
 	protected function is_unitary() {
-		$src_entity	= $this->src_set->entity;
+		$src_entity	= $this->src_entity();
 		$pk	= $src_entity->pk();
 		if (count($pk) > 1 || isset($this->limit) || isset($this->offset))
 			return true;
@@ -130,9 +140,9 @@ class Glue_Command_With extends Glue_Command {
 		$view = parent::debug();
 
 		// Add title :
-		$title = 'From set ' . $this->src_set->name . ', load set(s) ';
+		$title = 'From set ' . $this->src_set->name() . ', load set(s) ';
 		foreach($this->get_chain() as $command)
-			$sets[] = $command->trg_set->name;
+			$sets[] = $command->trg_set->name();
 		$title .= implode(', ', $sets);
 		$view->set('title', $title);
 
@@ -142,7 +152,7 @@ class Glue_Command_With extends Glue_Command {
 	protected function debug_self() {
 		return parent::debug_self()
 			->set('src_set', $this->src_set->debug())
-			->set('src_entity', $this->src_set->entity()->name())
+			->set('src_entity', $this->src_entity()->name())
 			->set('relationship', $this->relationship->name());
 	}
 }

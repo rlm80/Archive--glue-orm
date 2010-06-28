@@ -6,16 +6,16 @@
  */
 
 class Glue_Set implements Iterator, Countable, ArrayAccess {
-	public $name;
-	public $entity;
+	protected $name;
 	protected $sort;
 	protected $objects = array();
-	public $commands = array();
-	public $root_command;
 
-	public function  __construct($name, $entity) {
-		$this->name		= $name;
-		$this->entity	= $entity;
+	public function  __construct($name) {
+		$this->name	= $name;
+	}
+
+	public function name() {
+		return $this->name;
 	}
 
 	// Sorts the objects according to current sort criteria.
@@ -96,18 +96,17 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 		$this->dosort();
 	}
 
-	public function entity() {
-		return $this->entity;
-	}
-
 	public function as_array() {
 		return $this->objects;
 	}
 
 	public function debug() {
+		$parts = explode('_', $this->name);
+		array_pop($parts);
+		$entity_name = implode('_', $parts);
 		return View::factory('glue_set')
 			->set('name', $this->name)
-			->set('entity', $this->entity->name());
+			->set('entity', $entity_name);
 	}
 
 	// Iterator, Countable :

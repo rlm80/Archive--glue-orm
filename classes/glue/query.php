@@ -6,7 +6,7 @@
  */
 
 /*
- * Since several Glue queries may be constructed at the same time, it doesn't work
+ * Since several queries may be constructed at the same time, it doesn't work
  * to have the data related to those queries represented as static variables, or
  * properties of the Glue instance because the queries may "cross-polinate". We
  * need query objects to encapsulates all the execution environnement of each query.
@@ -23,43 +23,77 @@ class Glue_Query {
 	// Root command :
 	protected $root;
 
-	// Target command of db builder calls :
+	// Last command :
 	protected $active_command;
 
 	// Param id counter :
 	protected $param_id = 0;
 
+	// Sets counters :
+	protected $set_counters = array();
+
 	// Constructor, creates a load command :
 	public function __construct($entity_name, &$set) {
-		$entity = Glue_Entity::get($entity_name);
-		$set = $this->create_set($entity);
-		$this->root = new Glue_Command_Load($entity, $set);
+		$entity = glue::entity($entity_name);
+		$this->root = new Glue_Command_Load($entity);
+		$set = $this->create_set($entity, $this->root);
+
+		// Switch active command to current command :
 		$this->active_command = $this->root;
 	}
 
 	// Creates a with command :
 	public function with($src_set, $relationship, &$trg_set = null) {
-		// Check src_set existence among sets of current query :
-		if ( ! in_array($src_set, $this->sets))
-			throw new Kohana_Exception("Unknown set given as source of with command.");
+		// Get parent command of $src_set :
+		$parent_command = $this->get_set_parent($src_set);
+
+		// Get target entity :
+		$trg_entity = $parent_command->trg_entity();
 		
 		// Create trg_set and command :
-		$relationship	= $src_set->entity->relationship($relationship);
-		$trg_set		= $this->create_set($relationship->to());
-		$command		= new Glue_Command_With($relationship, $src_set, $trg_set);
-		$this->active_command	= $command;
+		$relationship = $trg_entity->relationship($relationship);
+		$command = new Glue_Command_With($relationship, $src_set);
+		$trg_set = $this->create_set($trg_entity, $command);
+		$parent_command->add_child($command);
+		
+		// Switch active command to current command :
+		$this->active_command = $command;
 
 		// Return query for chainability :
 		return $this;
 	}
 
-	// Creates a new set, adds it to cache, and returns it :
-	protected $set_number = 0;
-	protected function create_set($entity) {
-		$name = $entity->name() . ($this->set_number ++);
-		$set = new Glue_Set($name, $entity);
-		$this->sets[] = $set;
+	// Creates a new set, adds it to cache, and add it to its parent command :
+	protected function create_set($entity, $parent_command) {
+		// Get entity name :
+		$name = $entity->name();
+
+		// Increment set counter :
+		if ( ! isset($this->set_counters[$name]))
+			$this->set_counters[$name] = 0;
+		else
+			$this->set_counters[$name] ++;
+
+		// Create set :
+		$set = new Glue_Set($name . '_' . $this->set_counters[$name]);
+
+		// Register set :
+		$this->sets[spl_object_hash($set)] = $parent_command;
+
+		// Add set to command tree :
+		$parent_command->set_trg_set($set);
+
 		return $set;
+	}
+
+	protected function get_set_parent($set) {
+		// Check set existence :
+		$hash = spl_object_hash($set);
+		if ( ! isset($this->sets[$hash]))
+			throw new Kohana_Exception("Unknown set given as source of with command.");
+
+		// Return parent command :
+		return $this->sets[$hash];
 	}
 
 	// Init execution cascade :

@@ -3,9 +3,13 @@
 class Glue_Command_Load extends Glue_Command {
 	protected $entity;
 
-	public function  __construct($entity, $trg_set) {
-		parent::__construct($trg_set);
+	public function  __construct($entity) {
+		parent::__construct();
 		$this->entity = $entity;
+	}
+
+	public function trg_entity() {
+		return $this->entity;
 	}
 
 	protected function query_exec($parameters)	{
@@ -17,8 +21,8 @@ class Glue_Command_Load extends Glue_Command {
 		parent::query_contrib($query, $is_root);
 
 		// Entities and aliases :
-		$trg_entity = $this->trg_set->entity;
-		$trg_alias	= $this->trg_set->name;
+		$trg_entity = $this->trg_entity();
+		$trg_alias	= $this->trg_set->name();
 
 		// From :
 		$trg_entity->query_from($query, $trg_alias);
@@ -35,12 +39,10 @@ class Glue_Command_Load extends Glue_Command {
 		// Add title :
 		$title = 'Load set(s) ';
 		foreach($this->get_chain() as $command)
-			$sets[] = $command->trg_set->name;
+			$sets[] = $command->trg_set->name();
 		$title .= implode(', ', $sets);
 		$view->set('title', $title);
 
 		return $view;
 	}
-	
-	protected function load_relationships($result) {}
 }

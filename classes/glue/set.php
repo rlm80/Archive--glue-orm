@@ -18,13 +18,62 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 		$this->entity	= $entity;
 	}
 
-	public function sort($sort) {
-		$this->sort = $sort;
-		$this->do_sort();
+	// Sorts the objects according to current sort criteria.
+	public function dosort() {
+		if (isset($this->sort))
+			usort($this->objects, array($this, 'cmp'));
+
+		return $this;
 	}
+
+	// Sets current sort criteria and sorts the objects.
+	public function sort($criteria) {
+		// Parse sort clause and set current sort :
+		$this->sort = array();
+		$criteria = preg_replace('/\s+/', ' ', $criteria);
+		$criteria = explode(',', $criteria);
+		foreach($criteria as $c) {
+			$parts	= explode(' ', trim($c));
+			$field	= $parts[0];
+			$order	= ((! isset($parts[1])) || strtolower(substr($parts[1], 0, 1)) === 'a') ? +1 : -1;
+			$this->sort[$field] = $order;
+		}
+
+		// Sort objects :
+		$this->dosort();
+
+		return $this;
+	}
+
+	// Compares two objects according to current sort criteria.
+	protected function cmp($a, $b) {
+        foreach($this->sort as $field => $order) {
+			// Get values of $field :
+			$vala = $a->glue_get($field);
+			$valb = $b->glue_get($field);
+
+			// Compare field for $a with $b :
+			if ($vala < $valb)
+				$cmp = -1;
+			elseif ($vala > $valb)
+				$cmp = +1;
+			else
+				$cmp = 0;
+
+			// Change sign according to $order :
+			$cmp *= $order;
+
+			// $a <> $b ? It's over.
+            if ($cmp !== 0) return $cmp;
+        }
+		
+        return 0;
+    }
 
 	public function delete() {
 		$this->entity->object_delete($this->objects);
+		
+		return $this;
 	}
 
 	public function update() {
@@ -38,16 +87,13 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 				$fields = $args[0];
 		}
 		$this->entity->update($this->objects, $fields);
-	}
-	
-	protected function do_sort() {
-		if (isset($this->sort))
-			$this->entity->sort($this->objects, $this->sort);
+
+		return $this;
 	}
 
 	public function set_objects($objects) {
 		$this->objects = $objects;
-		$this->do_sort();
+		$this->dosort();
 	}
 
 	public function entity() {

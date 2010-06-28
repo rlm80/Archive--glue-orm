@@ -294,7 +294,7 @@ class Glue_Entity {
 		$objects = array();
 		foreach(array_flip($indexes) as $index => $pk)
 			$objects[$index] = $this->map[$pk];
-		call_user_func(array($this->proxy_class_name(), 'glue_set'), $objects, $rows, $mapping);
+		call_user_func(array($this->proxy_class_name(), 'glue_db_set'), $objects, $rows, $mapping);
 
 		// Load objects into result set :
 		$distinct = array();
@@ -317,7 +317,7 @@ class Glue_Entity {
 		$object = clone $this->get_pattern();
 
 		// Set object properties :
-		call_user_func(array($this->proxy_class_name(), 'glue_set'), array($object), array($array), array_combine(array_keys($array), array_keys($array)));
+		call_user_func(array($this->proxy_class_name(), 'glue_db_set'), array($object), array($array), array_combine(array_keys($array), array_keys($array)));
 
 		return $object;
 	}
@@ -343,39 +343,6 @@ class Glue_Entity {
 		else
 			return call_user_func(array($this->proxy_class_name(), 'glue_pk'), $objects);
 	}
-
-	// Sorts an array of objects according to sort criteria.
-	public function sort(&$objects, $clause) {
-		// Parse sort clause and set current sort :
-		$this->sort = array();
-		$clause = preg_replace('/\s+/', ' ', $clause);
-		$clause = explode(',', $clause);
-		foreach($clause as $c) {
-			$parts	= explode(' ', trim($c));
-			$sort	= $this->properties[$parts[0]];
-			$order	= ((! isset($parts[1])) || strtolower(substr($parts[1], 0, 1)) === 'a') ? +1 : -1;
-			$this->sort[$sort] = $order;
-		}
-
-		// Sort objects :
-		usort($objects, array($this, 'object_multi_cmp'));
-	}
-
-	// Compares two objects according to current sort criteria.
-	private function object_multi_cmp($a, $b) {
-        foreach($this->sort as $sort => $order) {
-			$cmp = $this->object_cmp($sort, $a, $b) * $order;
-            if ($cmp !== 0) return $cmp;
-        }
-        return 0;
-    }
-
-	// Compares two objects according to given sort criteria.
-	protected function object_cmp($sort, $a, $b) {
-		if ($a->$sort < $b->$sort) return -1;
-		if ($a->$sort > $b->$sort) return +1;
-		return 0;
-    }
 
 	public function object_delete($objects) {
 		// No objects ? Do nothing :

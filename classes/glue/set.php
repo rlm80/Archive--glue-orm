@@ -1,17 +1,8 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 /**
- * @package    Glue
- * @author     Régis Lemaigre
- * @license    MIT
- */
-
-/*
- * A common feature of all Glue queries is the need for defining and retrieving sets
- * of entity instances. For example the query :
- * glue::load('users u')->with('u.postS p')->execute()
- * defines two sets :
- * - 'u' : set of users,
- * - 'p' : set of all posts related to users in u by the relationship 'postS'.
+ * @package	Glue
+ * @author	Régis Lemaigre
+ * @license	MIT
  */
 
 class Glue_Set implements Iterator, Countable, ArrayAccess {

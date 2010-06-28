@@ -57,7 +57,7 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	}
 
 	// Set values coming from the database :
-	static public function glue_set($objects, $values, $mapping) {
+	static public function glue_db_set($objects, $values, $mapping) {
 		foreach($objects as $key => $obj) {
 			if (isset($values[$key])) {
 				$vals = $values[$key];
@@ -88,6 +88,18 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 
 	// Entity mapper :
 	public static function glue_entity() { return glue::entity(self::$glue_entity); }
+
+	// Getter :
+	public function glue_get($field, $is_field = true) {
+		$prop = $is_field ? self::$glue_properties[$field] : $field;
+		return $this->$prop;
+	}
+
+	// Setter :
+	public function glue_set($field, $value, $is_field = true) {
+		$prop = $is_field ? self::$glue_properties[$field] : $field;
+		$this->$prop = $value;
+	}	
 
 	// Active Record features :
 	public function delete() { return self::glue_entity()->delete($this); }

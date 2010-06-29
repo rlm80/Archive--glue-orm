@@ -113,11 +113,17 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 		if (isset($obj_vars[$var]))
 			trigger_error("Cannot access protected property <?php echo $model_class ?>::".'$'."$var", E_USER_ERROR);
 
-		// Lazy loading of $var :
-		if ($field = array_search($var, self::$glue_properties))
-			self::glue_entity()->proxy_load_field($this, $field);
-		else
-			self::glue_entity()->proxy_load_relationship($this, $var);
+		$from_parent = parent::__get($var);
+		if (isset($from_parent)) {
+			$this->$var = $from_parent;
+		}
+		else {
+			// Lazy loading of $var :
+			if ($field = array_search($var, self::$glue_properties))
+				self::glue_entity()->proxy_load_field($this, $field);
+			else
+				self::glue_entity()->proxy_load_relationship($this, $var);
+		}
 			
 		return $this->$var;
 	}

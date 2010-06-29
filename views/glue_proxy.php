@@ -112,21 +112,20 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 		$obj_vars = get_object_vars($this);
 		if (isset($obj_vars[$var]))
 			trigger_error("Cannot access protected property <?php echo $model_class ?>::".'$'."$var", E_USER_ERROR);
-
+		
+		// __get in parent has an answer to this call ? Return that answer.
 		if (method_exists(get_parent_class($this), '__get')) {
 			$from_parent = parent::__get($var);
+			if (isset($from_parent))
+				return $from_parent;
 		}
-		if (isset($from_parent)) {
-			$this->$var = $from_parent;
-		}
-		else {
-			// Lazy loading of $var :
-			if ($field = array_search($var, self::$glue_properties))
-				self::glue_entity()->proxy_load_field($this, $field);
-			else
-				self::glue_entity()->proxy_load_relationship($this, $var);
-		}
-			
+
+		// Lazy loading of $var :
+		if ($field = array_search($var, self::$glue_properties))
+			self::glue_entity()->proxy_load_field($this, $field);
+		else
+			self::glue_entity()->proxy_load_relationship($this, $var);
+		
 		return $this->$var;
 	}
 }

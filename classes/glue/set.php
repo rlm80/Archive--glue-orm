@@ -10,7 +10,7 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 	protected $sort;
 	protected $objects = array();
 
-	public function  __construct($name) {
+	public function  __construct($name = null) {
 		$this->name	= $name;
 	}
 
@@ -94,6 +94,8 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 	public function set_objects($objects) {
 		$this->objects = $objects;
 		$this->dosort();
+
+		return $this;
 	}
 
 	public function as_array() {

@@ -113,7 +113,9 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 		if (isset($obj_vars[$var]))
 			trigger_error("Cannot access protected property <?php echo $model_class ?>::".'$'."$var", E_USER_ERROR);
 
-		$from_parent = parent::__get($var);
+		if (method_exists(array(get_parent_class(), '__get'))) {
+			$from_parent = parent::__get($var);
+		}
 		if (isset($from_parent)) {
 			$this->$var = $from_parent;
 		}

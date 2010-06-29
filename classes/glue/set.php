@@ -1,5 +1,8 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
+
 /**
+ * Sets maintain an sorted, distinct list of objects.
+ *
  * @package	Glue
  * @author	Régis Lemaigre
  * @license	MIT
@@ -8,21 +11,59 @@
 class Glue_Set implements Iterator, Countable, ArrayAccess {
 	protected $name;
 	protected $sort;
-	protected $objects = array();
+	protected $objects	= array();
+	protected $hashes	= array();
 
 	public function  __construct($name = null) {
 		$this->name	= $name;
 	}
 
+	// Getter for name :
 	public function name() {
 		return $this->name;
 	}
 
+	// Reset objects :
+	public function reset() {
+		// Load objects :
+		$args = func_get_args();
+		if (count($args) > 0) {
+			$this->hashes = self::reduce($args);
+			$this->objects = array_values($this->hashes);
+		}
+		else {
+			$this->hashes = array();
+			$this->objects = array();
+		}
+
+		// Apply sort :
+		$this->dosort();
+
+		// Return $this for chainability :
+		return $this;
+	}
+
+	public function add() {
+		// Add objects :
+		$args = func_get_args();
+		$hashes = self::reduce($args);
+		//...
+
+		// Return $this for chainability :
+		return $this;
+	}
+
+	public function as_array() {
+		return $this->objects;
+	}
+
 	// Sorts the objects according to current sort criteria.
 	public function dosort() {
+		// Do sort :
 		if (isset($this->sort))
 			usort($this->objects, array($this, 'cmp'));
 
+		// Return $this for chainability :
 		return $this;
 	}
 
@@ -42,6 +83,7 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 		// Sort objects :
 		$this->dosort();
 
+		// Return $this for chainability :
 		return $this;
 	}
 
@@ -73,6 +115,7 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 	public function delete() {
 		$this->entity->object_delete($this->objects);
 		
+		// Return $this for chainability :
 		return $this;
 	}
 
@@ -88,18 +131,8 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 		}
 		$this->entity->update($this->objects, $fields);
 
+		// Return $this for chainability :
 		return $this;
-	}
-
-	public function set_objects($objects) {
-		$this->objects = $objects;
-		$this->dosort();
-
-		return $this;
-	}
-
-	public function as_array() {
-		return $this->objects;
 	}
 
 	public function debug() {
@@ -109,6 +142,21 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 		return View::factory('glue_set')
 			->set('name', $this->name)
 			->set('entity', $entity_name);
+	}
+
+	protected static function reduce($array) {
+		$hashes = array();
+		foreach ($array as $item) {
+			if ($item instanceof Glue_Set)
+				$hashes = array_merge($hashes, $item->hashes);
+			elseif (is_object($item))
+				$hashes[spl_object_hash($item)] = $item;
+			elseif (is_array($item))
+				$hashes = array_merge($hashes, self::reduce($item));
+			else
+				throw new Kohana_Exception("Unexpected item encountered while creating a set of objects.");
+		}
+		return $hashes;
 	}
 
 	// Iterator, Countable :

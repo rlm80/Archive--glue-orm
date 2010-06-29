@@ -96,7 +96,7 @@ abstract class Glue_Command {
 
 	protected function load_result_self(&$result) {
 		$objects = $this->trg_entity()->object_load($result, $this->trg_set->name().':');
-		$this->trg_set->set_objects($objects);
+		$this->trg_set->reset($objects);
 	}
 
 	protected function get_chain() {

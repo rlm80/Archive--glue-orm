@@ -2,7 +2,12 @@
 
 /**
  * Sets maintain a numerically indexed (from 0 to max without holes), sorted,
- * distinct list of objects.
+ * distinct list of object references.
+ 
+ * Note : the idea for this to be done efficiently is to always delay sorting
+ *        and reindexing to the last possible time (that is, when the collection
+ *        of objects is actually accessed) instead of doing it everytime the
+ *        set is modified.
  *
  * @package	Glue
  * @author	Régis Lemaigre
@@ -13,25 +18,37 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 	protected $name;					// Optional name of this set
 	protected $criteria;				// Current sort criteria (e.g. 'price DESC, date ASC')
 	protected $sort;					// Parsed sort criteria	used internally
-	protected $objects	= array();		// Numerically indexed objects
-	protected $hashes	= array();		// Mapping object hashes => indexes
+	protected $objects	= array();		// Objects currently in the set, indexed by hash. 
+	protected $sorted	= true;			// Whether or not $this->objects is sorted according to current sort criteria.
+	protected $indexes	= array();		// Same content as $this->objects and ordered in the same way, but numerically
+										// indexed from 0 to max.
+	protected $indexed	= true;			// Whether or not $this->indexes is currently in sync with $this->objects
+										// and correctly indexed.
 
-	// Constructor. Consider using glue::set() instead, as it is chainable.
+	// Consider using glue::set() instead, as it is chainable.
 	public function  __construct($name = null) {
 		$this->name	= $name;
 	}
+	
+	// Getter for name :
+	public function name() {
+		return $this->name;
+	}	
 
-	// Sets current sort criteria and sorts the objects.
-	public function sort($criteria = null, $must_sort = true) {
-		// Set current sort criteria :
-		$this->criteria	= $criteria;
-
-		// Set sort :
-		if (empty($this->criteria)) {
-			// Empty criteria ? Remove sort :
-			$this->sort = null;
+	// Sets current sort criteria.
+	public function sort($criteria = null) {
+		if (empty($criteria)) {
+			// No criteria ? Remove sort :
+			$this->criteria	= null;
+			$this->sort		= null;
+			
+			// Signal sorted :
+			$this->sorted = true;
 		}
 		else {
+			// Set criteria :
+			$this->criteria = $criteria;
+			
 			// Parse criteria and set current sort :
 			$this->sort = array();
 			$criteria = preg_replace('/\s+/', ' ', $criteria);
@@ -43,8 +60,8 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 				$this->sort[$field] = $order;
 			}
 
-			// Sort objects :
-			if ($must_sort) $this->dosort();
+			// Signal not sorted :
+			$this->sorted = false;
 		}
 
 		// Return $this for chainability :
@@ -56,122 +73,114 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 		return $this->criteria;
 	}
 
-	// Remove current sort criteria and return current sort criteria before reset.
-	public function unsort() {
-		$criteria = $this->criteria;
-		$this->sort();
-		return $criteria;
+	// Replaces current set of objects with the ones passed as parameter(s).
+	public function set() {
+		$args = func_get_args();
+		if (count($args) === 0) {
+			// Reset :
+			$this->objects	= array();
+			$this->indexes	= array();
+			
+			// Signal sorted and indexed :
+			$this->sorted	= true;
+			$this->indexed	= true;
+		}
+		else {			
+			// Set objects :
+			$this->objects = self::reduce($args);
+
+			// Signal not sorted and not indexed :
+			$this->sorted	= isset($this->sort) ? false : true;
+			$this->indexed	= false;
+		}
+
+		// Return $this for chainability :
+		return $this;
 	}
 
-	// Replaces current set of objects with the ones passed as parameter(s). Unicity,
-	// ordering and proper indexing (0 to max without holes) are enforced automatically.
-	public function set() {
-		// Reset :
-		$this->objects	= array();
-		$this->hashes	= array();
-
-		// Load objects :
+	// Adds objects passed as parameter(s) to current list of objects.
+	public function add() {
 		$args = func_get_args();
 		if (count($args) > 0) {
-			// Add objects
+			// Get hash => object mapping of objects to be added :
 			$hashes = self::reduce($args);
-			foreach($hashes as $hash => $object)
-				$this->objects[] = array('hash' => $hash, 'object' => $object);
 
-			// Rebuild hashes => indexes mapping :
-			$this->rebuild_hashes();
+			// Remove objects already in the set :
+			$hashes = array_diff_key($hashes, $this->objects);
+
+			// Add new objects to set :
+			foreach($hashes as $hash => $object) {
+				$this->objects[$hash] = $object;
+				if ($this->indexed) $this->indexes[] = $object;
+			}
+
+			// Signal not sorted :
+			$this->sorted = isset($this->sort) ? false : true;
 		}
-
-		// Apply sort :
-		$this->dosort();
 
 		// Return $this for chainability :
 		return $this;
 	}
 
-	// Adds objects passed as parameter(s) to current list of objects. Unicity,
-	// ordering and proper indexing (0 to max without holes) are enforced automatically.
-	public function add() {
-		// Get hash => object mapping of objects to be added :
-		$args = func_get_args();
-		$hashes = self::reduce($args);
-
-		// Remove objects already in the set :
-		$hashes = array_diff_key($hashes, $this->hashes);
-
-		// Add objects to set :
-		$index = count($this->objects);
-		foreach($hashes as $hash => $object) {
-			$this->objects[] = array('hash' => $hash, 'object' => $object);
-			$this->hashes[$hash] = $index;
-			$index ++;
-		}
-
-		// Apply sort :
-		$this->dosort();
-
-		// Return $this for chainability :
-		return $this;
-	}
-
-	// Removes objects passed as parameter(s) from current list of objects. Unicity,
-	// ordering and proper indexing (0 to max without holes) are enforced automatically.
+	// Removes objects passed as parameter(s) from current list of objects.
 	public function remove() {
-		// Get hash => object mapping of objects to be removed :
 		$args = func_get_args();
-		$hashes = self::reduce($args);
+		if (count($args) > 0) {
+			// Get hash => object mapping of objects to be removed :
+			$hashes = self::reduce($args);
 
-		// Remove objects :
-		$indexes = array_flip(array_intersect_key($this->hashes, $hashes));
-		$this->objects = array_diff_key($this->objects, $indexes);
+			// Keep only objects that actually belong to the set :
+			$hashes = array_intersect_key($hashes, $this->objects);
+			
+			// Remove objects :
+			foreach($hashes as $hash => $object)
+				unset($this->objects[$hash]);
 
-		// Reindex objects :
-		$this->objects = array_values($this->objects);
-
-		// Rebuild hashes => indexes mapping :
-		$this->rebuild_hashes();
+			// Signal not indexed :
+			$this->indexed = false;
+		}
 
 		// Return $this for chainability :
 		return $this;
 	}
-
+	
 	// Whether or not current set contains object $object.
 	public function has($object) {
-		return isset($this->hashes[spl_object_hash($object)]);
+		return isset($this->objects[spl_object_hash($object)]);
 	}
 
-	// Returns set content as a numerically indexed array, preserving the current ordering of objects :
+	// Returns set content as a numerically indexed array, preserving the current ordering of objects.
 	public function as_array() {
-		$array = array();
-		foreach($this->objects as $index => $data)
-			$array[] = $data['object'];
-		return $array;
+		if ( ! $this->sorted)	$this->dosort();
+		if ( ! $this->indexed)	$this->reindex();
+		return $this->indexes;
 	}
 
-	// Returns an array indexed by entity names. Each item is an array containing
-	// all objects in the set belonging to the entity in the key, in the order
-	// they are encountered in the set.
-	public function as_array_by_entity() {
-		foreach($this->objects as $data) {
-			$obj = $data['object'];
+	// Returns an array indexed by entity names. Each item is a Glue_Set containing
+	// all objects in the current set belonging to the entity in the key.
+	public function entities() {
+		// Group objects by entity :
+		$entities = array();
+		foreach($this->objects as $obj)
 			$entities[$obj->glue_entity()->name()][] = $obj;
+		
+		// Turn arrays into sets :
+		$sets = array();
+		foreach($entities as $entity => $array) {
+			$set			= glue::set($array);
+			$set->criteria	= $this->criteria;
+			$set->sort		= $this->sort;
+			$set->sorted	= $this->sorted;
+			$sets[$entity]	= $set;
 		}
-		return $entities;
-	}
-
-	// Getter for name :
-	public function name() {
-		return $this->name;
+		
+		return $sets;
 	}
 
 	// Deletes objects in the set from the database.
 	public function delete() {
-		// Classify objects by entity :
-		$entities = $this->as_array_by_entity();
-
-		// Delete objects :
-		foreach($entities as $entity_name => $objects)
-			glue::entity($entity_name)->object_delete($objects);
+		foreach($this->entities() as $entity_name => $set)
+			glue::entity($entity_name)->object_delete($set);
 		
 		// Return $this for chainability :
 		return $this;
@@ -179,38 +188,43 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 
 	// Updates database for all objects in the set.
 	public function update() {
-		$args = func_get_args();
-		if ( ! isset($args[0]))
-			$fields = $this->entity->fields_all();
-		else {
-			if ( ! is_array($args[0]))
-				$fields = $args;
-			else
-				$fields = $args[0];
-		}
-		$this->entity->update($this->objects, $fields);
-
+		foreach($this->entities() as $entity_name => $set)
+			glue::entity($entity_name)->object_update($set);
+		
 		// Return $this for chainability :
 		return $this;
 	}
+	
+	// Updates database for all objects in the set.
+	public function insert() {
+		foreach($this->entities() as $entity_name => $set)
+			glue::entity($entity_name)->object_insert($set);
+		
+		// Return $this for chainability :
+		return $this;
+	}	
 
 	// Sorts the objects according to current sort criteria if there is any.
 	protected function dosort() {
 		if (isset($this->sort)) {
-			// Sort :
-			usort($this->objects, array($this, 'compare'));
-
-			// Rebuild hashes => indexes mapping :
-			$this->rebuild_hashes();
-		}
+			uasort($this->objects, array($this, 'compare'));
+			$this->indexed = false;
+		}	
+		$this->sorted = true;
 	}
+	
+	// Rebuild indexes array :
+	protected function reindex() {
+		$this->indexes = array_values($this->objects);
+		$this->indexed = true;
+	}	
 
 	// Compares two objects according to current sort criteria.
 	protected function compare($a, $b) {
         foreach($this->sort as $field => $order) {
 			// Get values of $field :
-			$vala = method_exists($a, 'glue_get') ? $a['object']->glue_get($field) : $a['object']->$field;
-			$valb = method_exists($b, 'glue_get') ? $b['object']->glue_get($field) : $b['object']->$field;
+			$vala = method_exists($a, 'glue_get') ? $a->glue_get($field) : $a->$field;
+			$valb = method_exists($b, 'glue_get') ? $b->glue_get($field) : $b->$field;
 
 			// Compare field value in $a and $b :
 			if ($vala < $valb)
@@ -230,26 +244,19 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
         return 0;
     }
 
-	// Rebuild hashes => index mapping from $objects array :
-	protected function rebuild_hashes() {
-		$this->hashes = array();
-		foreach($this->objects as $index => $data)
-			$this->hashes[$data['hash']] = $index;
-	}
-
 	protected static function reduce($array) {
-		$hashes = array();
+		$objects = array();
 		foreach ($array as $item) {
 			if ($item instanceof Glue_Set)
-				$hashes = array_merge($hashes, $item->hashes);
+				$objects = array_merge($objects, $item->objects);
 			elseif (is_object($item))
-				$hashes[spl_object_hash($item)] = $item;
+				$objects[spl_object_hash($item)] = $item;
 			elseif (is_array($item))
-				$hashes = array_merge($hashes, self::reduce($item));
+				$objects = array_merge($objects, self::reduce($item));
 			else
 				throw new Kohana_Exception("Unexpected item encountered while creating a set of objects.");
 		}
-		return $hashes;
+		return $objects;
 	}
 
 	public function debug() {
@@ -261,20 +268,22 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 			->set('entity', $entity_name);
 	}
 
-	// Iterator, Countable :
+	// Iterator, Countable, ArrayAccess :
 	public function rewind() {
+		if ( ! $this->sorted) $this->dosort();
 		reset($this->objects);
 	}
     public function current() {
-		$data = current($this->objects);
-		return $data['object'];
+		if ( ! $this->sorted) $this->dosort();
+		return current($this->objects);
 	}
     public function key() {
+		if (! $this->sorted) $this->dosort();
 		return key($this->objects);
 	}
     public function next() {
-		$data = next($this->objects);
-		return $data['object'];
+		if ( ! $this->sorted) $this->dosort();
+		return next($this->objects);
 	}
     public function valid() {
 		return $this->current() !== false;
@@ -283,28 +292,20 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 		return count($this->objects);
 	}
     public function offsetExists($offset) {
-		return isset($this->objects[$offset]);
+		if ( ! $this->sorted)	$this->dosort();
+		if ( ! $this->indexed)	$this->reindex();
+		return isset($this->indexes[$offset]);
 	}
     public function offsetGet($offset) {
-		return isset($this->objects[$offset]) ? $this->objects[$offset]['object'] : null;
+		if ( ! $this->sorted)	$this->dosort();
+		if ( ! $this->indexed)	$this->reindex();
+		return isset($this->indexes[$offset]) ? $this->indexes[$offset] : null;
 	}
 	public function offsetSet($offset, $value) {
-		throw new Kohana_Exception("You may only use add, remove and reset to modify the content of a set.");
+		if ( ! isset($offset)) $this->add($value);
+		throw new Kohana_Exception("You may only use add, remove, set and the [] operator without parameter to modify the content of a set.");
 	}
 	public function offsetUnset($offset) {
-		throw new Kohana_Exception("You may only use add, remove and reset to modify the content of a set.");
-	}
-
-	// Chainable constructor :
-	static public function factory() {
-		// Get hash => object mapping of objects :
-		$args = func_get_args();
-		$hashes = self::reduce($args);
-
-		// Create set :
-		$set = new self;
-		$set->set($hashes);
-
-		return $set;
+		throw new Kohana_Exception("You may only use add, remove, set and the [] operator without parameter to modify the content of a set.");
 	}
 }

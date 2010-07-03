@@ -42,9 +42,10 @@ class Glue {
 		return new Glue_Param_Bound($var);
 	}
 
-	public static function set($entity_name, $objects = array()) {
-		$set = new Glue_Set('', glue::entity($entity_name));
-		$set->set_objects($objects);
+	public static function set() {
+		$args	= func_get_args();
+		$set	= new Glue_Set;
+		if (count($args) > 0) $set->set($args);
 		return $set;
 	}
 

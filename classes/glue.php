@@ -8,30 +8,31 @@
 class Glue {
 	public static function create($entity_name, $array) {
 		return glue::entity($entity_name)->create($array);
+	}	
+
+	public static function select($entity_name, &$set, $conditions = null, $order_by = null, $limit = null, $offset = null) {
+		// Init query :
+		$query = new Glue_Query_Select($entity_name, $set);
+		
+		// Add conditions if any :
+		self::add_conditions($query, $conditions);
+		
+		// Add order by, limit, offset if any :
+		if (isset($order_by))	$query->order_by($order_by);
+		if (isset($limit))		$query->limit($limit);
+		if (isset($offset))		$query->offset($offset);
+				
+		return $query;
 	}
 
-	public static function select($entity_name, $conditions = array(), $order_by = null, $limit = null, $offset = null) {
-		return glue::entity($entity_name)->select($conditions, $order_by, $limit, $offset);
-	}
-
-	public static function delete($entity_name, $conditions = null) {
-		return glue::entity($entity_name)->delete($conditions);
-	}		
-
-	public static function insert($entity_name, $objects) {
-		glue::entity($entity_name)->insert($objects);
-	}
-
-	public static function update($entity_name, $objects, $fields = null) {
-		glue::entity($entity_name)->update($objects, $fields);
-	}
-
-	public static function qselect($entity_name, &$set) {
-		return new Glue_Query_Select($entity_name, $set);
-	}
-
-	public static function qdelete($entity_name, &$set) {
-		return new Glue_Query_Delete($entity_name, $set);
+	public static function delete($entity_name, &$set, $conditions = null) {
+		// Init query :
+		$query = new Glue_Query_Delete($entity_name, $set);
+		
+		// Add conditions if any :
+		self::add_conditions($query, $conditions);		
+		
+		return $query;		
 	}
 
 	public static function param($name) {
@@ -68,4 +69,25 @@ class Glue {
 		if(preg_match("/^Glue_Proxy_(.*)$/", $class, $matches) > 0)
 			glue::entity($matches[1])->proxy_load_class();
 	}
+	
+	protected static function add_conditions($query, $conditions) {
+		if ( ! empty($conditions)) {
+			// PK given ?
+			if ( ! is_array($conditions)) {
+				$pk = glue::entity($entity_name)->pk();
+				if (count($pk) > 1)
+					throw new Kohana_Exception("Scalar value used for multiple columns pk.");
+				else
+					$conditions = array($pk[0] => $conditions);
+			}
+			
+			// Add conditions :			
+			foreach($conditions as $field => $value) {
+				if (is_array($value))
+					$query->where($field, 'IN', $value);
+				else
+					$query->where($field, '=', $value);
+			}
+		}
+	}	
 }

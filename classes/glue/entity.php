@@ -335,21 +335,22 @@ class Glue_Entity {
 	}
 
 	// Returns an associative array with pk field names and values.
-	public function object_pk($objects) {
-		if ( ! is_array($objects)) {
-			$pks = call_user_func(array($this->proxy_class_name(), 'glue_pk'), array($objects));
+	public function object_pk($set) {
+		if ($set instanceof Glue_Set)
+			return call_user_func(array($this->proxy_class_name(), 'glue_pk'), $set);
+		else {
+			$pks = call_user_func(array($this->proxy_class_name(), 'glue_pk'), array($set));
 			return end($pks);
 		}
-		else
-			return call_user_func(array($this->proxy_class_name(), 'glue_pk'), $objects);
 	}
 
-	public function object_delete($objects) {
+	// Deletes all the database representations of the given objects.
+	public function object_delete($set) {
 		// No objects ? Do nothing :
-		if (count($objects) === 0) return;
+		if (count($set) === 0) return;
 
 		// Get pk values :
-		$pkvals = $this->object_pk($objects);
+		$pkvals = $this->object_pk($set);
 
 		// Delete rows, table by table :
 		foreach($this->tables as $table) {
@@ -374,47 +375,11 @@ class Glue_Entity {
 			}
 		} 
 	}
-
-	public function delete($arg = null) {
-		// No param given :
-		if ( ! isset($arg)) {
-			$this->select()->delete();
-			return;
-		}
-
-		// Object given :
-		if (is_object($arg)) {
-			if ($arg instanceof Glue_Set)
-				$arg->delete();
-			else
-				$this->object_delete(array($arg));
-			return;
-		}
-
-		// Array given :
-		if (is_array($arg)) {
-			if (count($arg) !== 0) {
-				if (isset($arg[0]) && is_object($arg[0]))
-					$this->object_delete($arg);
-				else
-					$this->select($arg)->delete();
-			}
-			return;
-		}
-		
-		// Scalar given :
-		$this->object_delete(array($this->select($arg)));
-	}
-
-	public function insert($objects) {
-		// Glue_Set given ? Get array of objects :
-		if ($objects instanceof Glue_Set) $objects = $objects->as_array();
 	
-		// Object given ? Wrap it in an array :
-		if ( ! is_array($objects)) $objects = array($objects);
-
-		// No objects ? Do nothing :
-		if (count($objects) === 0) return;
+	// Insert into the database all objects of the given set.
+	public function object_insert($set) {
+		// Set is empty ? Do nothing :
+		if (count($set) === 0) return;
 
 		// Insert rows, table by table :
 		foreach($this->tables as $table) {
@@ -431,7 +396,7 @@ class Glue_Entity {
 			$query = DB::insert($table, array_keys($cp));
 
 			// Add values :
-			foreach($objects as $obj) {
+			foreach($set as $obj) {
 				$values = array();
 				foreach($cp as $column => $property)
 					$values[] = $obj->$property;
@@ -445,36 +410,21 @@ class Glue_Entity {
 			if ($this->autoincrement && $table === $this->tables[0]) {
 				$i = $result[0];
 				$p = $this->properties[$this->pk[0]];
-				foreach($objects as $obj) {
+				foreach($set as $obj) {
 					$obj->$p = $i;
 					$i++;
 				}
 			}
 		}
-	}
+	}	
+	
+	// Updates the database representations of all objects of the given set.
+	function object_update($set) {
+		// Set is empty ? Do nothing :
+		if (count($set) === 0) return;
 
-	function update($objects, $fields = null) {
-		// Glue_Set given ? Get array of objects :
-		if ($objects instanceof Glue_Set) $objects = $objects->as_array();
-
-		// Single object given ? Wrap it in an array :
-		if ( ! is_array($objects)) $objects = array($objects);
-
-		// No objects ? Do nothing :
-		if (count($objects) === 0) return;
-
-		// No fields given ? Default = all fields :
-		if ( ! isset($fields))
-			$fields = $this->fields_all();
-
-		// Single field given ? Wrap it in an array :
-		if ( ! is_array($fields)) $fields = array($fields);
-
-		// Remove pk :
-		$fields = array_diff($fields, $this->pk);
-
-		// Validate fields :
-		$this->fields_validate($fields);
+		// Default = all fields except pk (TODO change this)
+		$fields = array_diff($this->fields_all(), $this->pk);
 
 		// Build list of tables to be updated :
 		$tables = array();
@@ -493,7 +443,7 @@ class Glue_Entity {
 			 $query = DB::query(Database::UPDATE, $query->compile(Database::instance($this->db)));
 
 			// Loop on objects and update table :
-			foreach($objects as $obj) {
+			foreach($set as $obj) {
 				// Set pk values :
 				foreach($this->object_pk($obj) as $f => $val)
 					$query->param(':__'.$f, $val);
@@ -506,45 +456,7 @@ class Glue_Entity {
 				$query->execute($this->db);
 			}
 		}
-	}
-
-	public function select($conditions = array(), $order_by = null, $limit = null, $offset = null) {
-		// Init Glue query :
-		$q = glue::qselect($this->name, $result);
-
-		// Must return a set or a single object ?
-		$return_set = is_array($conditions);
-
-		// Single column Pk value passed ? Warp it in an array :
-		if ( ! is_array($conditions)) {
-			if (count($this->pk) > 1)
-				throw new Kohana_Exception("Only one value passed for multiple columns pk !");
-			$conditions = array($this->pk[0] => $conditions);
-		}
-
-		// Add conditions :
-		foreach ($conditions as $field => $value) {
-			if (is_array($value))
-				$q->where($field, 'IN', $value);
-			else
-				$q->where($field, '=', $value);
-		}
-
-		// Add sort, limit, offset :
-		if (isset($order_by))   $q->order_by($order_by);
-		if (isset($limit))		$q->limit($limit);
-		if (isset($offset))		$q->offset($offset);
-
-		// Execute query :
-		$q->execute();
-
-		// Return object, or set of objects :
-		if ($return_set)
-			return $result;
-		else
-			return isset($result[0]) ? $result[0] : null;
-			
-	}
+	}	
 
 	// Return relationship $name of this entity.
 	public function relationship($name) {

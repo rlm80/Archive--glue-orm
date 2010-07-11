@@ -34,18 +34,17 @@ abstract class Glue_Command {
 	protected $query;
 
 	// Constructor :
-	public function  __construct() {}
-
-	public function set_trg_set($trg_set) {
+	public function  __construct($trg_set) {
 		$this->trg_set = $trg_set;
 	}
 
-	abstract public function trg_entity();
-
-	public function add_child($command) {
-		$this->children[] = $command;
-		$command->parent = $this;
+	protected function trg_entity() {
+		return $trg_set->entity();
 	}
+	
+	protected function trg_alias() {
+		return $this->trg_set->name();
+	}	
 
 	public function execute($parameters) {
 		// Execute command subtree with current command as root :
@@ -54,27 +53,6 @@ abstract class Glue_Command {
 		// Cascade execution to next root commands :
 		foreach($this->get_roots() as $root)
 			$root->execute($parameters);
-	}
-
-	public function debug() {
-		// Prepare view with SQL :
-		$view = View::factory('glue_command_root');
-		$query = $this->query_get();
-		$view->set('sql', $query);
-
-		// Display all commands executed in SQL :
-		$views = array();
-		foreach($this->get_chain() as $command)
-			$views[] = $command->debug_self();
-		$view->set('commands', $views);
-
-		// Cascade debug to next root commands :
-		$views = array();
-		foreach($this->get_roots() as $root)
-			$views[] = $root->debug();
-		$view->set('roots', $views);
-
-		return $view;
 	}
 
 	protected function debug_self() {
@@ -95,8 +73,8 @@ abstract class Glue_Command {
 	}
 
 	protected function load_result_self(&$result) {
-		$objects = $this->trg_entity()->object_load($result, $this->trg_set->name().':');
-		$this->trg_set->reset($objects);
+		$objects = $this->trg_entity()->object_load($result, $this->trg_alias().':');
+		$this->trg_set->set($objects);
 	}
 
 	protected function get_chain() {
@@ -144,7 +122,7 @@ abstract class Glue_Command {
 	protected function query_contrib($query, $is_root) {
 		// Entities and aliases :
 		$trg_entity	= $this->trg_entity();
-		$trg_alias	= $this->trg_set->name();
+		$trg_alias	= $this->trg_alias();
 		
 		// trg fields :
 		if ( ! isset($this->fields))
@@ -240,6 +218,27 @@ abstract class Glue_Command {
 	public function offset($offset) {
 		$this->offset = $offset;
 	}
+	
+	public function debug() {
+		// Prepare view with SQL :
+		$view = View::factory('glue_command_root');
+		$query = $this->query_get();
+		$view->set('sql', $query);
+
+		// Display all commands executed in SQL :
+		$views = array();
+		foreach($this->get_chain() as $command)
+			$views[] = $command->debug_self();
+		$view->set('commands', $views);
+
+		// Cascade debug to next root commands :
+		$views = array();
+		foreach($this->get_roots() as $root)
+			$views[] = $root->debug();
+		$view->set('roots', $views);
+
+		return $view;
+	}	
 }
 
 

@@ -3,8 +3,8 @@
 class Glue_Command_Load extends Glue_Command {
 	protected $entity;
 
-	public function  __construct($entity) {
-		parent::__construct();
+	public function  __construct($entity, $trg_set) {
+		parent::__construct($trg_set);
 		$this->entity = $entity;
 	}
 

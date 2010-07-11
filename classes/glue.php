@@ -11,28 +11,11 @@ class Glue {
 	}	
 
 	public static function select($entity_name, &$set, $conditions = null, $order_by = null, $limit = null, $offset = null) {
-		// Init query :
-		$query = new Glue_Query_Select($entity_name, $set);
-		
-		// Add conditions if any :
-		self::add_conditions($query, $conditions);
-		
-		// Add order by, limit, offset if any :
-		if (isset($order_by))	$query->order_by($order_by);
-		if (isset($limit))		$query->limit($limit);
-		if (isset($offset))		$query->offset($offset);
-				
-		return $query;
+		return new Glue_Query_Select($entity_name, $set, $conditions, $order_by, $limit, $offset);
 	}
 
 	public static function delete($entity_name, &$set, $conditions = null) {
-		// Init query :
-		$query = new Glue_Query_Delete($entity_name, $set);
-		
-		// Add conditions if any :
-		self::add_conditions($query, $conditions);		
-		
-		return $query;		
+		return new Glue_Query_Delete($entity_name, $set, $conditions);		
 	}
 
 	public static function param($name) {
@@ -68,26 +51,5 @@ class Glue {
 	public static function auto_load($class) {
 		if(preg_match("/^Glue_Proxy_(.*)$/", $class, $matches) > 0)
 			glue::entity($matches[1])->proxy_load_class();
-	}
-	
-	protected static function add_conditions($query, $conditions) {
-		if ( ! empty($conditions)) {
-			// PK given ?
-			if ( ! is_array($conditions)) {
-				$pk = glue::entity($entity_name)->pk();
-				if (count($pk) > 1)
-					throw new Kohana_Exception("Scalar value used for multiple columns pk.");
-				else
-					$conditions = array($pk[0] => $conditions);
-			}
-			
-			// Add conditions :			
-			foreach($conditions as $field => $value) {
-				if (is_array($value))
-					$query->where($field, 'IN', $value);
-				else
-					$query->where($field, '=', $value);
-			}
-		}
 	}	
 }

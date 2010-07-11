@@ -8,13 +8,16 @@
 /*
  * Since several queries may be constructed at the same time, it doesn't work
  * to have the data related to those queries represented as static variables, or
- * properties of the Glue instance because the queries may "cross-polinate". We
+ * properties of the Glue instance because the queries may "cross-pollinate". We
  * need query objects to encapsulates all the execution environnement of each query.
  */
 
-class Glue_Query {	
+abstract class Glue_Query {
 	// Set cache :
 	protected $sets = array();
+	
+	// Sets counters :
+	protected $set_counters = array();	
 
 	// Query parameters
 	protected $params = array();
@@ -29,32 +32,65 @@ class Glue_Query {
 	// Param id counter :
 	protected $param_id = 0;
 
-	// Sets counters :
-	protected $set_counters = array();
-
 	// Constructor, creates a load command :
-	public function __construct($entity_name, &$set) {
-		$entity = glue::entity($entity_name);
-		$this->root = new Glue_Command_Load($entity);
-		$set = $this->create_set($entity, $this->root);
-
+	public function __construct($entity_name, &$set, $conditions) {
+		// Create target set :
+		$entity	= glue::entity($entity_name);
+		$set	= $this->create_set($entity);
+		
+		// Create command :
+		$command = new Glue_Command_Load($entity, $set);		
+		
+		// Register set :
+		$this->register_set($set, $this->root);
+		
+		// Set current command as root :
+		$this->root = $command;
+		
 		// Switch active command to current command :
-		$this->active_command = $this->root;
+		$this->active_command = $command;
+		
+		// Add conditions if any :
+		if ( ! empty($conditions)) {
+			// PK given ?
+			if ( ! is_array($conditions)) {
+				$pk = $entity->pk();
+				if (count($pk) > 1)
+					throw new Kohana_Exception("Scalar value used for multiple columns pk.");
+				else
+					$conditions = array($pk[0] => $conditions);
+			}
+			
+			// Add conditions :			
+			foreach($conditions as $field => $value) {
+				if (is_array($value))
+					$this->where($field, 'IN', $value);
+				else
+					$this->where($field, '=', $value);
+			}
+		}
 	}
 
 	// Creates a with command :
-	public function with($src_set, $relationship, &$trg_set = null) {
-		// Get parent command of $src_set :
-		$parent_command = $this->get_set_parent($src_set);
-
-		// Get target entity :
-		$trg_entity = $parent_command->trg_entity();
+	public function with($src_set, $relationship_name, &$trg_set = null) {
+		// Check source set existence in current query :
+		$hash = spl_object_hash($src_set);
+		if ( ! isset($this->sets[$hash]))
+			throw new Kohana_Exception("Unknown set given as source of with command.");
 		
-		// Create trg_set and command :
-		$relationship = $trg_entity->relationship($relationship);
-		$command = new Glue_Command_With($relationship, $src_set);
-		$trg_set = $this->create_set($trg_entity, $command);
-		$parent_command->add_child($command);
+		// Get parent command of $src_set :
+		$parent_command = $this->sets[$hash]['parent'];
+
+		// Create trg_set :
+		$relationship	= $src_set->entity()->relationship($relationship_name);
+		$entity 		= $relationship->to();
+		$trg_set		= $this->create_set($entity);
+		
+		// Create command :
+		$command = new Glue_Command_With($relationship, $src_set, $trg_set, $parent_command);
+		
+		// Register set :
+		$this->register_set($trg_set, $command);
 		
 		// Switch active command to current command :
 		$this->active_command = $command;
@@ -63,8 +99,8 @@ class Glue_Query {
 		return $this;
 	}
 
-	// Creates a new set, adds it to cache, and add it to its parent command :
-	protected function create_set($entity, $parent_command) {
+	// Creates a new set with a unique name that reflects the entity it belongs to :
+	protected function create_set($entity) {
 		// Get entity name :
 		$name = $entity->name();
 
@@ -75,25 +111,16 @@ class Glue_Query {
 			$this->set_counters[$name] ++;
 
 		// Create set :
-		$set = new Glue_Set($name . '_' . $this->set_counters[$name]);
-
-		// Register set :
-		$this->sets[spl_object_hash($set)] = $parent_command;
-
-		// Add set to command tree :
-		$parent_command->set_trg_set($set);
+		$set = new Glue_Set_Node($entity, $name . '_' . $this->set_counters[$name]);
 
 		return $set;
 	}
-
-	protected function get_set_parent($set) {
-		// Check set existence :
-		$hash = spl_object_hash($set);
-		if ( ! isset($this->sets[$hash]))
-			throw new Kohana_Exception("Unknown set given as source of with command.");
-
-		// Return parent command :
-		return $this->sets[$hash];
+	
+	protected function register_set($set, $parent_command) {
+		$this->sets[spl_object_hash($set)] = array(
+				'parent'	=> $parent_command,
+				'set'		=> $set
+			);
 	}
 
 	// Init execution cascade :

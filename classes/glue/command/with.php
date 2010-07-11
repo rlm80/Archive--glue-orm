@@ -8,30 +8,35 @@ class Glue_Command_With extends Glue_Command {
 
 	// Parent command :
 	protected $parent;
-
+	
+	// Relationship :
 	protected $relationship;
+	
+	// Source set :
 	protected $src_set;
 
 	// Root or slave command ?
 	protected $root;
 
-	public function  __construct($relationship, $src_set) {
-		parent::__construct();
+	public function  __construct($relationship, $src_set, $trg_set, $parent_command) {
+		parent::__construct($trg_set);
 		$this->root					= self::AUTO;
 		$this->relationship			= $relationship;
 		$this->src_set				= $src_set;
+		$parent_command->children[] = $this;
+		$this->parent				= $parent_command;
 	}
 
-	public function trg_entity() {
-		return $this->relationship->to();
+	protected function src_entity() {
+		return $this->src_set->entity();
 	}
-
-	public function src_entity() {
-		return $this->parent->trg_entity();
+	
+	protected function src_alias() {
+		return $this->src_set->name();
 	}
 
 	protected function load_result(&$result) {
-		$this->relationship->from()->object_load($result, $this->src_set->name().':');
+		$this->relationship->from()->object_load($result, $this->src_alias().':');
 		parent::load_result($result);
 	}
 
@@ -42,8 +47,8 @@ class Glue_Command_With extends Glue_Command {
 		// Load relationships :
 		$direct		= $this->relationship;
 		$reverse	= $this->relationship->reverse();
-		$src_key = $this->src_set->name().':__object';
-		$trg_key = $this->trg_set->name().':__object';
+		$src_key = $this->src_alias().':__object';
+		$trg_key = $this->trg_alias().':__object';
 		foreach($result as $row) {
 			$src_obj = isset($row[$src_key]) ? $row[$src_key] : null;
 			$trg_obj = isset($row[$trg_key]) ? $row[$trg_key] : null;
@@ -57,7 +62,7 @@ class Glue_Command_With extends Glue_Command {
 		$query		= $this->query_get()->parameters($parameters);
 		$entity		= $this->src_entity();
 		$pk			= $entity->pk();
-		$alias		= $this->src_set->name();
+		$alias		= $this->src_alias();
 		$objects	= $this->src_set->as_array();
 
 		// No objects ? No result :
@@ -93,8 +98,8 @@ class Glue_Command_With extends Glue_Command {
 		// Entities and aliases :
 		$src_entity	= $this->src_entity();
 		$trg_entity = $this->trg_entity();
-		$src_alias	= $this->src_set->name();
-		$trg_alias	= $this->trg_set->name();
+		$src_alias	= $this->src_alias();
+		$trg_alias	= $this->trg_alias();
 
 		// Root ? Must base query on src set :
 		if ($is_root) {
@@ -140,9 +145,9 @@ class Glue_Command_With extends Glue_Command {
 		$view = parent::debug();
 
 		// Add title :
-		$title = 'From set ' . $this->src_set->name() . ', load set(s) ';
+		$title = 'From set ' . $this->src_alias() . ', load set(s) ';
 		foreach($this->get_chain() as $command)
-			$sets[] = $command->trg_set->name();
+			$sets[] = $command->trg_alias();
 		$title .= implode(', ', $sets);
 		$view->set('title', $title);
 

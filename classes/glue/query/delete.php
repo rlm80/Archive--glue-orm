@@ -1,11 +1,11 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 class Glue_Query_Delete extends Glue_Query {
-	public function __construct($entity_name, &$set) {
-		parent::__construct($entity_name, $set);
+	public function __construct($entity_name, &$set, $conditions = null) {
+		parent::__construct($entity_name, $set, $conditions);
 
 		// Load only pk :
-		$this->active_command->select($set->entity()->pk());
+		$this->active_command->fields($set->entity()->pk());
 
 		return $this;
 	}
@@ -14,7 +14,7 @@ class Glue_Query_Delete extends Glue_Query {
 		parent::with($src_set, $relationship, $trg_set);
 
 		// Load only pk :
-		$this->active_command->select($trg_set->entity()->pk());
+		$this->active_command->fields($trg_set->entity()->pk());
 
 		return $this;
 	}
@@ -23,7 +23,7 @@ class Glue_Query_Delete extends Glue_Query {
 		parent::execute();
 
 		// Delete set contents :
-		foreach($this->sets as $set)
-			$set->delete();
+		foreach($this->sets as $hash => $data)
+			$data['set']->delete();
 	}
 }

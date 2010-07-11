@@ -10,12 +10,11 @@
  *        set is modified.
  *
  * @package	Glue
- * @author	RÃ©gis Lemaigre
+ * @author	Régis Lemaigre
  * @license	MIT
  */
 
 class Glue_Set implements Iterator, Countable, ArrayAccess {
-	protected $name;					// Optional name of this set
 	protected $criteria;				// Current sort criteria (e.g. 'price DESC, date ASC')
 	protected $sort;					// Parsed sort criteria	used internally
 	protected $objects	= array();		// Objects currently in the set, indexed by hash. 
@@ -24,16 +23,6 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 										// indexed from 0 to max.
 	protected $indexed	= true;			// Whether or not $this->indexes is currently in sync with $this->objects
 										// and correctly indexed.
-
-	// Consider using glue::set() instead, as it is chainable.
-	public function  __construct($name = null) {
-		$this->name	= $name;
-	}
-	
-	// Getter for name :
-	public function name() {
-		return $this->name;
-	}	
 
 	// Sets current sort criteria.
 	public function sort($criteria = null) {
@@ -257,15 +246,6 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 				throw new Kohana_Exception("Unexpected item encountered while creating a set of objects.");
 		}
 		return $objects;
-	}
-
-	public function debug() {
-		$parts = explode('_', $this->name);
-		array_pop($parts);
-		$entity_name = implode('_', $parts);
-		return View::factory('glue_set')
-			->set('name', $this->name)
-			->set('entity', $entity_name);
 	}
 
 	// Iterator, Countable, ArrayAccess :

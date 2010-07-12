@@ -38,13 +38,13 @@ abstract class Glue_Command {
 		$this->trg_set = $trg_set;
 	}
 
-	protected function trg_entity() {
-		return $trg_set->entity();
+	public function trg_entity() {
+		return $this->trg_set->entity();
 	}
-	
+
 	protected function trg_alias() {
 		return $this->trg_set->name();
-	}	
+	}
 
 	public function execute($parameters) {
 		// Execute command subtree with current command as root :
@@ -123,7 +123,7 @@ abstract class Glue_Command {
 		// Entities and aliases :
 		$trg_entity	= $this->trg_entity();
 		$trg_alias	= $this->trg_alias();
-		
+
 		// trg fields :
 		if ( ! isset($this->fields))
 			$this->fields = $trg_entity->fields_all();
@@ -218,7 +218,7 @@ abstract class Glue_Command {
 	public function offset($offset) {
 		$this->offset = $offset;
 	}
-	
+
 	public function debug() {
 		// Prepare view with SQL :
 		$view = View::factory('glue_command_root');
@@ -238,7 +238,7 @@ abstract class Glue_Command {
 		$view->set('roots', $views);
 
 		return $view;
-	}	
+	}
 }
 
 

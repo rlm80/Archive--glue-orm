@@ -1,99 +1,86 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
+
 /**
+ * Queries are objects that specify an object graph retrieval (or deletion) operation.
+ *
+ * They encapsulate all the parts required to define such an operation :
+ * - a command tree,
+ * - sets of objects that will hold the results,
+ * - parameters.
+ *
+ * Queries provide a fluent interface to conveniently assemble all of these parts.
+ *
  * @package    Glue
  * @author     Régis Lemaigre
  * @license    MIT
  */
 
-/*
- * Since several queries may be constructed at the same time, it doesn't work
- * to have the data related to those queries represented as static variables, or
- * properties of the Glue instance because the queries may "cross-pollinate". We
- * need query objects to encapsulates all the execution environnement of each query.
- */
-
 abstract class Glue_Query {
-	// Set cache :
+	// Sets :
 	protected $sets = array();
-	
-	// Sets counters :
-	protected $set_counters = array();	
+	protected $set_counters = array();
+	protected $root_set;
 
-	// Query parameters
+	// Parameters :
 	protected $params = array();
 	protected $bound_params = array();
-
-	// Root command :
-	protected $root;
-
-	// Last command :
-	protected $active_command;
-
-	// Param id counter :
 	protected $param_id = 0;
 
+	// Command :
+	protected $root_command;
+	protected $active_command;
+
 	// Constructor, creates a load command :
-	public function __construct($entity_name, &$set, $conditions) {
+	public function __construct($entity_name, &$set, $conditions = null, $order_by = null, $limit = null, $offset = null) {
 		// Create target set :
 		$entity	= glue::entity($entity_name);
 		$set	= $this->create_set($entity);
-		
+
 		// Create command :
-		$command = new Glue_Command_Load($entity, $set);		
-		
+		$command = new Glue_Command_Load($entity, $set);
+
 		// Register set :
-		$this->register_set($set, $this->root);
-		
-		// Set current command as root :
-		$this->root = $command;
-		
+		$this->register_set($set, $this->root_command);
+
+		// Set current command as root command :
+		$this->root_command = $command;
+
+		// Set current set as root set :
+		$this->root_set = $set;
+
 		// Switch active command to current command :
 		$this->active_command = $command;
-		
-		// Add conditions if any :
-		if ( ! empty($conditions)) {
-			// PK given ?
-			if ( ! is_array($conditions)) {
-				$pk = $entity->pk();
-				if (count($pk) > 1)
-					throw new Kohana_Exception("Scalar value used for multiple columns pk.");
-				else
-					$conditions = array($pk[0] => $conditions);
-			}
-			
-			// Add conditions :			
-			foreach($conditions as $field => $value) {
-				if (is_array($value))
-					$this->where($field, 'IN', $value);
-				else
-					$this->where($field, '=', $value);
-			}
-		}
+
+		// Add modifiers :
+		$this->add_modifiers($conditions, $order_by, $limit, $offset);
 	}
 
 	// Creates a with command :
-	public function with($src_set, $relationship_name, &$trg_set = null) {
+	public function with($src_set, $relationship_name, &$trg_set = null, $conditions = null, $order_by = null, $limit = null, $offset = null) {
 		// Check source set existence in current query :
 		$hash = spl_object_hash($src_set);
 		if ( ! isset($this->sets[$hash]))
 			throw new Kohana_Exception("Unknown set given as source of with command.");
-		
+
 		// Get parent command of $src_set :
-		$parent_command = $this->sets[$hash]['parent'];
+		$parent_command = $this->sets[$hash]['command'];
 
 		// Create trg_set :
 		$relationship	= $src_set->entity()->relationship($relationship_name);
 		$entity 		= $relationship->to();
 		$trg_set		= $this->create_set($entity);
-		
+
 		// Create command :
 		$command = new Glue_Command_With($relationship, $src_set, $trg_set, $parent_command);
-		
+
 		// Register set :
 		$this->register_set($trg_set, $command);
-		
+
 		// Switch active command to current command :
 		$this->active_command = $command;
+
+		// Add modifiers :
+		$this->add_modifiers($conditions, $order_by, $limit, $offset);
 
 		// Return query for chainability :
 		return $this;
@@ -115,32 +102,41 @@ abstract class Glue_Query {
 
 		return $set;
 	}
-	
-	protected function register_set($set, $parent_command) {
+
+	// Adds set to sets cache, along with the command that will populate it.
+	protected function register_set($set, $command) {
 		$this->sets[spl_object_hash($set)] = array(
-				'parent'	=> $parent_command,
+				'command'	=> $command,
 				'set'		=> $set
 			);
 	}
 
-	// Init execution cascade :
-	public function execute() {
-		$this->root->execute($this->get_params());
+	// Executes the query and returns the first element of the root set,
+	// or null if the root set is empty.
+	public function exec() {
+		// Execute command tree :
+		$this->root_command->execute($this->get_params());
+
+		// Returns first element of root set, or null if the set is empty :
+		if (count($this->root_set) > 0)
+			return $this->root_set[0];
+		else
+			return null;
 	}
 
-	// Init debugging cascade :
+	// Returns a view that tells how the query will be executed.
 	public function debug() {
-		return $this->root->debug();
+		return $this->root_command->debug();
 	}
 
-	// Set the value of a parameter in the query.
+	// Set the value of a parameter.
 	public function param($name, $value) {
 		if ( ! isset($this->params[$name])) throw new Kohana_Exception("Undefined parameter '".$name."'");
 		$this->params[$name]->value = $value;
 		return $this;
 	}
 
-	// Registers a parameter and returns its symbolic representation in the query :
+	// Registers a parameter and returns its symbolic representation in the query.
 	protected function register_param($param) {
 		$param->symbol = ':param' . ($this->param_id ++);
 		if ($param instanceof Glue_Param_Set)
@@ -158,6 +154,44 @@ abstract class Glue_Query {
 		return $parameters;
 	}
 
+	// Avoids code duplication between with and constructor.
+	protected function add_modifiers($conditions = null, $order_by = null, $limit = null, $offset = null) {
+		// Target entity of active command :
+		$entity = $this->active_command->trg_entity();
+
+		// Add conditions if any :
+		if ( ! empty($conditions)) {
+			// PK given ?
+			if ( ! is_array($conditions)) {
+				$pk = $entity->pk();
+				if (count($pk) > 1)
+					throw new Kohana_Exception("Scalar value used for multiple columns pk.");
+				else
+					$conditions = array($pk[0] => $conditions);
+			}
+
+			// Add conditions :
+			foreach($conditions as $field => $value) {
+				if (is_array($value))
+					$this->where($field, 'IN', $value);
+				else
+					$this->where($field, '=', $value);
+			}
+		}
+
+		// Add order by if any :
+		if (isset($order_by))
+			$this->order_by($order_by);
+
+		// Add  limit if any :
+		if (isset($limit))
+			$this->limit($limit);
+
+		// Add offset if any :
+		if (isset($offset))
+			$this->offset($offset);
+	}
+
 	// Forward calls to active command :
 	public function where($field, $op, $expr) {
 		// If $expr is a parameter, replace it with its symbolic representation in the query :
@@ -168,7 +202,7 @@ abstract class Glue_Query {
 
 		// Forward call :
 		$this->active_command->where($field, $op, $expr);
-		
+
 		return $this;
 	}
 
@@ -191,9 +225,14 @@ abstract class Glue_Query {
 		$this->active_command->limit($limit);
 		return $this;
 	}
-	
+
 	public function offset($offset) {
 		$this->active_command->offset($offset);
+		return $this;
+	}
+
+	public function sort($sort) {
+		$this->active_command->sort($sort);
 		return $this;
 	}
 }

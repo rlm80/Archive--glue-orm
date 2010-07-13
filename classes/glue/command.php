@@ -1,25 +1,27 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
+
 /**
+ * 
+ * Each query is a tree, with sets of objects being nodes, and commands being branches :
+ * 
+ * --root_command1--> root_set  --command2--> set2
+ * 					  		   '--command3--> set3 --command4--> set4
+ * 												  '--command5--> set5
+ * 												  '--command6--> set6
+ * 
+ * Each command defines the way to load a new set of objects (the target set) on the basis
+ * of a (conceptually) previously loaded set of objects (the source set), a relationship
+ * and optional conditions.  
+ * 						   
  * @package    Glue
  * @author     Régis Lemaigre
  * @license    MIT
- */
-
-/*
- * Commands are the smallest work units in a query. They are meant to load a
- * target set of objects according to their relationships with a source set
- * of objects.
- *
- * Commands form a tree - commands with source set A being children of the
- * (unique) command with target set A.
+ * 
  */
 
 abstract class Glue_Command {
 	// Target set :
 	protected $trg_set;
-
-	// Children commands :
-	protected $children = array();
 
 	// Modifiers :
 	protected $order_by = array();
@@ -36,11 +38,14 @@ abstract class Glue_Command {
 	// Constructor :
 	public function  __construct($trg_set) {
 		$this->trg_set = $trg_set;
+		$this->trg_set->set_parent($this);
+	}
+	
+	protected function children() {
+		return $this->trg_set->children();
 	}
 
-	public function trg_entity() {
-		return $this->trg_set->entity();
-	}
+	abstract public function trg_entity();
 
 	protected function trg_alias() {
 		return $this->trg_set->name();
@@ -92,7 +97,7 @@ abstract class Glue_Command {
 	protected function find_chain($root) {
 		$chain = array($this);
 		$roots = array();
-		foreach($this->children as $command) {
+		foreach($this->children() as $command) {
 			if ($root->is_relative_root($command))
 				$roots[] = $command;
 			else {

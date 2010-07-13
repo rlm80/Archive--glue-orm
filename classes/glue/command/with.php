@@ -5,9 +5,6 @@ class Glue_Command_With extends Glue_Command {
 	const ROOT	= 1;
 	const SLAVE	= 2;
 	const AUTO	= 3;
-
-	// Parent command :
-	protected $parent;
 	
 	// Relationship :
 	protected $relationship;
@@ -18,21 +15,28 @@ class Glue_Command_With extends Glue_Command {
 	// Root or slave command ?
 	protected $root;
 
-	public function  __construct($relationship, $src_set, $trg_set, $parent_command) {
+	public function  __construct($relationship, $src_set, $trg_set) {
 		parent::__construct($trg_set);
 		$this->root					= self::AUTO;
 		$this->relationship			= $relationship;
 		$this->src_set				= $src_set;
-		$parent_command->children[] = $this;
-		$this->parent				= $parent_command;
+		$this->src_set->add_child($this);
 	}
+	
+	protected function trg_entity() {
+		return $this->relationship->to();
+	}	
 
 	protected function src_entity() {
-		return $this->src_set->entity();
+		return $this->relationship->from();
 	}
 	
 	protected function src_alias() {
 		return $this->src_set->name();
+	}
+	
+	protected function parent() {
+		return $this->src_set->parent();
 	}
 
 	protected function load_result(&$result) {

@@ -5,10 +5,10 @@ class Glue_Command_With extends Glue_Command {
 	const ROOT	= 1;
 	const SLAVE	= 2;
 	const AUTO	= 3;
-	
+
 	// Relationship :
 	protected $relationship;
-	
+
 	// Source set :
 	protected $src_set;
 
@@ -22,19 +22,19 @@ class Glue_Command_With extends Glue_Command {
 		$this->src_set				= $src_set;
 		$this->src_set->add_child($this);
 	}
-	
-	protected function trg_entity() {
-		return $this->relationship->to();
-	}	
 
-	protected function src_entity() {
+	public function trg_entity() {
+		return $this->relationship->to();
+	}
+
+	public function src_entity() {
 		return $this->relationship->from();
 	}
-	
+
 	protected function src_alias() {
 		return $this->src_set->name();
 	}
-	
+
 	protected function parent() {
 		return $this->src_set->parent();
 	}
@@ -67,14 +67,13 @@ class Glue_Command_With extends Glue_Command {
 		$entity		= $this->src_entity();
 		$pk			= $entity->pk();
 		$alias		= $this->src_alias();
-		$objects	= $this->src_set->as_array();
 
 		// No objects ? No result :
-		if (count($objects) === 0)
+		if (count($this->src_set) === 0)
 			return array();
 
 		// Get pk values :
-		$pkvals = $entity->object_pk($objects);
+		$pkvals = $entity->object_pk($this->src_set);
 
 		// Exec query :
 		$result = array();
@@ -90,15 +89,15 @@ class Glue_Command_With extends Glue_Command {
 		}
 		else {
 			// Use only one query :
-			$result = $query->param(':__pks', array_map('array_pop', $pkvals))->execute()->as_array();
+			$result = $query->param(':__pks', array_map('reset', $pkvals))->execute()->as_array();
 		}
-		
+
 		return $result;
 	}
 
 	protected function query_contrib($query, $is_root) {
 		parent::query_contrib($query, $is_root);
-		
+
 		// Entities and aliases :
 		$src_entity	= $this->src_entity();
 		$trg_entity = $this->trg_entity();

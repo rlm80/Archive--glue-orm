@@ -7,7 +7,7 @@
 class Glue_Entity {
 	// Entity cache :
 	static protected $entities = array();
-	
+
 	// Identity map :
 	protected $map = array();
 
@@ -76,7 +76,7 @@ class Glue_Entity {
 
 		return $fields;
 	}
-	
+
 	protected function default_properties() {
 		return array_combine($this->fields, $this->fields);
 	}
@@ -239,7 +239,7 @@ class Glue_Entity {
 		foreach($this->columns[$field] as $table => $column)
 			return $alias . '__' . $table . '.' . $column;
 	}
-	
+
 	public function fields_validate($fields) {
 		return array_diff($fields, $this->fields);
 	}
@@ -321,13 +321,13 @@ class Glue_Entity {
 
 		return $object;
 	}
-	
+
 	protected function get_pattern() {
 		if ( ! isset($this->pattern))
 			$this->pattern = $this->create_pattern();
 		return $this->pattern;
 	}
-	
+
 	protected function create_pattern() {
 		$class = $this->proxy_class_name();
 		$pattern = new $class;
@@ -335,12 +335,12 @@ class Glue_Entity {
 	}
 
 	// Returns an associative array with pk field names and values.
-	public function object_pk($set) {
-		if ($set instanceof Glue_Set)
-			return call_user_func(array($this->proxy_class_name(), 'glue_pk'), $set);
+	public function object_pk($objects) {
+		if (is_array($objects) || $objects instanceof Glue_Set)
+			return call_user_func(array($this->proxy_class_name(), 'glue_pk'), $objects);
 		else {
-			$pks = call_user_func(array($this->proxy_class_name(), 'glue_pk'), array($set));
-			return end($pks);
+			$pks = call_user_func(array($this->proxy_class_name(), 'glue_pk'), array($objects));
+			return reset($pks);
 		}
 	}
 
@@ -357,7 +357,7 @@ class Glue_Entity {
 			$query = DB::delete($table);
 			if ( ! isset($this->pk[1])) {	// single pk
 				$pkcol = $this->columns[$this->pk[0]][$table];
-				$query->where($pkcol, 'IN', array_map('array_pop', $pkvals));
+				$query->where($pkcol, 'IN', array_map('reset', $pkvals));
 				$query->execute($this->db);
 			}
 			else {							// multiple pk
@@ -373,9 +373,9 @@ class Glue_Entity {
 					$query->execute($this->db);
 				}
 			}
-		} 
+		}
 	}
-	
+
 	// Insert into the database all objects of the given set.
 	public function object_insert($set) {
 		// Set is empty ? Do nothing :
@@ -401,7 +401,7 @@ class Glue_Entity {
 				foreach($cp as $column => $property)
 					$values[] = $obj->$property;
 				$query->values($values);
-			}			
+			}
 
 			// Exec query :
 			$result = $query->execute($this->db);
@@ -416,8 +416,8 @@ class Glue_Entity {
 				}
 			}
 		}
-	}	
-	
+	}
+
 	// Updates the database representations of all objects of the given set.
 	function object_update($set) {
 		// Set is empty ? Do nothing :
@@ -456,7 +456,7 @@ class Glue_Entity {
 				$query->execute($this->db);
 			}
 		}
-	}	
+	}
 
 	// Return relationship $name of this entity.
 	public function relationship($name) {
@@ -470,6 +470,13 @@ class Glue_Entity {
 
 	// Load proxy class :
 	public function proxy_load_class() {
+//		echo View::factory('glue_proxy')
+//				->set('proxy_class',	$this->proxy_class_name())
+//				->set('model_class',	$this->model)
+//				->set('entity',			$this->name)
+//				->set('properties',		$this->properties)
+//				->set('pk',				$this->pk)
+//				->set('types',			$this->types); die;
 		eval(
 			View::factory('glue_proxy')
 				->set('proxy_class',	$this->proxy_class_name())

@@ -21,9 +21,9 @@ class Glue_Query_Delete extends Glue_Query {
 
 	public function exec() {
 		if (parent::exec()) {
-			// Delete set contents :
-			foreach($this->sets as $hash => $data)
-				$data['set']->delete();
+			// Delete sets contents :
+			foreach($this->sets as $set)
+				$set->delete();
 		}
 	}
 }

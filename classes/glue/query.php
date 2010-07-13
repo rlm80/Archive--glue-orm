@@ -39,9 +39,6 @@ abstract class Glue_Query {
 		// Create command :
 		$command = new Glue_Command_Load($entity, $set);
 
-		// Register set :
-		$this->register_set($set, $this->root_command);
-
 		// Set current command as root command :
 		$this->root_command = $command;
 
@@ -62,19 +59,13 @@ abstract class Glue_Query {
 		if ( ! isset($this->sets[$hash]))
 			throw new Kohana_Exception("Unknown set given as source of with command.");
 
-		// Get parent command of $src_set :
-		$parent_command = $this->sets[$hash]['command'];
-
 		// Create trg_set :
 		$relationship	= $src_set->entity()->relationship($relationship_name);
-		$entity 		= $relationship->to();
-		$trg_set		= $this->create_set($entity);
+		$trg_entity 	= $relationship->to();
+		$trg_set		= $this->create_set($trg_entity);
 
 		// Create command :
-		$command = new Glue_Command_With($relationship, $src_set, $trg_set, $parent_command);
-
-		// Register set :
-		$this->register_set($trg_set, $command);
+		$command = new Glue_Command_With($relationship, $src_set, $trg_set);
 
 		// Switch active command to current command :
 		$this->active_command = $command;
@@ -98,17 +89,12 @@ abstract class Glue_Query {
 			$this->set_counters[$name] ++;
 
 		// Create set :
-		$set = new Glue_Set_Node($entity, $name . '_' . $this->set_counters[$name]);
+		$set = new Glue_Set_Node($name . '_' . $this->set_counters[$name]);
+
+		// Register set :
+		$this->sets[spl_object_hash($set)] = $set;
 
 		return $set;
-	}
-
-	// Adds set to sets cache, along with the command that will populate it.
-	protected function register_set($set, $command) {
-		$this->sets[spl_object_hash($set)] = array(
-				'command'	=> $command,
-				'set'		=> $set
-			);
 	}
 
 	// Executes the query and returns the first element of the root set,

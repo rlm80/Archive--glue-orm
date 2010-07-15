@@ -3,63 +3,96 @@
 /**
  * Sets maintain a numerically indexed (from 0 to max without holes), sorted,
  * distinct list of object references.
- 
+
  * Note : the idea for this to be done efficiently is to always delay sorting
  *        and reindexing to the last possible time (that is, when the collection
  *        of objects is actually accessed) instead of doing it everytime the
  *        set is modified.
  *
  * @package	Glue
- * @author	Régis Lemaigre
+ * @author	RÃ©gis Lemaigre
  * @license	MIT
  */
 
 class Glue_Set implements Iterator, Countable, ArrayAccess {
-	protected $criteria;				// Current sort criteria (e.g. 'price DESC, date ASC')
-	protected $sort;					// Parsed sort criteria	used internally
-	protected $objects	= array();		// Objects currently in the set, indexed by hash. 
-	protected $sorted	= true;			// Whether or not $this->objects is sorted according to current sort criteria.
-	protected $indexes	= array();		// Same content as $this->objects and ordered in the same way, but numerically
+	protected $sort			= array();	// Current sort criteria
+	protected $sort_stack	= array();	// History of past sort criteria
+	protected $objects		= array();	// Objects currently in the set, indexed by hash.
+	protected $sorted		= true;		// Whether or not $this->objects is sorted according to current sort criteria.
+	protected $indexes		= array();	// Same content as $this->objects and ordered in the same way, but numerically
 										// indexed from 0 to max.
-	protected $indexed	= true;			// Whether or not $this->indexes is currently in sync with $this->objects
+	protected $indexed		= true;		// Whether or not $this->indexes is currently in sync with $this->objects
 										// and correctly indexed.
 
 	// Sets current sort criteria.
 	public function sort($criteria = null) {
-		if (empty($criteria)) {
-			// No criteria ? Remove sort :
-			$this->criteria	= null;
-			$this->sort		= null;
-			
-			// Signal sorted :
-			$this->sorted = true;
-		}
+		// Compute sort :
+		if (empty(trim($criteria))) // No criteria ? No sort :
+			$sort = null;
 		else {
-			// Set criteria :
-			$this->criteria = $criteria;
-			
-			// Parse criteria and set current sort :
-			$this->sort = array();
+			// Parse criteria  :
+			$sort = array();
 			$criteria = preg_replace('/\s+/', ' ', $criteria);
 			$criteria = explode(',', $criteria);
 			foreach($criteria as $c) {
 				$parts	= explode(' ', trim($c));
 				$field	= $parts[0];
 				$order	= ((! isset($parts[1])) || strtolower(substr($parts[1], 0, 1)) === 'a') ? +1 : -1;
-				$this->sort[$field] = $order;
+				$sort[$field] = $order;
 			}
-
-			// Signal not sorted :
-			$this->sorted = false;
 		}
+
+		// Put old sort on stack :
+		$this->sort_stack[] = $this->sort;
+
+		// Set new sort :
+		$this->set_sort($sort);
 
 		// Return $this for chainability :
 		return $this;
 	}
 
-	// Gets current sort criteria.
-	public function get_sort() {
-		return $this->criteria;
+	// Returns sort criteria to its previous value :
+	public function unsort() {
+		// Stack is empty ? Exception.
+		if (empty($this->sort_stack))
+			throw new Kohana_Exception("You called unsort() one time too many in a Glue_Set. There is no previous sort criteria to restore");
+
+		// Set new sort :
+		$this->set_sort(array_pop($this->sort_stack));
+	}
+
+	// Updates the $this->sort property and takes care of setting the right value for $this->sorted
+	protected function set_sort($sort) {
+		// Get old sort criteria :
+		$prev_criteria = $this->criteria();
+
+		// Set new sort :
+		$this->sort = $sort;
+
+		// Get new sort criteria :
+		$cur_criteria = $this->criteria();
+
+		// Is set currently sorted ?
+		if ($cur_criteria = '' || count($this) === 0)
+			// No sort or no object => set is sorted :
+			$this->sorted = true;
+		elseif (strlen($cur_criteria) > strlen($prev_criteria) || substr($prev_criteria, 0, strlen($cur_criteria) !== $cur_criteria))
+			// Sort different or more refined than previous one => set may not be sorted anymore :
+			$this->sorted = false;
+		// Otherwise, current value of $this->sort is inherited from previous sort.
+	}
+
+
+	// Standardized current sort criteria.
+	public function criteria() {
+		// No sort ? Return empty string :
+		if (empty($this->sort)) return '';
+
+		// Convert current sort to string :
+		foreach($this->sort as $field => $order)
+			$arr[] = $field . ($order > 0 ? ' ASC' : ' DESC');
+		return implode(', ', $arr);
 	}
 
 	// Replaces current set of objects with the ones passed as parameter(s).
@@ -69,17 +102,17 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 			// Reset :
 			$this->objects	= array();
 			$this->indexes	= array();
-			
+
 			// Signal sorted and indexed :
 			$this->sorted	= true;
 			$this->indexed	= true;
 		}
-		else {			
+		else {
 			// Set objects :
 			$this->objects = self::reduce($args);
 
 			// Signal not sorted and not indexed :
-			$this->sorted	= isset($this->sort) ? false : true;
+			$this->sorted	= (! empty($this->sort)) ? false : true;
 			$this->indexed	= false;
 		}
 
@@ -104,7 +137,7 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 			}
 
 			// Signal not sorted :
-			$this->sorted = isset($this->sort) ? false : true;
+			$this->sorted = (! empty($this->sort)) ? false : true;
 		}
 
 		// Return $this for chainability :
@@ -120,7 +153,7 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 
 			// Keep only objects that actually belong to the set :
 			$hashes = array_intersect_key($hashes, $this->objects);
-			
+
 			// Remove objects :
 			foreach($hashes as $hash => $object)
 				unset($this->objects[$hash]);
@@ -132,7 +165,7 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 		// Return $this for chainability :
 		return $this;
 	}
-	
+
 	// Whether or not current set contains object $object.
 	public function has($object) {
 		return isset($this->objects[spl_object_hash($object)]);
@@ -152,7 +185,7 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 		$entities = array();
 		foreach($this->objects as $obj)
 			$entities[$obj->glue_entity()->name()][] = $obj;
-		
+
 		// Turn arrays into sets :
 		$sets = array();
 		foreach($entities as $entity => $array) {
@@ -162,7 +195,7 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 			$set->sorted	= $this->sorted;
 			$sets[$entity]	= $set;
 		}
-		
+
 		return $sets;
 	}
 
@@ -170,7 +203,7 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 	public function delete() {
 		foreach($this->entities() as $entity_name => $set)
 			glue::entity($entity_name)->object_delete($set);
-		
+
 		// Return $this for chainability :
 		return $this;
 	}
@@ -179,34 +212,34 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 	public function update() {
 		foreach($this->entities() as $entity_name => $set)
 			glue::entity($entity_name)->object_update($set);
-		
+
 		// Return $this for chainability :
 		return $this;
 	}
-	
+
 	// Updates database for all objects in the set.
 	public function insert() {
 		foreach($this->entities() as $entity_name => $set)
 			glue::entity($entity_name)->object_insert($set);
-		
+
 		// Return $this for chainability :
 		return $this;
-	}	
+	}
 
 	// Sorts the objects according to current sort criteria if there is any.
 	protected function dosort() {
-		if (isset($this->sort)) {
+		if ( ! empty($this->sort)) {
 			uasort($this->objects, array($this, 'compare'));
 			$this->indexed = false;
-		}	
+		}
 		$this->sorted = true;
 	}
-	
+
 	// Rebuild indexes array :
 	protected function reindex() {
 		$this->indexes = array_values($this->objects);
 		$this->indexed = true;
-	}	
+	}
 
 	// Compares two objects according to current sort criteria.
 	protected function compare($a, $b) {

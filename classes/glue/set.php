@@ -27,7 +27,7 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 	// Sets current sort criteria.
 	public function sort($criteria = null) {
 		// Compute sort :
-		if (empty(trim($criteria))) // No criteria ? No sort :
+		if ( ! isset($criteria) || trim($criteria) === '') // No criteria ? No sort :
 			$sort = null;
 		else {
 			// Parse criteria  :
@@ -188,13 +188,8 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 
 		// Turn arrays into sets :
 		$sets = array();
-		foreach($entities as $entity => $array) {
-			$set			= glue::set($array);
-			$set->criteria	= $this->criteria;
-			$set->sort		= $this->sort;
-			$set->sorted	= $this->sorted;
-			$sets[$entity]	= $set;
-		}
+		foreach($entities as $entity => $array)
+			$sets[$entity]	= glue::set($array);
 
 		return $sets;
 	}

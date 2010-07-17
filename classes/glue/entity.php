@@ -470,13 +470,14 @@ class Glue_Entity {
 
 	// Load proxy class :
 	public function proxy_load_class() {
+//		if ($this->name === 'glprofile') {
 //		echo View::factory('glue_proxy')
 //				->set('proxy_class',	$this->proxy_class_name())
 //				->set('model_class',	$this->model)
 //				->set('entity',			$this->name)
 //				->set('properties',		$this->properties)
 //				->set('pk',				$this->pk)
-//				->set('types',			$this->types); die;
+//				->set('types',			$this->types); die; }
 		eval(
 			View::factory('glue_proxy')
 				->set('proxy_class',	$this->proxy_class_name())

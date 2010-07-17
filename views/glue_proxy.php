@@ -37,7 +37,7 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	// Best knowledge we have about the state of the object's data in the DB :
 	public $glue_db_state = array();
 
-	// Mapper data copied here for convenience :
+	// Mapper data copied here for convenience : TODO remove this and call mapper functions instead !!
 	static public $glue_entity		= <?php var_export($entity)		?>;	// Entity name
 	static public $glue_properties	= <?php var_export($properties)	?>;	// Fields => properties mapping
 	static public $glue_types		= <?php var_export($types)		?>;	// Fields => property types mapping
@@ -102,9 +102,9 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	}	
 
 	// Active Record features :
-	public function delete() { return self::glue_entity()->delete($this); }
-	public function insert() { return self::glue_entity()->insert($this); }
-	public function update() { return self::glue_entity()->update($this); }
+	public function delete() { return glue::set($this)->delete(); }
+	public function insert() { return glue::set($this)->insert(); }
+	public function update() { return glue::set($this)->update(); }
 
 	// Lazy loading of properties and relationships :
 	public function __get($var) {

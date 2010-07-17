@@ -41,5 +41,15 @@ class Controller_Glue extends Controller {
 		}
 		$this->request->headers['Content-Type'] = File::mime_by_ext($ext);
 	}
+	
+	public function action_test() {
+		if (Kohana::config('glue')->debug) {
+			$this->request->response = View::factory('glue_template')
+				->set('title', 'Test')
+				->set('content', View::factory('glue_test'));
+		}
+		else
+			$this->request->status = 404;
+	}
 }
 ?>

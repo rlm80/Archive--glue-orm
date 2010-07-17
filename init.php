@@ -6,6 +6,12 @@ Route::set('glue_sandbox', 'glue/sandbox')
 		'controller' => 'Glue',
 		'action'     => 'sandbox',
 	));
+	
+Route::set('glue_test', 'glue/test')
+	->defaults(array(
+		'controller' => 'Glue',
+		'action'     => 'test',
+	));	
 
 Route::set('glue_entity', 'glue/entity/<entity>')
 	->defaults(array(

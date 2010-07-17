@@ -6,7 +6,7 @@
 
  * Note : the idea for this to be done efficiently is to always delay sorting
  *        and reindexing to the last possible time (that is, when the collection
- *        of objects is actually accessed) instead of doing it everytime the
+ *        of objects is actually accessed) rather than doing it everytime the
  *        set is modified.
  *
  * @package	Glue
@@ -53,7 +53,7 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 	}
 
 	// Returns sort criteria to its previous value :
-	public function unsort() {
+	public function popsort() {
 		// Stack is empty ? Exception.
 		if (empty($this->sort_stack))
 			throw new Kohana_Exception("You called unsort() one time too many in a Glue_Set. There is no previous sort criteria to restore");
@@ -244,17 +244,22 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 	// Compares two objects according to current sort criteria.
 	protected function compare($a, $b) {
         foreach($this->sort as $field => $order) {
-			// Get values of $field :
-			$vala = method_exists($a, 'glue_get') ? $a->glue_get($field) : $a->$field;
-			$valb = method_exists($b, 'glue_get') ? $b->glue_get($field) : $b->$field;
-
-			// Compare field value in $a and $b :
-			if ($vala < $valb)
-				$cmp = -1;
-			elseif ($vala > $valb)
-				$cmp = +1;
-			else
-				$cmp = 0;
+        	// Is $field a callback ?
+        	if (strpos($field, '::') !== false)
+        		$cmp = call_user_func($field, $a, $b);
+        	else {
+				// Get values of $field :
+				$vala = method_exists($a, 'glue_get') ? $a->glue_get($field) : $a->$field;
+				$valb = method_exists($b, 'glue_get') ? $b->glue_get($field) : $b->$field;
+	
+				// Compare field value in $a and $b :
+				if ($vala < $valb)
+					$cmp = -1;
+				elseif ($vala > $valb)
+					$cmp = +1;
+				else
+					$cmp = 0;
+        	}
 
 			// Reverses comparaison result according to $order if necessary :
 			$cmp *= $order;

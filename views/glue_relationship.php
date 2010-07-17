@@ -22,8 +22,8 @@
 			switch ($type) {
 				case Glue_Relationship::MANY_TO_MANY;	echo "many-to-many";	break;
 				case Glue_Relationship::ONE_TO_ONE;		echo "one-to-one";		break;
-				case Glue_Relationship::MANY_TO_ONE;		echo "many-to-one";		break;
-				case Glue_Relationship::ONE_TO_MANY;		echo "one-to-many";		break;
+				case Glue_Relationship::MANY_TO_ONE;	echo "many-to-one";		break;
+				case Glue_Relationship::ONE_TO_MANY;	echo "one-to-many";		break;
 			}
 		?></td>
 	</tr>
@@ -37,6 +37,6 @@
 	</tr>	
 	<tr class="superfluous">
 		<th>Reverse</th>
-		<td><a href="<?php echo url::site(Route::get('glue_relationship')->uri(array('entity' => $to, 'relationship' => $reverse))) ?>"><?php echo ucfirst($to) . ' -&gt; ' . $reverse ?></td>
+		<td><a href="<?php echo url::site(Route::get('glue_relationship')->uri(array('entity' => $to, 'relationship' => $reverse))) ?>"><?php echo ucfirst($to) . ' -&gt; ' . $reverse ?></a></td>
 	</tr>
 </table>

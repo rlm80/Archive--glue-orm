@@ -3,7 +3,7 @@
 
 	It's best to keep proxy classes as lightweight as possible and keep the bulk
 	of the code in the mappers because
-	- proxy classes cannot be extended by the user,
+	- unlike mappers, proxy classes cannot be extended by the user,
 	- one proxy class by entity needs to be compiled,
 	- the more we put here the closer we get to Active Record and the very same problems
 	  we wanted to avoid by using Data Mapper.

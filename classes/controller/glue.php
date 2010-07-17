@@ -2,12 +2,9 @@
 class Controller_Glue extends Controller {
 	public function action_sandbox() {
 		if (Kohana::config('glue')->debug) {
-			$query = isset($_GET['query']) ? $_GET['query'] : null;
 			$this->request->response = View::factory('glue_template')
 				->set('title', 'Sandbox')
-				->set('content',
-					View::factory('glue_sandbox')->set('query', $query)
-				);
+				->set('content', View::factory('glue_sandbox'));
 		}
 		else
 			$this->request->status = 404;

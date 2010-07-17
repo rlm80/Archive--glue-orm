@@ -99,7 +99,7 @@ abstract class Glue_Query {
 
 	// Executes the query and returns the first element of the root set,
 	// or null if the root set is empty.
-	public function exec() {
+	public function execute() {
 		// Execute command tree :
 		$this->root_command->execute($this->get_params());
 

@@ -66,7 +66,7 @@ class Glue_Relationship {
 	public function name()		{	return $this->name;						}
 
 	protected function default_to() {
-		return $this->name;
+		return Inflector::singular($this->name);
 	}
 
 	protected function default_mapping() {
@@ -156,8 +156,6 @@ class Glue_Relationship {
 	}
 
 	protected function default_property() {
-		if ($this->type === self::MANY_TO_MANY || $this->type === self::ONE_TO_MANY)
-			return Inflector::plural($this->name);
 		return $this->name;
 	}
 

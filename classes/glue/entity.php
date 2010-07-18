@@ -1,9 +1,11 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
+
 /**
  * @package	Glue
  * @author	Régis Lemaigre
  * @license	MIT
  */
+
 class Glue_Entity {
 	// Entity cache :
 	static protected $entities = array();

@@ -154,7 +154,10 @@ class Glue_Relationship {
 	}
 
 	protected function default_reverse() {
-		return $this->from;
+		if ($this->type === self::MANY_TO_MANY || $this->type === self::MANY_TO_ONE)
+			return Inflector::plural($this->from);
+		else
+			return $this->from;
 	}
 
 	protected function default_property() {

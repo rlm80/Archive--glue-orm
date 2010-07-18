@@ -1,7 +1,7 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 /**
  * @package    Glue
- * @author     Régis Lemaigre
+ * @author     RÃ©gis Lemaigre
  * @license    MIT
  */
 

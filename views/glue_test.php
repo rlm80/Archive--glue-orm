@@ -1,26 +1,381 @@
-<h3>Dropping tables...</h3>
 <?php
 	try {db::query(null, "drop table glusers")->execute();			} catch (Exception $e) {}
 	try {db::query(null, "drop table glprofiles")->execute();		} catch (Exception $e) {}
 	try {db::query(null, "drop table glposts")->execute();			} catch (Exception $e) {}
 	try {db::query(null, "drop table glcategories")->execute();		} catch (Exception $e) {}
-	try {db::query(null, "drop table glcategory2posts")->execute();	} catch (Exception $e) {}
+	try {db::query(null, "drop table glcategory2glposts")->execute();	} catch (Exception $e) {}
+	db::query(null, "create table glusers (id integer auto_increment, login varchar(31), password varchar(31), primary key(id))")->execute();
+	db::query(null, "create table glprofiles (id integer auto_increment, email varchar(255), primary key(id))")->execute();
+	db::query(null, "create table glposts (id integer auto_increment, content text, gluser_id integer, primary key(id))")->execute();
+	db::query(null, "create table glcategories (id integer auto_increment, name varchar(63), primary key(id))")->execute();
+	db::query(null, "create table glcategory2glposts (glcategory_id integer, glpost_id integer, primary key(glcategory_id, glpost_id))")->execute();
+	db::query(null, "create index glcategory2glposts_post_id on glcategory2glposts (glpost_id)")->execute();
+	db::query(null, "create index glposts_user_id on glposts (gluser_id)")->execute();
 ?>
-...ok
 
-<h3>Creating tables...</h3>
-<?php 
+<h3>Testing entity mappers...</h3>
+<?php
+	echo "Creating mapper...";
 	try {
-		db::query(null, "create table glusers (id integer auto_increment, login varchar(31), password varchar(31), primary key(id))")->execute();
-		db::query(null, "create table glprofiles (id integer auto_increment, email varchar(255), primary key(id))")->execute();
-		db::query(null, "create table glposts (id integer auto_increment, content text, gluser_id integer, primary key(id))")->execute();
-		db::query(null, "create table glcategories (id integer auto_increment, name varchar(63), primary key(id))")->execute();
-		db::query(null, "create table glcategory2posts (glcategory_id integer, glpost_id integer, primary key(glcategory_id, glpost_id))")->execute();
-		db::query(null, "create index glcategory2posts_post_id on glcategory2posts (glpost_id)")->execute();
-		db::query(null, "create index glposts_user_id on glposts (gluser_id)")->execute();
+		$mapper = glue::entity('gluser');
 	} catch(Exception $e) { echo "Failed with exception : " . $e->getMessage();	return;	}
+	echo "ok<br/>";
+	
+	echo "Testing mappers identity map...";
+	$mapper2 = glue::entity('gluser');
+	if ($mapper === $mapper2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}
+	
+	echo "Testing mapper properties : fields...";
+	$prop1 = $mapper->fields();
+	sort($prop1);
+	$prop1 = array_values($prop1);
+	$prop2 = array('id', 'login', 'password');
+	if ($prop1 == $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}
+	
+	echo "Testing mapper properties : tables...";
+	$fields1 = $mapper->tables();
+	sort($fields1);
+	$fields1 = array_values($fields1);
+	$fields2 = array('glusers');
+	if ($fields1 == $fields2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing mapper properties : columns...";
+	$fields1 = $mapper->columns();
+	$fields2 = array ( 'id' => array ( 'glusers' => 'id'), 'login' => array ( 'glusers' => 'login'), 'password' => array ( 'glusers' => 'password'));
+	if ($fields1 == $fields2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing mapper properties : properties...";
+	$fields1 = $mapper->properties();
+	$fields2 = array ( 'id' => 'id', 'login' => 'login', 'password' => 'password');
+	if ($fields1 == $fields2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}
+
+	echo "Testing mapper properties : types...";
+	$fields1 = $mapper->types();
+	$fields2 = array ( 'id' => 'int', 'login' => 'string', 'password' => 'string');
+	if ($fields1 == $fields2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}
+	
+	echo "Testing mapper properties : pk...";
+	$fields1 = $mapper->pk();
+	sort($fields1);
+	$fields1 = array_values($fields1);
+	$fields2 = array('id');
+	if ($fields1 == $fields2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing mapper properties : fk...";
+	$fields1 = $mapper->fk();
+	$fields2 = array ( 'id' => 'gluser_id');
+	if ($fields1 == $fields2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing mapper properties : autoincrement...";
+	$fields1 = $mapper->autoincrement();
+	$fields2 = true;
+	if ($fields1 === $fields2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing mapper properties : model...";
+	$fields1 = $mapper->model();
+	$fields2 = 'stdClass';
+	if ($fields1 === $fields2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}		
+	
+	echo "Testing mapper properties : db...";
+	$fields1 = $mapper->db();
+	$fields2 = 'default';
+	if ($fields1 === $fields2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}		
+	
+	//var_dump($fields1); die;
 ?>
-...ok
+
+<h3>Testing relationship mappers...</h3>
+<?php
+	echo "Creating mapper...";
+	try {
+		$mapper = glue::entity('gluser')->relationship('glposts');
+	} catch(Exception $e) { echo "Failed with exception : " . $e->getMessage();	return;	}
+	echo "ok<br/>";
+	
+	echo "Testing mappers identity map...";
+	$mapper2 = glue::entity('gluser')->relationship('glposts');
+	if ($mapper === $mapper2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}
+	
+	echo "Testing one-to-many properties : type...";
+	$mapper = glue::entity('gluser')->relationship('glposts');
+	$prop1 = $mapper->type();
+	$prop2 = Glue_Relationship::ONE_TO_MANY;
+	if ($prop1 === $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}
+	
+	echo "Testing one-to-many properties : to...";
+	$mapper = glue::entity('gluser')->relationship('glposts');
+	$prop1 = $mapper->to();
+	$prop2 = glue::entity('glpost');
+	if ($prop1 === $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing one-to-many properties : from...";
+	$mapper = glue::entity('gluser')->relationship('glposts');
+	$prop1 = $mapper->from();
+	$prop2 = glue::entity('gluser');
+	if ($prop1 === $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing one-to-many properties : mapping...";
+	$mapper = glue::entity('gluser')->relationship('glposts');
+	$prop1 = $mapper->mapping();
+	$prop2 = array('gluser.id' => 'glpost.gluser_id');
+	if ($prop1 == $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}
+	
+	echo "Testing one-to-many properties : property...";
+	$mapper = glue::entity('gluser')->relationship('glposts');
+	$prop1 = $mapper->property();
+	$prop2 = 'glposts';
+	if ($prop1 == $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}			
+	
+	echo "Testing many-to-one properties : type...";
+	$mapper = glue::entity('glpost')->relationship('gluser');
+	$prop1 = $mapper->type();
+	$prop2 = Glue_Relationship::MANY_TO_ONE;
+	if ($prop1 === $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}
+	
+	echo "Testing many-to-one properties : to...";
+	$mapper = glue::entity('glpost')->relationship('gluser');
+	$prop1 = $mapper->to();
+	$prop2 = glue::entity('gluser');
+	if ($prop1 === $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing many-to-one properties : from...";
+	$mapper = glue::entity('glpost')->relationship('gluser');
+	$prop1 = $mapper->from();
+	$prop2 = glue::entity('glpost');
+	if ($prop1 === $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing many-to-one properties : mapping...";
+	$mapper = glue::entity('glpost')->relationship('gluser');
+	$prop1 = $mapper->mapping();
+	$prop2 = array('glpost.gluser_id' => 'gluser.id');
+	if ($prop1 == $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing many-to-one properties : property...";
+	$mapper = glue::entity('glpost')->relationship('gluser');
+	$prop1 = $mapper->property();
+	$prop2 = 'gluser';
+	if ($prop1 == $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+
+	echo "Testing one-to-one properties : type...";
+	$mapper = glue::entity('gluser')->relationship('glprofile');
+	$prop1 = $mapper->type();
+	$prop2 = Glue_Relationship::ONE_TO_ONE;
+	if ($prop1 === $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}
+	
+	echo "Testing one-to-one properties : to...";
+	$mapper = glue::entity('gluser')->relationship('glprofile');
+	$prop1 = $mapper->to();
+	$prop2 = glue::entity('glprofile');
+	if ($prop1 === $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing one-to-one properties : from...";
+	$mapper = glue::entity('gluser')->relationship('glprofile');
+	$prop1 = $mapper->from();
+	$prop2 = glue::entity('gluser');
+	if ($prop1 === $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing one-to-one properties : mapping...";
+	$mapper = glue::entity('gluser')->relationship('glprofile');
+	$prop1 = $mapper->mapping();
+	$prop2 = array('gluser.id' => 'glprofile.id');
+	if ($prop1 == $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}
+	
+	echo "Testing one-to-one properties : property...";
+	$mapper = glue::entity('gluser')->relationship('glprofile');
+	$prop1 = $mapper->property();
+	$prop2 = 'glprofile';
+	if ($prop1 == $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}
+
+	echo "Testing many-to-many properties : type...";
+	$mapper = glue::entity('glpost')->relationship('glcategories');
+	$prop1 = $mapper->type();
+	$prop2 = Glue_Relationship::MANY_TO_MANY;
+	if ($prop1 === $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}
+	
+	echo "Testing many-to-many properties : to...";
+	$mapper = glue::entity('glpost')->relationship('glcategories');
+	$prop1 = $mapper->to();
+	$prop2 = glue::entity('glcategory');
+	if ($prop1 === $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing many-to-many properties : from...";
+	$mapper = glue::entity('glpost')->relationship('glcategories');
+	$prop1 = $mapper->from();
+	$prop2 = glue::entity('glpost');
+	if ($prop1 === $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+	
+	echo "Testing many-to-many properties : mapping...";
+	$mapper = glue::entity('glpost')->relationship('glcategories');
+	$prop1 = $mapper->mapping();
+	$prop2 = array('glpost.id' => 'glcategory2glpost.glpost_id', 'glcategory2glpost.glcategory_id' => 'glcategory.id');
+	if ($prop1 == $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}
+	
+	echo "Testing many-to-many properties : property...";
+	$mapper = glue::entity('glpost')->relationship('glcategories');
+	$prop1 = $mapper->property();
+	$prop2 = 'glcategories';
+	if ($prop1 == $prop2)
+		echo "ok<br/>";
+	else {
+		echo 'failed';
+		return;
+	}	
+?>
 
 <h3>Creating objects...</h3>
 <?php

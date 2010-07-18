@@ -64,6 +64,8 @@ class Glue_Relationship {
 	public function from()		{	return Glue_Entity::get($this->from);	}
 	public function type()		{	return $this->type;						}
 	public function name()		{	return $this->name;						}
+	public function mapping()	{	return $this->mapping;					}
+	public function property()	{	return $this->property;					}	
 
 	protected function default_to() {
 		return Inflector::singular($this->name);

@@ -244,14 +244,6 @@ class Glue_Entity {
 		return array_diff($fields, $this->fields);
 	}
 
-	public function fields_opposite($fields) {
-		return array_diff($this->fields, $fields);
-	}
-
-	public function fields_all() {
-		return $this->fields;
-	}
-
 	public function object_load(&$rows, $prefix = '') {
 		// No rows ? Do nothing :
 		if (count($rows) === 0) return array();
@@ -424,7 +416,7 @@ class Glue_Entity {
 		if (count($set) === 0) return;
 
 		// Default = all fields except pk (TODO change this)
-		$fields = array_diff($this->fields_all(), $this->pk);
+		$fields = array_diff($this->fields, $this->pk);
 
 		// Build list of tables to be updated :
 		$tables = array();
@@ -514,10 +506,17 @@ class Glue_Entity {
 	}
 
 	// Getters :
-	public function name()	{ return $this->name;	}
-	public function pk()	{ return $this->pk;		}
-	public function fk()	{ return $this->fk;		}
-	public function db()	{ return $this->db;		}
+	public function name()			{ return $this->name;			}
+	public function tables()		{ return $this->tables;			}
+	public function fields()		{ return $this->fields;			}
+	public function properties()	{ return $this->properties;		}
+	public function columns()		{ return $this->columns;		}
+	public function types()			{ return $this->types;			}
+	public function pk()			{ return $this->pk;				}
+	public function fk()			{ return $this->fk;				}
+	public function db()			{ return $this->db;				}
+	public function model()			{ return $this->model;			}
+	public function autoincrement()	{ return $this->autoincrement;	}
 
 	// Debug :
 	public function debug() {

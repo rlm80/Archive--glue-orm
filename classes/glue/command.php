@@ -131,7 +131,7 @@ abstract class Glue_Command {
 
 		// trg fields :
 		if ( ! isset($this->fields))
-			$this->fields = $trg_entity->fields_all();
+			$this->fields = $trg_entity->fields();
 		else
 			$this->fields = array_merge($this->fields, array_diff($trg_entity->pk(), $this->fields));
 		$trg_entity->query_select($query, $trg_alias, $this->fields);
@@ -205,7 +205,7 @@ abstract class Glue_Command {
 		$fields = is_array($args[0]) ? $args[0] : $args;
 
 		// Set fields :
-		$this->fields = $this->trg_set->entity->fields_opposite($fields);
+		$this->fields = array_diff($this->trg_entity()->fields(), $fields);
 	}
 
 	public function where($field, $op, $expr) {

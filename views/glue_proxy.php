@@ -99,7 +99,7 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	public function glue_set($field, $value, $is_field = true) {
 		$prop = $is_field ? self::$glue_properties[$field] : $field;
 		$this->$prop = $value;
-	}	
+	}
 
 	// Active Record features :
 	public function delete() { return glue::set($this)->delete(); }
@@ -118,7 +118,7 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 			self::glue_entity()->proxy_load_field($this, $field);
 		else
 			self::glue_entity()->proxy_load_relationship($this, $var);
-			
+
 		return $this->$var;
 	}
 }

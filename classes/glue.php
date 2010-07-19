@@ -8,14 +8,23 @@
 class Glue {
 	public static function create($entity_name, $array) {
 		return glue::entity($entity_name)->create($array);
-	}	
+	}
 
 	public static function select($entity_name, &$set, $conditions = null, $order_by = null, $limit = null, $offset = null) {
 		return new Glue_Query_Select($entity_name, $set, $conditions, $order_by, $limit, $offset);
 	}
 
 	public static function delete($entity_name, &$set, $conditions = null) {
-		return new Glue_Query_Delete($entity_name, $set, $conditions);		
+		return new Glue_Query_Delete($entity_name, $set, $conditions);
+	}
+
+	public static function clear($entity_name = null) {
+		if (isset($entity_name))
+			glue::entity($entity_name)->clear();
+		else {
+			foreach(Glue_Entity::get_all() as $mapper)
+				$mapper->clear();
+		}
 	}
 
 	public static function param($name) {
@@ -51,5 +60,5 @@ class Glue {
 	public static function auto_load($class) {
 		if(preg_match("/^Glue_Proxy_(.*)$/", $class, $matches) > 0)
 			glue::entity($matches[1])->proxy_load_class();
-	}	
+	}
 }

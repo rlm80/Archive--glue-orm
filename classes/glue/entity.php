@@ -485,7 +485,7 @@ class Glue_Entity {
 
 	public function proxy_load_field($object, $field) {
 		// Build query :
-		$query = glue::qselect($this->name, $set);
+		$query = glue::select($this->name, $set);
 		foreach($this->object_pk($object) as $f => $val)
 			$query->where($f, '=', $val);
 		$query->fields($field);
@@ -496,15 +496,19 @@ class Glue_Entity {
 
 	public function proxy_load_relationship($object, $relationship) {
 		// Build query :
-		$query = glue::qselect($this->name, $set);
+		$query = glue::select($this->name, $set);
 		foreach($this->object_pk($object) as $f => $val) {
 			$query->where($f, '=', $val);
 			$query->fields($f);
 		}
-		$query->with($set, Inflector::singular($relationship));
+		$query->with($set, $relationship);
 
 		// Execute query :
 		$query->execute();
+	}
+
+	public function clear() {
+		$this->map = array();
 	}
 
 	// Getters :
@@ -535,12 +539,17 @@ class Glue_Entity {
 			->set('model',			$this->model);
 	}
 
-	// Lazy loads an entity object, stores it in cache, and returns it :
+	// Lazy loads an entity mapper, stores it in cache, and returns it :
 	static public function get($name) {
 		$name = strtolower($name);
 		if( ! isset(self::$entities[$name]))
 			self::$entities[$name] = self::build($name);
 		return self::$entities[$name];
+	}
+
+	// Returns all entity mappers instanciated so far :
+	static public function get_all() {
+		return self::$entities;
 	}
 
 	// Chooses the right entity class to use, based on the name of the entity and

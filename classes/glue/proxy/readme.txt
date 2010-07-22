@@ -1,0 +1,1 @@
+This folder cointains auto-generated proxy classes. There should never be a need to delete them. If however you need to customize one of them, don't modify it here, use the cascading file system to override the file.

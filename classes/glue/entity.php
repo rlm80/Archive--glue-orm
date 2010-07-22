@@ -459,28 +459,20 @@ class Glue_Entity {
 
 	// Proxy class name :
 	protected function proxy_class_name() {
-		return 'Glue_Proxy_' . ucfirst($this->name);
+		return 'Glue_Proxy_' . strtr($this->name, '_', '0') . '00' . strtr($this->model, '_', '0');
 	}
 
 	// Load proxy class :
 	public function proxy_load_class() {
-//		if ($this->name === 'glprofile') {
-//		echo View::factory('glue_proxy')
-//				->set('proxy_class',	$this->proxy_class_name())
-//				->set('model_class',	$this->model)
-//				->set('entity',			$this->name)
-//				->set('properties',		$this->properties)
-//				->set('pk',				$this->pk)
-//				->set('types',			$this->types); die; }
-		eval(
-			View::factory('glue_proxy')
+		$arr = explode('_', $this->proxy_class_name());
+		$path = MODPATH."glue/classes/glue/proxy/".end($arr).'.php';
+		file_put_contents($path, View::factory('glue_proxy')
 				->set('proxy_class',	$this->proxy_class_name())
 				->set('model_class',	$this->model)
 				->set('entity',			$this->name)
-				->set('properties',		$this->properties)
-				->set('pk',				$this->pk)
-				->set('types',			$this->types)
+				->render()
 		);
+		include $path;
 	}
 
 	public function proxy_load_field($object, $field) {

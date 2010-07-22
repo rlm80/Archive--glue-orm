@@ -1,17 +1,14 @@
-/*
-	This view is used as a template to generate proxy classes code.
+<?php echo "<?php defined('SYSPATH') OR die('No direct access allowed.');" ?>
 
-	It's best to keep proxy classes as lightweight as possible and keep the bulk
-	of the code in the mappers because
-	- unlike mappers, proxy classes cannot be extended by the user,
-	- one proxy class by entity needs to be compiled,
-	- the more we put here the closer we get to Active Record and the very same problems
-	  we wanted to avoid by using Data Mapper.
+/*
+	This is an auto-generated proxy class for the entity "<?php echo $entity ?>" when
+	the class "<?php echo $model_class ?>" is used as a model class to represent
+	its instances.
 
 	There are two kind of functions here :
-	- instance functions : implement active record features,
 	- static functions : mapper code that must execute in the scope of the model
 	  class to gain access to protected properties,
+	- instance functions : implement active record features,
 	- magic functions : __get to implement lazy loading of fields and properties.
 */
 
@@ -20,7 +17,7 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	public $glue_db_state = array();
 
 	// Entity name :
-	static public $glue_entity = <?php var_export($entity) ?>;
+	static public $glue_entity = '<?php echo $entity ?>';
 
 	// Constructor :
 	public function __construct() {

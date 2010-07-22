@@ -10,11 +10,11 @@ class Glue {
 		return glue::entity($entity_name)->create($array);
 	}
 
-	public static function select($entity_name, &$set, $conditions = null, $order_by = null, $limit = null, $offset = null) {
+	public static function select($entity_name, &$set = null, $conditions = null, $order_by = null, $limit = null, $offset = null) {
 		return new Glue_Query_Select($entity_name, $set, $conditions, $order_by, $limit, $offset);
 	}
 
-	public static function delete($entity_name, &$set, $conditions = null) {
+	public static function delete($entity_name, &$set = null, $conditions = null) {
 		return new Glue_Query_Delete($entity_name, $set, $conditions);
 	}
 

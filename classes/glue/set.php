@@ -184,7 +184,7 @@ class Glue_Set implements Iterator, Countable, ArrayAccess {
 		// Group objects by entity :
 		$entities = array();
 		foreach($this->objects as $obj)
-			$entities[$obj->glue_entity()->name()][] = $obj;
+			$entities[$obj->glue_entity()][] = $obj;
 
 		// Turn arrays into sets :
 		$sets = array();

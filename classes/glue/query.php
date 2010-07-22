@@ -31,7 +31,7 @@ abstract class Glue_Query {
 	protected $active_command;
 
 	// Constructor, creates a load command :
-	public function __construct($entity_name, &$set, $conditions = null, $order_by = null, $limit = null, $offset = null) {
+	public function __construct($entity_name, &$set = null, $conditions = null, $order_by = null, $limit = null, $offset = null) {
 		// Create target set :
 		$entity	= glue::entity($entity_name);
 		$set	= $this->create_set($entity);

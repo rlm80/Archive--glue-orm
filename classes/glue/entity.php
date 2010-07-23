@@ -324,6 +324,8 @@ class Glue_Entity {
 
 	protected function create_pattern() {
 		$class = $this->proxy_class_name();
+		if ( ! class_exists($class))
+			$this->proxy_class_create();
 		$pattern = new $class;
 		return $pattern;
 	}
@@ -459,20 +461,25 @@ class Glue_Entity {
 
 	// Proxy class name :
 	protected function proxy_class_name() {
-		return 'Glue_Proxy_' . strtr($this->name, '_', '0') . '00' . strtr($this->model, '_', '0');
+		// Ensure name uniqueness (each {entity name, model name} pair should have its own proxy class name ) :
+		$token = md5(json_encode(array($this->name, $this->model)));
+		
+		// Although it's unneccessary, entity name is inserted into
+		// the proxy class name to make debugging easier :
+		return 'Glue_Proxy_' . strtr($this->name, '_', '0') . $token;
 	}
 
 	// Load proxy class :
-	public function proxy_load_class() {
-		$arr = explode('_', $this->proxy_class_name());
-		$path = MODPATH."glue/classes/glue/proxy/".end($arr).'.php';
+	public function proxy_class_create() {
+		$class	= $this->proxy_class_name();
+		$arr	= explode('_', $class);
+		$path	= MODPATH."glue/classes/glue/proxy/".end($arr).'.php';
 		file_put_contents($path, View::factory('glue_proxy')
-				->set('proxy_class',	$this->proxy_class_name())
+				->set('proxy_class',	$class)
 				->set('model_class',	$this->model)
 				->set('entity',			$this->name)
 				->render()
 		);
-		include $path;
 	}
 
 	public function proxy_load_field($object, $field) {

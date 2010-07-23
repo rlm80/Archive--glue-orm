@@ -30,6 +30,3 @@ Route::set('glue_media', 'glue/media/<file>', array('file' => '.+'))
 		'controller' => 'Glue',
 		'action'     => 'media',
 	));
-	
-// Set up autoloading of proxy classes :
-spl_autoload_register(array('Glue', 'auto_load'));

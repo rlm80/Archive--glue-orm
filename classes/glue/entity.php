@@ -464,16 +464,25 @@ class Glue_Entity {
 		// Ensure name uniqueness (each {entity name, model name} pair should have its own proxy class name ) :
 		$token = md5(json_encode(array($this->name, $this->model)));
 		
-		// Although it's unneccessary, entity name is inserted into
-		// the proxy class name to make debugging easier :
-		return 'Glue_Proxy_' . strtr($this->name, '_', '0') . $token;
+		return 'Glue_Proxy_' . $this->name . '_' . $this->model . '_' .  $token;
 	}
 
-	// Load proxy class :
-	public function proxy_class_create() {
+	// Create proxy class file on disk :
+	protected function proxy_class_create() {
+		// Get proxy class name :
 		$class	= $this->proxy_class_name();
-		$arr	= explode('_', $class);
-		$path	= MODPATH."glue/classes/glue/proxy/".end($arr).'.php';
+		
+		// Compute directory and file :
+		$arr	= explode('_', strtolower($class));
+		$file	= array_pop($arr) . '.php';
+		$dir	= MODPATH."glue/classes/".implode('/', $arr);
+		
+		// Create directory :
+		if ( ! mkdir($dir, 777, true))
+			throw new Kohana_Exception("Impossible to create directory " . $path);
+			
+		// Create file :
+		$path = $dir.'/'.$file;
 		file_put_contents($path, View::factory('glue_proxy')
 				->set('proxy_class',	$class)
 				->set('model_class',	$this->model)

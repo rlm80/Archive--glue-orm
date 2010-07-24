@@ -1,6 +1,1 @@
-.svn/
-
-/.settings/org.eclipse.php.core.prefs
-/.buildpath
-/.project
-/classes/glue/proxy/*.php
+/classes/glue/proxy/

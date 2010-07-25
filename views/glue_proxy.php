@@ -40,13 +40,15 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	// is expected to have the same keys as the array of objects. The columns
 	// => properties mapping is $properties. The columns => types mapping is
 	// $types.
-	static public function glue_mass_set($objects, $values, $properties, $types = array()) {
+	static public function glue_set($objects, $values, $properties, $types) {
 		foreach($objects as $key => $obj) {
-			$vals = $values[$key];
-			foreach($properties as $col => $prop) {
-				$obj->$prop = $vals[$col];
-				if (isset($types[$col]))
-					settype($obj->$prop, $types[$col]);
+			if (isset($values[$key])) {
+				$vals = $values[$key];
+				foreach($properties as $col => $prop) {
+					$obj->$prop = $vals[$col];
+					if (isset($types[$col]))
+						settype($obj->$prop, $types[$col]);
+				}
 			}
 		}
 	}
@@ -54,27 +56,33 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	// Gets property values for an array of objects. The returned array of values
 	// will have the same keys as the array of objects. The properties => columns
 	// mapping is $columns.
-	static public function glue_mass_get($objects, $columns) {
+	static public function glue_get($objects, $columns) {
 		$values = array();
 		foreach($objects as $key => $obj)
 			foreach($columns as $prop => $col)			
 				$values[$key][$col] = $obj->$prop;
 		return $values;
 	}
-
-	// Getter :
-	public function glue_get($field, $is_field = true) {
-		$properties	= glue::entity(self::$glue_entity)->properties();
-		$prop = $is_field ? $properties[$field] : $field;
-		return $this->$prop;
-	}
-
-	// Setter :
-	public function glue_set($field, $value, $is_field = true) {
-		$properties	= glue::entity(self::$glue_entity)->properties();
-		$prop = $is_field ? $properties[$field] : $field;
-		$this->$prop = $value;
-	}
+	
+	// For each values in $values, links object at column $colsrc to object
+	// at columns $coltrg, using property $property. If $ismany, a Glue_Set is used
+	// and the target object is added to it, otherwise the property is simply set
+	// to target object (this function is used to link together related objects).
+	static public function glue_link($values, $colsrc, $coltrg, $property, $ismany) {
+		foreach($values as $vals) {
+			if (isset($vals[$colsrc])) {
+				$src = $vals[$colsrc];
+				if ($ismany && ! isset($src->$property))
+					$src->$property = glue::set();
+				if (isset($vals[$coltrg])) {
+					if ($ismany)
+						$src->$property->add($vals[$coltrg]);
+					else
+						$src->$property = $vals[$coltrg];
+				}
+			}
+		}
+	}	
 
 	// Active Record features :
 	public function delete() { return glue::set($this)->delete(); }

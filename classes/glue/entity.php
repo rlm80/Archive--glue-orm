@@ -32,6 +32,7 @@ class Glue_Entity {
 	protected $partial;
 	protected $sort;
 	protected $pattern;
+	protected $proxy_class_name;
 
 	protected function __construct($name) {
 		// Set properties :
@@ -275,22 +276,18 @@ class Glue_Entity {
 		foreach($indexes_new as $pk => $index)
 			$this->map[$pk] = clone $pattern;
 
-		// Build columns => properties and columns => types mapping :
+		// Build columns => fields mapping :
 		$len_prefix	= strlen($prefix);
 		foreach($rows[0] as $col => $val) {
-			if (substr($col, 0, $len_prefix) === $prefix) {
-				$field = substr($col, $len_prefix);
-				$properties[$col] = $this->properties[$field];
-				if ($this->types[$field] !== 'string')
-					$types[$col] = $this->types[$field];
-			}
-		}			
+			if (substr($col, 0, $len_prefix) === $prefix)
+				$fields[$col] = substr($col, $len_prefix);
+		}
 
 		// Update fields of objects with values coming from the database :
 		$objects = array();
 		foreach(array_flip($indexes) as $index => $pk)
 			$objects[$index] = $this->map[$pk];
-		$this->object_set($objects, $rows, $properties, $types);
+		$this->object_set($objects, $rows, $fields);
 
 		// Load objects into result set :
 		$distinct = array();
@@ -330,9 +327,8 @@ class Glue_Entity {
 	
 	// Sets properties for an array of objects. The array of values
 	// is expected to have the same keys as the array of objects. The columns
-	// => properties mapping is $properties. The columns => types mapping is
-	// $types.
-	public function object_set($objects, $values, $properties = null, $types = array()) {
+	// => fields mapping is $fields.
+	public function object_set($objects, $values, $fields = null) {
 		// Turn parameters into arrays if they are not already :
 		if ( ! is_array($objects)) {
 			$objects	= array($objects);
@@ -342,30 +338,42 @@ class Glue_Entity {
 		// No objects ? Do nothing :
 		if (count($objects) === 0) return;
 
-		// Columns => properties mapping not given ? Assume columns = fields :
-		if ( ! isset($properties))
-			$properties = array_intersect_key($this->properties, reset($values));
+		// Columns => fields mapping not given ? Assume columns == fields.
+		if ( ! isset($fields)) {
+			$arr	= array_keys(reset($values));
+			$fields	= array_combine($arr, $arr);
+		}
 		
+		// Compute columns => properties and columns => types mappings :
+		foreach($fields as $col => $field) {
+			$properties[$col]	= $this->properties[$field];
+			$types[$col]		= $this->types[$field];
+		}
+
 		// Set properties :
-		call_user_func(array($this->proxy_class_name(), 'glue_mass_set'), $objects, $values, $properties, $types);
+		call_user_func(array($this->proxy_class_name(), 'glue_set'), $objects, $values, $properties, $types);
 	}
-	
+
 	// Gets properties for an array of objects. The returned array of values
-	// will have the same keys as the array of objects. The properties => columns
+	// will have the same keys as the array of objects. The fields => columns
 	// mapping is $columns.
 	public function object_get($objects, $columns) {
+		// Compute fields => properties mapping :
+		foreach($columns as $field => $col)
+			$newcolumns[$this->properties[$field]] = $col;
+		
+		// Get properties :
 		if (is_array($objects) || $objects instanceof Glue_Set)
-			return call_user_func(array($this->proxy_class_name(), 'glue_mass_get'), $objects, $columns);
+			return call_user_func(array($this->proxy_class_name(), 'glue_get'), $objects, $newcolumns);
 		else {
-			$values = call_user_func(array($this->proxy_class_name(), 'glue_mass_get'), array($objects), $columns);
+			$values = call_user_func(array($this->proxy_class_name(), 'glue_get'), array($objects), $newcolumns);
 			return reset($values);
 		}
 	}
 	
 	// Returns an associative array with pk field names and values.
 	public function object_pk($objects) {
-		foreach ($this->pk as $f) $columns[$this->properties[$f]] = $f;
-		return $this->object_get($objects, $columns);
+		return $this->object_get($objects, array_combine($this->pk, $this->pk));
 	}	
 
 	// Deletes all the database representations of the given objects.
@@ -493,8 +501,10 @@ class Glue_Entity {
 	}
 
 	// Proxy class name :
-	protected function proxy_class_name() {
-		return 'Glue_Proxy_' . strtr($this->name, '_', '0') . '_' . strtr($this->model, '_', '0');
+	public function proxy_class_name() {
+		if ( ! isset($this->proxy_class_name))
+			$this->proxy_class_name = 'Glue_Proxy_' . strtr($this->name, '_', '0') . '_' . strtr($this->model, '_', '0');
+		return $this->proxy_class_name;
 	}
 
 	// Create proxy class file on disk :

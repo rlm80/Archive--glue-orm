@@ -51,14 +51,10 @@ class Glue_Command_With extends Glue_Command {
 		// Load relationships :
 		$direct		= $this->relationship;
 		$reverse	= $this->relationship->reverse();
-		$src_key = $this->src_alias().':__object';
-		$trg_key = $this->trg_alias().':__object';
-		foreach($result as $row) {
-			$src_obj = isset($row[$src_key]) ? $row[$src_key] : null;
-			$trg_obj = isset($row[$trg_key]) ? $row[$trg_key] : null;
-			$direct->link($src_obj, $trg_obj);
-			$reverse->link($trg_obj, $src_obj);
-		}
+		$src_key 	= $this->src_alias().':__object';
+		$trg_key 	= $this->trg_alias().':__object';
+		$direct->link($result, $src_key, $trg_key);
+		$reverse->link($result, $trg_key, $src_key);
 	}
 
 	protected function query_exec($parameters)	{

@@ -194,21 +194,15 @@ class Glue_Relationship {
 		}
 	}
 
-	public function link($src, $trg) {
-		if (isset($src)) {
-			$multiple = ($this->type === self::MANY_TO_MANY || $this->type === self::ONE_TO_MANY);
-			$property = $this->property;
-			if ($multiple && ! isset($src->$property))
-				$src->$property = array();
-			if (isset($trg)) {
-				if ($multiple) {
-					$p =& $src->$property;
-					$p[spl_object_hash($trg)] = $trg;
-				}
-				else
-					$src->$property = $trg;
-			}
-		}
+	public function link($values, $colsrc, $coltrg) {
+		// Get proxy class name of src entity :
+		$proxy = $this->from()->proxy_class_name();
+		
+		// Cardinality :
+		$ismany = ($this->type === self::MANY_TO_MANY || $this->type === self::ONE_TO_MANY);
+		
+		// Link objects together :
+		call_user_func(array($proxy, 'glue_link'), $values, $colsrc, $coltrg, $this->property, $ismany);
 	}
 
 	// Debug :

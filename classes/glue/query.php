@@ -97,17 +97,13 @@ abstract class Glue_Query {
 		return $set;
 	}
 
-	// Executes the query and returns the first element of the root set,
-	// or null if the root set is empty.
+	// Executes the query and returns the number of elements in the root set.
 	public function execute() {
 		// Execute command tree :
 		$this->root_command->execute($this->get_params());
 
-		// Returns first element of root set, or null if the set is empty :
-		if (count($this->root_set) > 0)
-			return $this->root_set[0];
-		else
-			return null;
+		// Returns number of elements in root set :
+		return count($this->root_set);
 	}
 
 	// Returns a view that tells how the query will be executed.
@@ -115,7 +111,7 @@ abstract class Glue_Query {
 		return $this->root_command->debug();
 	}
 
-	// Set the value of a parameter.
+	// Sets the value of a parameter.
 	public function param($name, $value) {
 		if ( ! isset($this->params[$name])) throw new Kohana_Exception("Undefined parameter '".$name."'");
 		$this->params[$name]->value = $value;

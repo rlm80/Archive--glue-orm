@@ -1,4 +1,5 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
+
 /**
  * @package    Glue
  * @author     Régis Lemaigre
@@ -7,10 +8,10 @@
 
 class Glue {
 	public static function create($entity_name, $array) {
-		return glue::entity($entity_name)->create($array);
+		return glue::entity($entity_name)->object_create($array);
 	}
 
-	public static function select($entity_name, &$set = null, $conditions = null, $order_by = null, $limit = null, $offset = null) {
+	public static function select($entity_name, &$set, $conditions = null, $order_by = null, $limit = null, $offset = null) {
 		return new Glue_Query_Select($entity_name, $set, $conditions, $order_by, $limit, $offset);
 	}
 

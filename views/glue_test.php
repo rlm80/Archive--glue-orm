@@ -420,15 +420,15 @@
 <h3>Selecting objects...</h3>
 <?php
 	echo "Testing execute() return value for queries that return something...";
-	$res = glue::select('gluser', $u, array('login' => 'jane'))->execute();
-	if (is_object($res) && $res->login = 'jane')
+	$res = glue::select('gluser', $u, array('login' => array('jane','john')))->execute();
+	if ($res === 2)
 		echo "ok<br/>";
 	else
 		throw new Exception('failed');
 
 	echo "Testing execute() return value for queries that return nothing...";
 	$res = glue::select('gluser', $u, array('login' => 'no such login'))->execute();
-	if ( ! isset($res))
+	if ($res === 0)
 		echo "ok<br/>";
 	else
 		throw new Exception('failed');
@@ -459,7 +459,8 @@
 <h3>Lazy loading...</h3>
 <?php
 	glue::clear();
-	$jane = glue::select('gluser', $u, array('login' => 'jane'))->fields('id')->execute();
+	glue::select('gluser', $u, array('login' => 'jane'))->fields('id')->execute();
+	$jane = $u[0];
 
 	echo "Lazy loading relationships...";
 	if (count($jane->glposts) === 2)
@@ -480,6 +481,7 @@
 	} catch(Exception $e) {
 		echo $e->getMessage();
 		glue_test_drop_tables();
+		//throw $e;
 	}
 ?>
 

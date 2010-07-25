@@ -13,7 +13,7 @@
 */
 
 class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
-	// Best knowledge we have about the state of the object's data in the DB :
+	// Best knowledge we currently have about the state of the object's data in the DB :
 	public $glue_db_state = array();
 
 	// Entity name :
@@ -36,40 +36,30 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 		return self::$glue_entity;
 	}
 
-	// Set values coming from the database :
-	static public function glue_db_set($objects, $values, $mapping) {
-		$mapper		= glue::entity(self::$glue_entity);
-		$properties	= $mapper->properties();
-		$types		= $mapper->types();
+	// Sets property values for an array of objects. The array of values
+	// is expected to have the same keys as the array of objects. The columns
+	// => properties mapping is $properties. The columns => types mapping is
+	// $types.
+	static public function glue_mass_set($objects, $values, $properties, $types = array()) {
 		foreach($objects as $key => $obj) {
-			if (isset($values[$key])) {
-				$vals = $values[$key];
-				$obj_vars = get_object_vars($obj);
-				foreach($mapping as $col => $field) {
-					$prop = $properties[$field];
-					if ( ! isset($obj_vars[$prop])) {
-						$val = $vals[$col];
-						settype($val, $types[$field]);
-						$obj->glue_db_state[$field] = $obj->$prop = $val;
-					}
-				}
+			$vals = $values[$key];
+			foreach($properties as $col => $prop) {
+				$obj->$prop = $vals[$col];
+				if (isset($types[$col]))
+					settype($obj->$prop, $types[$col]);
 			}
 		}
 	}
-
-	// Get pk :
-	static public function glue_pk($objects) {
-		$pks = array();
-		$mapper		= glue::entity(self::$glue_entity);
-		$properties	= $mapper->properties();
-		$pk			= $mapper->pk();
-		foreach($pk as $f) {
-			$prop = $properties[$f];
-			foreach($objects as $key => $obj) {
-				$pks[$key][$f] = $obj->$prop;
-			}
-		}
-		return $pks;
+	
+	// Gets property values for an array of objects. The returned array of values
+	// will have the same keys as the array of objects. The properties => columns
+	// mapping is $columns.
+	static public function glue_mass_get($objects, $columns) {
+		$values = array();
+		foreach($objects as $key => $obj)
+			foreach($columns as $prop => $col)			
+				$values[$key][$col] = $obj->$prop;
+		return $values;
 	}
 
 	// Getter :

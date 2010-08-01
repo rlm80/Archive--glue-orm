@@ -477,7 +477,7 @@
 ?>
 
 <?php
-		glue_test_drop_tables();
+		//glue_test_drop_tables();
 	} catch(Exception $e) {
 		echo $e->getMessage();
 		glue_test_drop_tables();

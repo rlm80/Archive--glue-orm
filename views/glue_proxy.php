@@ -13,8 +13,10 @@
 */
 
 class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
-	// Best knowledge we currently have about the state of the object's data in the DB :
-	public $glue_db_state = array();
+	// Last values that went to, or came from, the database for the properties
+	// or the current object (~= best knowledge we currently have about the state
+	// of the object's data in the DB)
+	protected $glue_db_state = array();
 
 	// Entity name :
 	static public $glue_entity = '<?php echo $entity ?>';
@@ -46,7 +48,7 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 				$vals = $values[$key];
 				foreach($properties as $col => $prop) {
 					$obj->$prop = $vals[$col];
-					if (isset($types[$col]))
+					if (isset($types[$col]) && isset($obj->$prop) /* casting null to integer => 0 ! we don't want that */ )
 						settype($obj->$prop, $types[$col]);
 				}
 			}
@@ -58,9 +60,12 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 	// mapping is $columns.
 	static public function glue_get($objects, $columns) {
 		$values = array();
-		foreach($objects as $key => $obj)
-			foreach($columns as $prop => $col)			
-				$values[$key][$col] = $obj->$prop;
+		foreach($objects as $key => $obj) {
+			$values[$key] = array();
+			foreach($columns as $prop => $col)
+				if (property_exists($obj, $prop))
+					$values[$key][$col] = $obj->$prop;
+		}
 		return $values;
 	}
 	
@@ -82,7 +87,30 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 				}
 			}
 		}
-	}	
+	}
+	
+	// Copy current property values to $glue_db_state.
+	static public function glue_set_clean($objects, $properties) {
+		foreach($objects as $obj)
+			foreach($properties as $prop)
+				$obj->glue_db_state[$prop] = $obj->$prop;
+	}
+	
+	// For each object, returns all property values that differ from what
+	// they are in the database (and thus need an update). Returned array
+	// is indexed in the same way as $objects.
+	static public function glue_get_dirty($objects, $properties) {
+		$dirty = array();
+		foreach($objects as $key => $obj) {
+			$dirty[$key] = array(); 
+			foreach($properties as $field => $prop) {
+				if (property_exists($obj, $prop))
+					if ( ! array_key_exists($prop, $obj->glue_db_state) || $obj->glue_db_state[$prop] !== $obj->$prop)
+						$dirty[$key][$field] = $obj->$prop;
+			}
+		}
+		return $dirty;
+	}
 
 	// Active Record features :
 	public function delete() { return glue::set($this)->delete(); }
@@ -91,18 +119,19 @@ class <?php echo $proxy_class ?> extends <?php echo $model_class ?> {
 
 	// Lazy loading of properties and relationships :
 	public function __get($var) {
-		// __get called even though $var already initialized ?
-		$obj_vars = get_object_vars($this);
-		if (isset($obj_vars[$var]))
+		// __get called even though $var already exists ?
+		if (property_exists($this, $var))
 			trigger_error("Cannot access protected property ".get_parent_class($this)."::".'$'."$var", E_USER_ERROR);
+			
+		// __get in parent has an answer to this call ? Return that answer.
+		if (method_exists(get_parent_class($this), '__get')) {
+			$from_parent = parent::__get($var);
+			if (isset($from_parent))
+				return $from_parent;
+		}		
 
 		// Lazy loading of $var :
-		$mapper = glue::entity(self::$glue_entity);
-		$properties	= $mapper->properties();
-		if ($field = array_search($var, $properties))
-			$mapper->proxy_load_field($this, $field);
-		else
-			$mapper->proxy_load_relationship($this, $var);
+		glue::entity(self::$glue_entity)->proxy_load_var($this, $var);
 
 		return $this->$var;
 	}

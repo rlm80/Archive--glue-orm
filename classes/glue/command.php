@@ -1,22 +1,22 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 /**
- * 
+ *
  * Each query is a tree, with sets of objects being nodes, and commands being branches :
- * 
+ *
  * --root_command1--> root_set  --command2--> set2
  * 					  		   '--command3--> set3 --command4--> set4
  * 												  '--command5--> set5
  * 												  '--command6--> set6
- * 
+ *
  * Each command defines the way to load a new set of objects (the target set) on the basis
  * of a (conceptually) previously loaded set of objects (the source set), a relationship
- * and optional conditions.  
- * 						   
+ * and optional conditions.
+ *
  * @package    Glue
  * @author     Régis Lemaigre
  * @license    MIT
- * 
+ *
  */
 
 abstract class Glue_Command {
@@ -40,7 +40,7 @@ abstract class Glue_Command {
 		$this->trg_set = $trg_set;
 		$this->trg_set->set_parent($this);
 	}
-	
+
 	protected function children() {
 		return $this->trg_set->children();
 	}
@@ -78,8 +78,18 @@ abstract class Glue_Command {
 	}
 
 	protected function load_result_self(&$result) {
-		$objects = $this->trg_entity()->object_load($result, $this->trg_alias().':');
-		$this->trg_set->set($objects);
+
+		// Build columns => fields mapping : TODO change this
+		$trg_alias = $this->trg_alias()
+		$fields = array();
+		foreach($this->fields as $field) {
+			$col = $this->query_field_alias($entity_alias, $field)
+			if (array_key_exists($col, $rows[0]))
+				$fields[$col] = $field;
+		}
+
+		$objects = $this->trg_entity()->get_objects($result, $fields);
+		$this->trg_set->set($objects); // TODO make sure order is not altered
 	}
 
 	protected function get_chain() {

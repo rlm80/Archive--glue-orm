@@ -238,93 +238,102 @@ class Glue_Entity {
 			$query->select(array($this->query_field_expr($alias, $name), $alias.':'.$name)); // TODO move aliasing logic to calling function
 	}
 
-	public function query_field_expr($alias, $field) {
-		foreach($this->columns[$field] as $table => $column)
-			return $alias . '__' . $table . '.' . $column;
+	public function query_field_expr($entity_alias, $field) {
+		reset($this->columns[$field]);
+		list($table, $column) = each($this->columns[$field]);
+		return $entity_alias . '__' . $table . '.' . $column;
+	}
+
+	public function query_field_alias($entity_alias, $field) {
+		return $entity_alias . ':' . $field;
 	}
 
 	public function fields_validate($fields) {
 		return array_diff($fields, $this->fields);
 	}
 
-	public function object_load(&$rows, $prefix = '') {
+	// Get pk string representations of each row
+	// returned array is indexed the same way as $rows; no pk data ? no entry in returned array
+	protected function pk_encode($rows, $fields) {
+		// No rows ? Nothing to do :
+		if (count($rows) === 0)	return array();
+
+		// Build fields => columns mapping :
+		$columns = array_flip($fields);
+
+		// Array of columns holding pk information :
+		foreach ($this->pk as $f) $pkcols[] = $columns[$f];
+
+		// Loop on rows and build pk strings :
+		foreach($rows as $key => $row) {
+			// Gather pk data :
+			$null = true;
+			foreach($pkcols as $i => $col) {
+				$arr[$i] = $row[$col];
+				if ($row[$col] !== null)
+					$null = false;
+			}
+			if ($null) continue;
+
+			// Encode pk into string :
+			$pks[$key] = json_encode($arr);
+		}
+
+		return $pks;
+	}
+
+	// Returns the array of objects represented as data in $rows. Objects already existing
+	// in the identity map are reused and completed with new data. Otherwise new objects
+	// are created and added to the identity map. Returned array is indexed like $rows.
+	public function get_objects($rows, $fields) {
 		// No rows ? Do nothing :
 		if (count($rows) === 0) return array();
 
 		// Get pk string representations of each row :
-		$arr	= array();
-		$pks	= array();
-		$pkcols	= array();
-		foreach($this->pk as $f) $pkcols[] = $prefix.$f;
-		foreach($rows as $row) {
-			$no_obj = true;
-			foreach($pkcols as $i => $col) {
-				$arr[$i] = $row[$col];
-				if ($row[$col] !== null)
-					$no_obj = false;
-			}
-			$pks[] = $no_obj ? 0 : json_encode($arr);
-		}
+		$pks = $this->pk_encode($rows, $fields);
 
 		// Build distinct pk => index mapping :
-		$indexes = array_flip($pks); // Distinct pk => row index mapping
-		unset($indexes[0]);			 // Remove key that represents "no object".
+		$indexes = array_flip($pks);
 
-		// Create new objects :
+		// Add new objects to identity map :
 		$pattern = $this->get_pattern();
-		$indexes_new = array_diff_key($indexes, $this->map);
-		foreach($indexes_new as $pk => $index)
+		foreach(array_diff_key($indexes, $this->map) as $pk => $index)
 			$this->map[$pk] = clone $pattern;
 
-		// Build columns => fields mapping :
-		$len_prefix	= strlen($prefix);
-		foreach($rows[0] as $col => $val) {
-			if (substr($col, 0, $len_prefix) === $prefix)
-				$fields[$col] = substr($col, $len_prefix);
-		}
+		// Set values :
+		foreach ($indexes as $pk => $index)
+			$this->object_set($this->map[$pk], $rows[$index], $fields);
 
-		// Update fields of objects with values coming from the database :
+		// Create array of objects indexed in the same way rows are :
 		$objects = array();
-		foreach(array_flip($indexes) as $index => $pk)
-			$objects[$index] = $this->map[$pk];
-		$this->object_set($objects, $rows, $fields);
+		foreach ($rows as $index => $row)
+			$objects[$index] = $this->map[$pks[$index]];
 
-		// Load objects into result set :
-		$distinct = array();
-		$key = $prefix.'__object';
-		foreach($pks as $index => $pk) {
-			if ($pk === 0)
-				$rows[$index][$key] = null;
-			else {
-				$rows[$index][$key] = $this->map[$pk];
-				$distinct[$pk] = $this->map[$pk];
-			}
-		}
-
-		// Return distinct objects :
-		return array_values($distinct);
+		return $objects;
 	}
 
 	public function object_create($array) {
-		$object = clone $this->get_pattern();
+		$object = $this->object_new();
 		$this->object_set($object, $array);
 		return $object;
 	}
 
-	protected function get_pattern() {
+	// Creates and returns pattern object (you may redefine this if you
+	// need to set properties common to all model objects if this entity) :
+	protected function create_pattern() {
+		$proxy_class = $this->proxy_class_name();
+		if ( ! class_exists($proxy_class))
+			$this->proxy_class_create();
+		return new $proxy_class;
+	}
+
+	// Lazy-loads pattern object :
+	final protected function get_pattern() {
 		if ( ! isset($this->pattern))
 			$this->pattern = $this->create_pattern();
 		return $this->pattern;
 	}
 
-	protected function create_pattern() {
-		$class = $this->proxy_class_name();
-		if ( ! class_exists($class))
-			$this->proxy_class_create();
-		$pattern = new $class;
-		return $pattern;
-	}
-	
 	// Sets properties for an array of objects. The array of values
 	// is expected to have the same keys as the array of objects. The columns
 	// => fields mapping is $fields.
@@ -334,7 +343,7 @@ class Glue_Entity {
 			$objects	= array($objects);
 			$values		= array($values);
 		}
-		
+
 		// No objects ? Do nothing :
 		if (count($objects) === 0) return;
 
@@ -343,7 +352,7 @@ class Glue_Entity {
 			$arr	= array_keys(reset($values));
 			$fields	= array_combine($arr, $arr);
 		}
-		
+
 		// Compute columns => properties and columns => types mappings :
 		foreach($fields as $col => $field) {
 			$properties[$col]	= $this->properties[$field];
@@ -355,17 +364,17 @@ class Glue_Entity {
 	}
 
 	// Gets properties for an array of objects. The returned array of values
-	// will have the same keys as the array of objects. The 
+	// will have the same keys as the array of objects. The
 	// mapping is $columns.
 	public function object_get($objects, $columns = null) {
 		// Fields => columns mapping not given ? Assume mapping = fields => fields
-		if ( ! isset($columns)) 
+		if ( ! isset($columns))
 			$columns = array_combine($this->fields, $this->fields);
-		
+
 		// Compute fields => properties mapping :
 		foreach($columns as $field => $col)
 			$newcolumns[$this->properties[$field]] = $col;
-		
+
 		// Get properties :
 		if (is_array($objects) || $objects instanceof Glue_Set)
 			return call_user_func(array($this->proxy_class_name(), 'glue_get'), $objects, $newcolumns);
@@ -374,7 +383,7 @@ class Glue_Entity {
 			return reset($values);
 		}
 	}
-	
+
 	// Gets dirty fields and their values for an array of objects. The returned
 	// array of values will have the same keys as the array of objects.
 	protected function object_get_dirty($objects) {
@@ -388,15 +397,15 @@ class Glue_Entity {
 		$props = array();
 		foreach ($fields as $f)
 			$props[] = $this->properties[$f];
-		
+
 		// Copy state :
 		return call_user_func(array($this->proxy_class_name(), 'glue_set_clean'), $objects, $props);
-	}		
-	
+	}
+
 	// Returns an associative array with pk field names and values.
 	public function object_pk($objects) {
 		return $this->object_get($objects, array_combine($this->pk, $this->pk));
-	}	
+	}
 
 	// Deletes all the database representations of the given objects.
 	public function object_delete($set) {
@@ -434,26 +443,26 @@ class Glue_Entity {
 	public function object_insert($set) {
 		// Set is empty ? Do nothing :
 		if (count($set) === 0) return;
-		
+
 		// Get objects as array :
-		$objects = $set->as_array(); 	
+		$objects = $set->as_array();
 
 		// This entity has an autoincrementing pk ? Initialize it with null values :
 		if ($this->autoincrement) {
 			$arr = array_fill(0, count($objects), array($this->pk[0] => null));
 			$this->object_set($objects, $arr);
 		}
-		
+
 		// Get populated fields and their values :
 		$populated = $this->object_get($objects);
-		
+
 		// Group objects that have same populated fields :
 		$groups = array();
 		foreach($populated as $key => $values) {
 			$populated_fields = implode(',', array_keys($values));
 			$groups[$populated_fields][$key] = $objects[$key];
 		}
-		
+
 		// Loop on each group :
 		foreach($groups as $populated_fields => $group) {
 			// Get fields to insert :
@@ -468,17 +477,17 @@ class Glue_Entity {
 					if (isset($data[$table]))
 						$columns[$f] = $data[$table];
 				}
-	
+
 				// Build query :
 				$query = DB::insert($table, $columns);
-	
+
 				// Add values :
 				foreach($group as $key => $obj)
 					$query->values(array_intersect_key($populated[$key], $columns));
-	
+
 				// Exec query :
 				$result = $query->execute($this->db);
-	
+
 				// Set auto-increment values :
 				if ($this->autoincrement && $table === $this->tables[0]) {
 					$pk		= $this->pk[0];
@@ -492,7 +501,7 @@ class Glue_Entity {
 					$this->object_set($group, $arr);
 				}
 			}
-			
+
 			// Mark properties as synched with db :
 			$this->object_set_clean($group, $fields);
 		}
@@ -502,23 +511,23 @@ class Glue_Entity {
 	function object_update($set) {
 		// Set is empty ? Do nothing :
 		if (count($set) === 0) return;
-		
+
 		// Get objects as array :
-		$objects = $set->as_array(); 
-		
+		$objects = $set->as_array();
+
 		// Get pk values :
-		$pks = $this->object_pk($objects);		
-		
+		$pks = $this->object_pk($objects);
+
 		// Get dirty fields and their values :
 		$dirty = $this->object_get_dirty($objects);
-		
+
 		// Group objects that have same dirty fields :
 		$groups = array();
 		foreach($dirty as $key => $values) {
 			$dirty_fields = implode(',', array_keys($values));
 			$groups[$dirty_fields][$key] = $objects[$key];
 		}
-		
+
 		// Loop on each group :
 		foreach($groups as $dirty_fields => $group) {
 			// Get fields to update :
@@ -529,7 +538,7 @@ class Glue_Entity {
 			foreach($fields as $f)
 				foreach ($this->columns[$f] as $table => $column)
 					$tables[$table][$f] = $column;
-	
+
 			// Update tables :
 			foreach($tables as $table => $data) {
 				// Build query :
@@ -539,22 +548,22 @@ class Glue_Entity {
 				foreach($data as $f => $column)
 					$query->value($column, DB::expr(':__'.$f));
 				 $query = DB::query(Database::UPDATE, $query->compile(Database::instance($this->db)));
-	
+
 				// Loop on objects and update table :
 				foreach($group as $key => $obj) {
 					// Set pk values :
 					foreach($pks[$key] as $f => $val)
 						$query->param(':__'.$f, $val);
-	
+
 					// Set fields values :
 					foreach($data as $f => $column)
 						$query->param(':__'.$f, $dirty[$key][$f]);
-	
+
 					// Execute query :
 					$query->execute($this->db);
 				}
 			}
-			
+
 			// Mark properties as synched with db :
 			$this->object_set_clean($group, $fields);
 		}
@@ -576,16 +585,16 @@ class Glue_Entity {
 	protected function proxy_class_create() {
 		// Get proxy class name :
 		$class	= $this->proxy_class_name();
-		
+
 		// Compute directory and file :
 		$arr	= explode('_', strtolower($class));
 		$file	= array_pop($arr) . '.php';
 		$dir	= MODPATH."glue/classes/".implode('/', $arr);
-		
+
 		// Create directory :
 		if ( ! mkdir($dir, 777, true))
 			throw new Kohana_Exception("Impossible to create directory " . $dir);
-			
+
 		// Create file :
 		$path = $dir.'/'.$file;
 		file_put_contents($path, View::factory('glue_proxy')
@@ -595,14 +604,14 @@ class Glue_Entity {
 				->render()
 		);
 	}
-	
+
 	public function proxy_load_var($object, $var) {
 		if ($field = array_search($var, $this->properties))
 			$this->proxy_load_field($object, $field);
 		else
 			$this->proxy_load_relationship($object, $var);
-	}	
-	
+	}
+
 	protected function proxy_load_field($object, $field) {
 		// Build query :
 		$query = glue::select($this->name, $set);

@@ -1,43 +1,142 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.');
 
 /**
- * @package	Glue
+ * Entity mapper class.
+ * 
+ * A mapper is an object that knows about the way an entity is stored in the database
+ * (which tables and columns) and about the way it is represented in the application
+ * (which model class and properties). It centralizes all the code that needs
+ * this knowledge. Especially :
+ * - updating, deleting and inserting objects into the database,
+ * - creating objects with data coming from the database.
+ * 
+ * An identity map is used to ensure that there can never be any duplicate objects, that is,
+ * that no entity instance is ever represented as more than one object in the application.
+ * 
+ * @package	Glue-ORM
  * @author	Régis Lemaigre
  * @license	MIT
  */
 
 class Glue_Entity {
-	// Entity cache :
-	static protected $entities = array();
+	/**
+	 * Entity mappers identity map.
+	 * @var array
+	 */
+	static protected $mappers = array();
 	
-	// Constants :
-	const OVERWRITE	= 1; // Mode == overwrite all fields with supplied data
-	const COMPLETE	= 2; // Mode == add missing fields but don't touch existing ones	
+	/******************************************************************************/
+	/* Constants																  */
+	/******************************************************************************/	
+	
+	/**
+	 * Mode == overwrite all fields of the object with supplied data.
+	 * @var integer
+	 */
+	const OVERWRITE	= 1;
+	
+	/**
+	 * Mode == add missing fields to the object but don't touch existing ones.
+	 * @var integer
+	 */
+	const COMPLETE	= 2;
 
-	// Identity map :
-	protected $map = array();
-
-	// Properties that may NOT be set in children classes (passed to constructor) :
+	/******************************************************************************/
+	/* Properties that may NOT be set in children classes						  */
+	/******************************************************************************/
+	
+	/**
+	 * Name of this entity.
+	 * @var string
+	 */
 	protected $name;
-
-	// Properties that may be set by user in children classes :
-	protected $db;
-	protected $model;
-	protected $tables;
-	protected $fields;
-	protected $properties;
-	protected $columns;
-	protected $types;
-	protected $autoincrement;
-	protected $pk;
-	protected $fk;
-
-	// Internal details :
-	protected $partial;
-	protected $sort;
+	
+	/**
+	 * Model objects identity map.
+	 * @var array
+	 */
+	protected $map = array();	
+	
+	/**
+	 * Proxy class instance that's going to be cloned to build new model objects.
+	 * @var object
+	 */
 	protected $pattern;
-	protected $proxy_class_name;
+	
+	/**
+	 * Name of the proxy class.
+	 * @var string
+	 */
+	protected $proxy_class_name;	
 
+	/******************************************************************************/
+	/* Properties that may be set by user in children classes					  */
+	/******************************************************************************/
+
+	/**
+	 * Name of the model class.
+	 * @var string
+	 */
+	protected $model;
+	
+	/**
+	 * Fields of this entity.
+	 * @var array
+	 */
+	protected $fields;
+	
+	/**
+	 * Fields => model class properties mapping.
+	 * @var array
+	 */
+	protected $properties;
+	
+	/**
+	 * Fields => PHP types mapping.
+	 * @var array
+	 */
+	protected $types;
+	
+	/**
+	 * Primary key fields.
+	 * @var array
+	 */
+	protected $pk;
+	
+	/**
+	 * Primary key fields => foreign key fields mapping.
+	 * @var array
+	 */
+	protected $fk;
+	
+	/**
+	 * Database identifier.
+	 * @var string
+	 */
+	protected $db;
+	
+	/**
+	 * Tables.
+	 * @var array
+	 */	
+	protected $tables;
+	
+	/**
+	 * Fields => tables/columns mapping.
+	 * @var array
+	 */	
+	protected $columns;
+	
+	/**
+	 * Is the pk autoincrementing ?
+	 * @var boolean
+	 */
+	protected $autoincrement;	
+	
+	/******************************************************************************/
+	/* Constructor																  */
+	/******************************************************************************/
+	
 	protected function __construct($name) {
 		// Set properties :
 		$this->name	= $name;
@@ -55,19 +154,43 @@ class Glue_Entity {
 		if ( ! isset($this->autoincrement))	$this->autoincrement = $this->default_autoincrement();
 	}
 
+	/******************************************************************************/
+	/* Initializing functions													  */
+	/******************************************************************************/
+	
+	/**
+	 * Returns default database identifier.
+	 * 
+	 * @return string 
+	 */	
 	protected function default_db() {
 		return 'default';
-	}
-
+	}	
+	
+	/**
+	 * Returns default model class name.
+	 * 
+	 * @return string 
+	 */	
 	protected function default_model() {
-		$model = 'Glue_Model_'.ucfirst($this->name);
+		$model = Kohana::config('glue')->model_prefix . ucfirst($this->name);
 		return class_exists($model) ? $model : 'stdClass'; // no upper case !
 	}
-
+	
+	/**
+	 * Returns default tables.
+	 * 
+	 * @return array 
+	 */	
 	protected function default_tables() {
 		return array(inflector::plural($this->name));
 	}
 
+	/**
+	 * Returns default fields.
+	 * 
+	 * @return array 
+	 */		
 	protected function default_fields() {
 		// Init fields array :
 		$fields  = array();
@@ -82,13 +205,22 @@ class Glue_Entity {
 		}
 
 		return $fields;
-	}
+	}	
 
+	/**
+	 * Returns default fields => model class properties mapping.
+	 * 
+	 * @return array 
+	 */	
 	protected function default_properties() {
 		return array_combine($this->fields, $this->fields);
 	}
-
-	// par défault, associe chaque field à la colonne du même nom. Si il y plusieurs tables, ça demande un accès db, sinon pas.
+	
+	/**
+	 * Returns default fields => tables/columns mapping.
+	 * 
+	 * @return array 
+	 */
 	protected function default_columns() {
 		$columns = array();
 
@@ -111,6 +243,11 @@ class Glue_Entity {
 		return $columns;
 	}
 
+	/**
+	 * Returns default fields => PHP types mapping.
+	 * 
+	 * @return array 
+	 */
 	protected function default_types() {
 		$types = array();
 
@@ -122,7 +259,12 @@ class Glue_Entity {
 
 		return $types;
 	}
-
+	
+	/**
+	 * Returns default primary key fields.
+	 * 
+	 * @return array 
+	 */
 	protected function default_pk() {
 		$pk = array();
 
@@ -137,14 +279,24 @@ class Glue_Entity {
 		}
 
 		return $pk;
-	}
-
+	}	
+	
+	/**
+	 * Returns default primary key fields => foreign key fields mapping.
+	 * 
+	 * @return array 
+	 */	
 	protected function default_fk() {
 		$fk = array();
 		foreach($this->pk as $f) $fk[$f] = $this->name.'_'.$f;
 		return $fk;
-	}
-
+	}	
+	
+	/**
+	 * Returns whether or not the pk is autoincrementing.
+	 * 
+	 * @return boolean 
+	 */		
 	protected function default_autoincrement() {
 		if (isset($this->pk[1]))
 			$auto = false;
@@ -164,8 +316,12 @@ class Glue_Entity {
 		}
 
 		return $auto;
-	}
-	
+	}	
+
+	/******************************************************************************/
+	/* Pattern related functions												  */
+	/******************************************************************************/	
+
 	/**
 	 * Creates the proxy class instance that's going to be cloned to build new model
 	 * objects. You may redefine this if your model class constructor accepts
@@ -190,6 +346,10 @@ class Glue_Entity {
 		return $this->pattern;
 	}
 	
+	/******************************************************************************/
+	/* Fields related functions													  */
+	/******************************************************************************/	
+	
 	/**
 	 * Formats a value coming from the data source for storage into an object property.
 	 * 
@@ -199,7 +359,7 @@ class Glue_Entity {
 	 * @return mixed
 	 */
 	protected function field_format($field, $value) {
-		if (isset($value))
+		if (isset($value) && glue::isdef($value))	// settype(null, 'integer') => 0 !!!
 			settype($value, $this->types[$field]);
 		return $value;
 	}
@@ -230,7 +390,7 @@ class Glue_Entity {
 	 * @return mixed
 	 */
 	public function field_set($object, $field, $value) {
-		$object->glue_set($this->properties[$field], $value);
+		$object->glue_set_property($this->properties[$field], $value);
 	}
 
 	/**
@@ -248,8 +408,43 @@ class Glue_Entity {
 	 * @return mixed
 	 */
 	public function field_get($object, $field) {
-		return $object->glue_get($this->properties[$field]);
+		return $object->glue_get_property($this->properties[$field]);
 	}
+	
+	/**
+	 * Returns the alias that is supposed to be used for the field $field in the select
+	 * clause, when the alias used for this entity is $entity_alias.
+	 * 
+	 * @param string $entity_alias
+	 * @param string $field
+	 * 
+	 * @return string
+	 */
+	protected function field_alias($entity_alias, $field) {
+		return $entity_alias . '::' . $field;
+	}
+	
+	/**
+	 * Extracts the value of a field from a data source row. Returns glue::undef()
+	 * if the field is absent from the row.
+	 * 
+	 * @param array		$row
+	 * @param string	$entity_alias
+	 * @param string	$field
+	 * 
+	 * @return mixed
+	 */
+	protected function field_unalias($row, $entity_alias, $field) {
+		$field_alias = $this->field_alias($entity_alias, $field);
+		if (array_key_exists($field_alias, $row))
+			return $row[$field_alias];
+		else
+			return glue::undef();
+	}
+	
+	/******************************************************************************/
+	/* Objects related functions												  */
+	/******************************************************************************/	
 	
 	/**
 	 * Creates and returns a new model object, loaded with given data. The
@@ -269,7 +464,7 @@ class Glue_Entity {
 	
 	/**
 	 * Returns the primary key representation as it would be stored in the
-	 * identity map. The data is expected in a format coming straight from the
+	 * identity map. The data is expected to be in a format coming straight from the
 	 * data source. Returns null if the primary key fields are not set in the
 	 * data array.
 	 * 
@@ -279,8 +474,10 @@ class Glue_Entity {
 	 */
 	protected function object_pk($raw_data) {
 		foreach ($this->pk as $f)  {
-			if ( ! isset($raw_data[$f])) return null;
-			$arr[] = $raw_data[$f];
+			if (isset($raw_data[$f]) && glue::isdef($raw_data[$f]))
+				$arr[] = $raw_data[$f];
+			else
+				return null;
 		}
 		return json_encode($arr);
 	}
@@ -333,15 +530,21 @@ class Glue_Entity {
 	 * the identity map, it is updated with new data and returned. Otherwise
 	 * it is created and added to identity map.
 	 * 
-	 * @param array		$raw_data	Fields => data source values mapping.
-	 * @param integer	$mode		Overwrite all fields with supplied data or
-	 * 								simply add missing fields.	
+	 * @param array		$row			Columns aliases => data source values mapping.
+	 * @param string	$entity_alias	Entity alias that was used to identify this entity.
+	 * @param integer	$mode			Overwrite all fields with supplied data or
+	 * 									simply add missing fields.	
 	 * 
 	 * @return object
 	 */
-	public function object_get($raw_data, $mode = self::COMPLETE) {
+	public function object_get($row, $entity_alias, $mode = self::COMPLETE) {
+		// Extract data from row : 
+		foreach($this->fields as $field)
+			$raw_data[$field] = $this->field_unalias($row, $entity_alias, $field);			
+		
 		// Compute encoded pk :
 		$pk = $this->object_pk($raw_data);
+		if ( ! isset($pk)) return null;
 
 		// Look up pk in id map :
 		if (isset($this->map[$pk]))
@@ -352,6 +555,121 @@ class Glue_Entity {
 		// Return object :
 		return $this->map[$pk];
 	}
+
+	/******************************************************************************/
+	/* Proxy class related functions											  */
+	/******************************************************************************/
+	
+	/**
+	 * Returns the name of the proxy class.
+	 * 
+	 * @return string
+	 */
+	protected function proxy_class_name() {
+		if ( ! isset($this->proxy_class_name))
+			$this->proxy_class_name = 'Glue_Proxy_' . strtr($this->name, '_', '0') . '_' . strtr($this->model, '_', '0');
+		return $this->proxy_class_name;
+	}
+	
+	/**
+	 * Creates proxy class file on disk.
+	 */
+	protected function proxy_class_create() {
+		// Get proxy class name :
+		$class = $this->proxy_class_name();
+
+		// Compute directory and file :
+		$arr	= explode('_', strtolower($class));
+		$file	= array_pop($arr) . '.php';
+		$dir	= MODPATH."glue/classes/".implode('/', $arr);
+
+		// Create directory :
+		if ( ! mkdir($dir, 777, true))
+			throw new Kohana_Exception("Impossible to create directory " . $dir);
+
+		// Create file :
+		$path = $dir.'/'.$file;
+		file_put_contents($path, View::factory('glue_proxy')
+				->set('proxy_class',	$class)
+				->set('model_class',	$this->model)
+				->set('entity',			$this->name)
+				->render()
+		);
+	}	
+	
+	/**
+	 * Creates and returns a new instance of the proxy class. Any parameters passed to
+	 * this function are forwarded to the proxy class constructor, and ultimately to the
+	 * model class constructor.
+	 * 
+	 * @return object
+	 */
+	protected function proxy_new() {
+		// Make sure proxy class exists :
+		$proxy_class = $this->proxy_class_name();
+		if ( ! class_exists($proxy_class))
+			$this->proxy_class_create();
+		
+		// Call proxy class constructor with given parameters :
+		$args	= func_get_args();
+		$refl	= new ReflectionClass($proxy_class);
+		$proxy	= $refl->newInstanceArgs($args);
+		 
+        return $proxy; 
+	}
+
+	/**
+	 * Lazy loads an object property.
+	 * 
+	 * @param object $object
+	 * @param string $var
+	 */
+	public function proxy_load_var($object, $var) {
+		if ($field = array_search($var, $this->properties))
+			$this->proxy_load_field($object, $field);
+		else
+			$this->proxy_load_relationship($object, $var);
+	}
+	
+	/**
+	 * Lazy loads an object field.
+	 * 
+	 * @param object $object
+	 * @param string $field
+	 */
+	protected function proxy_load_field($object, $field) {
+		// Build query :
+		$query = glue::select($this->name, $set);
+		foreach($this->object_pk($object) as $f => $val)
+			$query->where($f, '=', $val);
+		$query->fields($field);
+
+		// Execute query :
+		$query->execute();
+	}	
+
+	/**
+	 * Lazy loads an object relationship.
+	 * 
+	 * @param object $object
+	 * @param string $relationship
+	 */
+	protected function proxy_load_relationship($object, $relationship) {
+		// Build query :
+		$query = glue::select($this->name, $set);
+		foreach($this->object_pk($object) as $f => $val) {
+			$query->where($f, '=', $val);
+			$query->fields($f);
+		}
+		$query->with($set, $relationship);
+
+		// Execute query :
+		$query->execute();
+	}
+	
+	/******************************************************************************/
+	/* Sets related functions													  */
+	/******************************************************************************/	
 	
 	// Deletes all the database representations of the given objects.
 	public function delete($set) {
@@ -513,7 +831,11 @@ class Glue_Entity {
 			// Mark properties as synched with db :
 			$this->object_set_clean($group, $fields);
 		}
-	}	
+	}
+
+	/******************************************************************************/
+	/* Query related functions													  */
+	/******************************************************************************/	
 
 	protected function introspect() {
 		if ( ! isset($this->introspect)) {
@@ -601,130 +923,58 @@ class Glue_Entity {
 		return $entity_alias . ':' . $field;
 	}
 
-	/* TODO ajouter object_dirty basé sur object_compare ? */
+	/* TODO ajouter object_dirty basé sur object_compare ? */	
+	
+	/******************************************************************************/
+	/* Getters																	  */
+	/******************************************************************************/
+	
+	public function name()			{ return $this->name;		}
+	public function fields()		{ return $this->fields;		}
+	public function properties()	{ return $this->properties;	}
+	public function types()			{ return $this->types;		}
+	public function pk()			{ return $this->pk;			}
+	public function fk()			{ return $this->fk;			}
+	public function model()			{ return $this->model;		}
 
-	// Return relationship $name of this entity.
+	/******************************************************************************/
+	/* Miscellaneous functions											 		  */
+	/******************************************************************************/	
+	
+	/**
+	 * Returns the relationship mapper for the relationship $name of this entity.
+	 * 
+	 * @param string $name
+	 * 
+	 * @return Glue_Relationship 
+	 */
 	public function relationship($name) {
 		return glue::relationship($this->name, $name);
 	}
 
-	// Proxy class name :
-	public function proxy_class_name() {
-		if ( ! isset($this->proxy_class_name))
-			$this->proxy_class_name = 'Glue_Proxy_' . strtr($this->name, '_', '0') . '_' . strtr($this->model, '_', '0');
-		return $this->proxy_class_name;
-	}
-	
-	
 	/**
-	 * Creates and returns a new instance of the proxy class. Any parameters passed to
-	 * this function are forwarded to the proxy class constructor, and ultimately to the
-	 * model class constructor.
-	 * 
-	 * @return object
+	 * Clears the identity map of this entity mapper.
 	 */
-	final protected function proxy_new() {
-		// Make sure proxy class exists :
-		$proxy_class = $this->proxy_class_name();
-		if ( ! class_exists($proxy_class))
-			$this->proxy_class_create();
-		
-		// Call proxy class constructor with given parameters :
-		$args	= func_get_args();
-		$refl	= new ReflectionClass($proxy_class);
-		$proxy	= $refl->newInstanceArgs($args);
-		 
-        return $proxy; 
-	}
-
-	// Create proxy class file on disk :
-	protected function proxy_class_create() {
-		// Get proxy class name :
-		$class	= $this->proxy_class_name();
-
-		// Compute directory and file :
-		$arr	= explode('_', strtolower($class));
-		$file	= array_pop($arr) . '.php';
-		$dir	= MODPATH."glue/classes/".implode('/', $arr);
-
-		// Create directory :
-		if ( ! mkdir($dir, 777, true))
-			throw new Kohana_Exception("Impossible to create directory " . $dir);
-
-		// Create file :
-		$path = $dir.'/'.$file;
-		file_put_contents($path, View::factory('glue_proxy')
-				->set('proxy_class',	$class)
-				->set('model_class',	$this->model)
-				->set('entity',			$this->name)
-				->render()
-		);
-	}
-
-	public function proxy_load_var($object, $var) {
-		if ($field = array_search($var, $this->properties))
-			$this->proxy_load_field($object, $field);
-		else
-			$this->proxy_load_relationship($object, $var);
-	}
-
-	protected function proxy_load_field($object, $field) {
-		// Build query :
-		$query = glue::select($this->name, $set);
-		foreach($this->object_pk($object) as $f => $val)
-			$query->where($f, '=', $val);
-		$query->fields($field);
-
-		// Execute query :
-		$query->execute();
-	}
-
-	protected function proxy_load_relationship($object, $relationship) {
-		// Build query :
-		$query = glue::select($this->name, $set);
-		foreach($this->object_pk($object) as $f => $val) {
-			$query->where($f, '=', $val);
-			$query->fields($f);
-		}
-		$query->with($set, $relationship);
-
-		// Execute query :
-		$query->execute();
-	}
-
 	public function clear() {
 		$this->map = array();
-	}
+	}	
+	
+	/**
+	 * Returns a view representing this entity mapper for debugging.
+	 */
+	abstract public function debug();
 
-	// Getters :
-	public function name()			{ return $this->name;			}
-	public function tables()		{ return $this->tables;			}
-	public function fields()		{ return $this->fields;			}
-	public function properties()	{ return $this->properties;		}
-	public function columns()		{ return $this->columns;		}
-	public function types()			{ return $this->types;			}
-	public function pk()			{ return $this->pk;				}
-	public function fk()			{ return $this->fk;				}
-	public function db()			{ return $this->db;				}
-	public function model()			{ return $this->model;			}
-	public function autoincrement()	{ return $this->autoincrement;	}
-
-	// Debug :
-	public function debug() {
-		return View::factory('glue_entity')
-			->set('name',			$this->name)
-			->set('fields',			$this->fields)
-			->set('columns',		$this->columns)
-			->set('properties',		$this->properties)
-			->set('types',			$this->types)
-			->set('db',				$this->db)
-			->set('pk',				$this->pk)
-			->set('fk',				$this->fk)
-			->set('autoincrement',	$this->autoincrement)
-			->set('model',			$this->model);
-	}
-
-	// Lazy loads an entity mapper, stores it in cache, and returns it :
+	/******************************************************************************/
+	/* Static functions															  */
+	/******************************************************************************/
+	
+	/**
+	 * Lazy loads an entity mapper, stores it in cache, and returns it.
+	 * 
+	 * @param string $name	Entity name.
+	 * 
+	 * @return Glue_Entity
+	 */
 	static public function get($name) {
 		$name = strtolower($name);
 		if( ! isset(self::$entities[$name]))
@@ -732,13 +982,24 @@ class Glue_Entity {
 		return self::$entities[$name];
 	}
 
-	// Returns all entity mappers instanciated so far :
-	static public function get_all() {
-		return self::$entities;
+	/**
+	 * Clears the identity maps of all entity mappers loaded so far.
+	 * 
+	 * @return Glue_Entity
+	 */
+	static public function clear_all() {
+		foreach(self::$entities as $mapper)
+			$mapper->clear();
 	}
 
-	// Chooses the right entity class to use, based on the name of the entity and
-	// the available classes.
+	/**
+	 * Instanciate and returns an entity mapper. Chooses the right entity class to use,
+	 * based on the name of the entity and the available classes.
+	 *  
+	 * @param string $name	Entity name.
+	 * 
+	 * @return Glue_Entity
+	 */
 	static protected function build($name) {
 		$class = 'Glue_Entity_'.ucfirst($name);
 		if (class_exists($class))

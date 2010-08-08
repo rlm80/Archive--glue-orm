@@ -78,17 +78,7 @@ abstract class Glue_Command {
 	}
 
 	protected function load_result_self(&$result) {
-
-		// Build columns => fields mapping : TODO change this
-		$trg_alias = $this->trg_alias()
-		$fields = array();
-		foreach($this->fields as $field) {
-			$col = $this->query_field_alias($entity_alias, $field)
-			if (array_key_exists($col, $rows[0]))
-				$fields[$col] = $field;
-		}
-
-		$objects = $this->trg_entity()->get_objects($result, $fields);
+		$objects = $this->trg_entity()->get_objects($result, $this->trg_alias()); // TODO change this to make use of get_object() instead
 		$this->trg_set->set($objects); // TODO make sure order is not altered
 	}
 

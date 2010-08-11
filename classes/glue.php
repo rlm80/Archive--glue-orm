@@ -4,7 +4,7 @@
  * Main Glue class. Contains only static methods. All of the Glue features can be
  * accessed through this interface. Whatever you do with Glue, this should almost
  * always be your entry point.
- * 
+ *
  * @package    Glue
  * @author     Régis Lemaigre
  * @license    MIT
@@ -12,11 +12,11 @@
 
 class Glue {
 	static protected $undef;
-	
+
 	/**
 	 * Returns the constant used to represent a property that is not defined. This is
 	 * neccessary to distinguish a null value from a value that is not defined at all.
-	 * 
+	 *
 	 * @return stdClass
 	 */
 	public static function undef() {
@@ -24,17 +24,17 @@ class Glue {
 			self::$undef = new stdClass();
 		return self::$undef;
 	}
-	
+
 	/**
 	 * Returns true if the property value is defined, false otherwise.
-	 * 
-	 * @param	mixed	$value	
+	 *
+	 * @param	mixed	$value
 	 * @return	boolean
 	 */
 	public static function isdef($value) {
 		return $value !== self::undef();
 	}
-	
+
 	public static function create($entity_name, $array) {
 		return glue::entity($entity_name)->object_create($array);
 	}
@@ -48,10 +48,7 @@ class Glue {
 	}
 
 	public static function clear($entity_name = null) {
-		if (isset($entity_name))
-			glue::entity($entity_name)->clear();
-		else
-			Glue_Entity::clear_all();
+			Glue_Entity::clear($entity_name);
 	}
 
 	public static function param($name) {

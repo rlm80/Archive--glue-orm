@@ -9,10 +9,10 @@
 class Glue_Entity {
 	// Entity cache :
 	static protected $entities = array();
-	
+
 	// Constants :
 	const OVERWRITE	= 1; // Mode == overwrite all fields with supplied data
-	const COMPLETE	= 2; // Mode == add missing fields but don't touch existing ones	
+	const COMPLETE	= 2; // Mode == add missing fields but don't touch existing ones
 
 	// Identity map :
 	protected $map = array();
@@ -165,14 +165,14 @@ class Glue_Entity {
 
 		return $auto;
 	}
-	
+
 	/**
 	 * Creates the proxy class instance that's going to be cloned to build new model
 	 * objects. You may redefine this if your model class constructor accepts
 	 * parameters (in which case you may pass them to proxy_new()) or if there is a need
 	 * for some additional setup after calling the constructor.
-	 * 
-	 * @return object 
+	 *
+	 * @return object
 	 */
 	protected function pattern_create() {
 		return $this->proxy_new();
@@ -181,21 +181,21 @@ class Glue_Entity {
 	/**
 	 * Lazy-loads and returns pattern object. Don't redefine this, redefine
 	 * pattern_create instead.
-	 * 
-	 * @return object 
+	 *
+	 * @return object
 	 */
 	final protected function pattern_get() {
 		if ( ! isset($this->pattern))
 			$this->pattern = $this->pattern_create();
 		return $this->pattern;
 	}
-	
+
 	/**
 	 * Formats a value coming from the data source for storage into an object property.
-	 * 
+	 *
 	 * @param string	$field
 	 * @param mixed		$value
-	 * 
+	 *
 	 * @return mixed
 	 */
 	protected function field_format($field, $value) {
@@ -203,16 +203,16 @@ class Glue_Entity {
 			settype($value, $this->types[$field]);
 		return $value;
 	}
-	
+
 	/**
 	 * Formats a value coming from an object property for storage into the data
 	 * source. This is not neccessarily the opposite of field_format. You should
 	 * only have to redefine this if you've redefined field_format to do
 	 * something really funky.
-	 * 
+	 *
 	 * @param string	$field
 	 * @param mixed		$value
-	 * 
+	 *
 	 * @return mixed
 	 */
 	protected function field_unformat($field, $value) {
@@ -222,11 +222,11 @@ class Glue_Entity {
 	/**
 	 * Sets the value of a model object field. The value is stored as-is, no type casting
 	 * or conversion of any kind occurs. For this, see field_format() and field_unformat().
-	 * 
+	 *
 	 * @param mixed		$object
 	 * @param string	$field
 	 * @param mixed		$value
-	 * 
+	 *
 	 * @return mixed
 	 */
 	public function field_set($object, $field, $value) {
@@ -237,27 +237,27 @@ class Glue_Entity {
 	 * Returns the value of a model object field. The value is returned as-is,
 	 * no type casting or conversion of any kind occurs. For this, see field_format()
 	 * and field_unformat().
-	 * 
+	 *
 	 * If the property doesn't exist at all in the object, this function will return
 	 * glue::undef(). You may test for this by running the returned value through
 	 * glue::isdef($value).
-	 * 
+	 *
 	 * @param mixed		$object
 	 * @param string	$field
-	 * 
+	 *
 	 * @return mixed
 	 */
 	public function field_get($object, $field) {
 		return $object->glue_get($this->properties[$field]);
 	}
-	
+
 	/**
 	 * Creates and returns a new model object, loaded with given data. The
 	 * data is expected to be in a format suitable for storage into
 	 * the object properties. See field_format() and field_unformat().
-	 * 
+	 *
 	 * @param array $data	Fields => formatted values mapping.
-	 * 
+	 *
 	 * @return mixed
 	 */
 	public function object_new($formatted_data) {
@@ -266,15 +266,15 @@ class Glue_Entity {
 			$this->field_set($object, $field, $value);
 		return $object;
 	}
-	
+
 	/**
 	 * Returns the primary key representation as it would be stored in the
 	 * identity map. The data is expected in a format coming straight from the
 	 * data source. Returns null if the primary key fields are not set in the
 	 * data array.
-	 * 
+	 *
 	 * @param array $raw_data	Fields => data source values mapping.
-	 * 
+	 *
 	 * @return string
 	 */
 	protected function object_pk($raw_data) {
@@ -284,14 +284,14 @@ class Glue_Entity {
 		}
 		return json_encode($arr);
 	}
-	
+
 	/**
 	 * Creates a new model object and adds it to identity map. The data is
 	 * expected in a format coming straight from the data source.
-	 * 
+	 *
 	 * @param string	$pk			Encoded primary key.
 	 * @param array		$raw_data	Fields => data source values mapping.
-	 * 
+	 *
 	 * @return string
 	 */
 	protected function object_create($pk, $raw_data) {
@@ -299,44 +299,44 @@ class Glue_Entity {
 			$formatted_data[$field] = $this->field_format($field, $value);
 		$this->map[$pk] = $this->object_new($formatted_data);
 	}
-	
+
 	/**
 	 * Updates an object already existing in the identity map with fresh
 	 * values coming from the data source.
-	 * 
-	 * @param string	$pk			Encoded primary key. 
+	 *
+	 * @param string	$pk			Encoded primary key.
 	 * @param array 	$raw_data	Fields => data source values mapping.
 	 * @param integer 	$mode		Overwrite all fields with supplied data or
 	 * 								simply add missing fields.
-	 * 
+	 *
 	 * @return string
 	 */
 	protected function object_upgrade($pk, $raw_data, $mode) {
 		// Get object from identity map :
 		$object = $this->map[$pk];
-		
+
 		// Upgrade object :
 		foreach ($raw_data as $field => $value) {
 			// Skip pk fields :
 			if (in_array($field, $this->pk, true)) continue;
-			
+
 			// Update / add fields :
 			if ($mode === self::OVERWRITE || (self::COMPLETE && ! glue::isdef($this->field_get($object, $field)))) {
 				$formatted_value = $this->field_format($field, $value);
 				$this->field_set($object, $field, $formatted_value);
 			}
 		}
-	}	
-	
+	}
+
 	/**
 	 * Returns the object represented in $data. If the object already exists in
 	 * the identity map, it is updated with new data and returned. Otherwise
 	 * it is created and added to identity map.
-	 * 
+	 *
 	 * @param array		$raw_data	Fields => data source values mapping.
 	 * @param integer	$mode		Overwrite all fields with supplied data or
-	 * 								simply add missing fields.	
-	 * 
+	 * 								simply add missing fields.
+	 *
 	 * @return object
 	 */
 	public function object_get($raw_data, $mode = self::COMPLETE) {
@@ -352,7 +352,7 @@ class Glue_Entity {
 		// Return object :
 		return $this->map[$pk];
 	}
-	
+
 	// Deletes all the database representations of the given objects.
 	public function delete($set) {
 		// No objects ? Do nothing :
@@ -513,7 +513,7 @@ class Glue_Entity {
 			// Mark properties as synched with db :
 			$this->object_set_clean($group, $fields);
 		}
-	}	
+	}
 
 	protected function introspect() {
 		if ( ! isset($this->introspect)) {
@@ -614,13 +614,13 @@ class Glue_Entity {
 			$this->proxy_class_name = 'Glue_Proxy_' . strtr($this->name, '_', '0') . '_' . strtr($this->model, '_', '0');
 		return $this->proxy_class_name;
 	}
-	
-	
+
+
 	/**
 	 * Creates and returns a new instance of the proxy class. Any parameters passed to
 	 * this function are forwarded to the proxy class constructor, and ultimately to the
 	 * model class constructor.
-	 * 
+	 *
 	 * @return object
 	 */
 	final protected function proxy_new() {
@@ -628,13 +628,13 @@ class Glue_Entity {
 		$proxy_class = $this->proxy_class_name();
 		if ( ! class_exists($proxy_class))
 			$this->proxy_class_create();
-		
+
 		// Call proxy class constructor with given parameters :
 		$args	= func_get_args();
 		$refl	= new ReflectionClass($proxy_class);
 		$proxy	= $refl->newInstanceArgs($args);
-		 
-        return $proxy; 
+
+        return $proxy;
 	}
 
 	// Create proxy class file on disk :
